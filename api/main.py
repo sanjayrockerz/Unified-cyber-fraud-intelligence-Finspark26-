@@ -1,12 +1,16 @@
 import asyncio
+import json
+import math
+import os
 import sys
 import io
 import datetime
+import hmac
+import secrets
 from pathlib import Path
-import pandas as pd
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, Query, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, FileResponse
 from pydantic import BaseModel
 
 # PDF Generation
@@ -18,21 +22,234 @@ ROOT = Path(__file__).parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from api.risk_engine import evaluate
-from ml.predict import _get_fusion_model, _prepare_single
-from ml.features import engineer_features, FEATURE_COLS_FUSION
+from api.scenario_engine import get_all_scenarios_list, generate_scenario
+from api import store
+from api.synthetic_universe.fraud_scenario_engine import generate_bank_universe
+from api.synthetic_universe.graph_generator import generate_graph_topology
+from api.synthetic_universe.exporter import export_dataset_csv, export_dataset_json, export_dataset_replay, export_dataset_parquet_bytes
+from api.synthetic_universe.bank_model import get_virtual_bank, BANK_REGISTRY
+from api.digital_twin_engine import get_or_create_digital_twin
+from api.session_intelligence_engine import session_engine
+from api.investigation_intelligence_engine import investigation_engine
+from api.response_orchestrator_engine import soar_engine
+from api.trust_fabric_engine import trust_fabric
+from api.quantum_trust_layer import quantum_trust
+from api.sdk_engine import sdk_engine
+from api.cyber_threat_engine import cyber_threat_engine
+from api.session_intelligence import (
+    SessionLifecycle,
+    session_intelligence,
+    trust_update_broker,
+)
+from api.platform import (
+    PlatformSecurityMiddleware,
+    create_access_token,
+    platform_settings,
+)
+from api.platform.observability import RequestContextMiddleware
+from api.platform.security import authenticate_websocket
+from api.platform.banking_auth import router as banking_auth_router
+from api.platform.events import platform_event_broker
+from api.platform.graph_runtime import graph_runtime
+from api.platform.model_runtime import model_runtime
+from api.platform.pipeline import PipelineValidationError, platform_pipeline
+from api.platform.decision_runtime import decision_engine
+from api.platform.pairing import pairing_registry
+from api.platform.notifications import notification_service
+from api.gateway_integration import router as gateway_router
 
-app = FastAPI()
+
+
+
+
+
+
+app = FastAPI(title="Fusion Risk OS", version="2.5.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=list(platform_settings.cors_origins),
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "X-Request-ID", "X-Razorpay-Signature"],
 )
+app.add_middleware(PlatformSecurityMiddleware)
+app.add_middleware(RequestContextMiddleware)
+
+app.include_router(gateway_router)
+app.include_router(banking_auth_router)
+
+
+class PairingRequest(BaseModel):
+    backend_url: str | None = None
+    ws_url: str | None = None
+
+
+class DeviceRegistrationRequest(BaseModel):
+    pair_id: str
+    bootstrap_token: str
+    device_uuid: str
+    android_version: str = "unknown"
+    manufacturer: str = "unknown"
+    model: str = "unknown"
+    sdk_version: str = "unknown"
+    app_version: str = "unknown"
+    fingerprint: str = ""
+
+
+@app.post("/device/pair")
+async def create_device_pairing(req: PairingRequest, request: Request):
+    backend = req.backend_url or str(request.base_url).rstrip("/")
+    ws = req.ws_url or backend.replace("https://", "wss://").replace("http://", "ws://") + "/ws/stream"
+    return pairing_registry.create(backend, ws)
+
+
+@app.post("/device/register")
+async def register_paired_device(req: DeviceRegistrationRequest):
+    record = pairing_registry.consume(req.pair_id, req.bootstrap_token)
+    if not record:
+        raise HTTPException(status_code=401, detail="Pairing token is invalid, expired, or already used")
+    device = pairing_registry.register_device(req.pair_id, req.model_dump())
+    client = platform_settings.clients.get("fusion-android-dev", {"roles": ["sdk"], "app_id": "com.fusionbank.mobileapp"})
+    access_token, expires_at = create_access_token(
+        "fusion-android-dev", {**client, "roles": ["sdk"]}, subject=device["device_id"]
+    )
+    refresh_token = secrets.token_urlsafe(32)
+    return {
+        **device,
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "session_token": access_token,
+        "expires_at": expires_at,
+        "backend_url": record.backend_url,
+        "ws_url": record.ws_url,
+    }
+
+
+@app.get("/device/connected")
+async def connected_devices():
+    sessions = list(sdk_engine.sdk_sessions.values())
+    by_device = {item["device_id"]: item for item in sessions}
+    devices = []
+    for device in pairing_registry.list_devices():
+        item = {**device}
+        session = by_device.get(device["device_id"])
+        item["session_id"] = session.get("session_id") if session else None
+        item["user_id"] = session.get("user_id") if session else None
+        item["session_status"] = session.get("status") if session else "NOT_LOGGED_IN"
+        devices.append(item)
+    return {"devices": devices, "count": len(devices)}
+
+
+@app.get("/device/sessions")
+async def connected_device_sessions():
+    sessions = []
+    for session in sdk_engine.sdk_sessions.values():
+        item = {**session, "kind": "LIVE_DEVICE", "last_event": None, "threat_count": 0, "connection": "CONNECTED"}
+        recent = [event for event in platform_event_broker.recent(session_id=session["session_id"], limit=1)]
+        if recent:
+            item["last_event"] = recent[-1].get("event_type") or recent[-1].get("msg_type")
+            item["threat_count"] = len(recent[-1].get("threats", []))
+        sessions.append(item)
+    return {"sessions": sessions, "count": len(sessions)}
+
+
+@app.get("/banking/notifications")
+async def banking_notifications(request: Request, limit: int = 100):
+    return {"notifications": notification_service.list_for_user(request.state.auth.subject, limit), "channel": "IN_APP"}
+
+
+@app.get("/download/apk")
+async def download_demo_apk():
+    apk = ROOT / "fusion-reference-bank" / "app" / "build" / "outputs" / "apk" / "debug" / "app-debug.apk"
+    if not apk.exists():
+        raise HTTPException(status_code=404, detail="Build the debug APK before downloading")
+    return FileResponse(apk, media_type="application/vnd.android.package-archive", filename="fusion-risk-os-demo.apk")
+
+
+@app.get("/download/sdk")
+async def download_demo_sdk():
+    sdk = ROOT / "SDK_REFERENCE.md"
+    if not sdk.exists():
+        raise HTTPException(status_code=404, detail="SDK reference is not available")
+    return FileResponse(sdk, media_type="text/markdown", filename="fusion-sdk-reference.md")
+
+
+class TokenRequest(BaseModel):
+    client_id: str
+    client_secret: str
+
+
+@app.post("/auth/token")
+async def issue_platform_token(req: TokenRequest):
+    client = platform_settings.clients.get(req.client_id)
+    supplied = req.client_secret.encode("utf-8")
+    expected = str(client.get("secret", "")).encode("utf-8") if client else b""
+    if not client or not hmac.compare_digest(supplied, expected):
+        raise HTTPException(status_code=401, detail="Invalid client credentials")
+    token, expires_at = create_access_token(req.client_id, client)
+    return {
+        "access_token": token,
+        "token_type": "Bearer",
+        "expires_at": expires_at,
+        "expires_in": platform_settings.jwt_ttl_seconds,
+        "roles": client.get("roles", []),
+    }
+
+
+@app.get("/health/live")
+async def health_live():
+    return {"status": "live", "service": "fusion-risk-os"}
+
+
+@app.get("/health/ready")
+async def health_ready():
+    model_status = model_runtime.status()
+    graph_status = graph_runtime.status()
+    ready = (
+        model_status.get("status") == "AVAILABLE"
+        and graph_status.get("status") == "AVAILABLE"
+        and graph_status.get("backend") == "NEO4J"
+    )
+    return {
+        "status": "ready" if ready else "degraded",
+        "service": "fusion-risk-os",
+        "security_mode": platform_settings.security_mode,
+        "dependencies": {
+            "models": model_status,
+            "graph": graph_status,
+            "database": {"status": "available"},
+        },
+    }
+
+
+@app.get("/platform/status")
+async def platform_status():
+    return {
+        "service": "fusion-risk-os",
+        "version": "2.5.0",
+        "security_mode": platform_settings.security_mode,
+        "models": model_runtime.status(),
+        "graph": graph_runtime.status(),
+        "pipeline": "AUTHORITATIVE_PLATFORM_PIPELINE",
+        "decision_engine": {
+            "implementation": decision_engine.__class__.__name__,
+            "version": decision_engine.version,
+        },
+    }
+
+
+@app.post("/graph/analyze")
+async def analyze_graph(payload: dict):
+    return graph_runtime.process(payload).to_dict()
+
+
+@app.get("/graph/topology")
+async def graph_topology(limit: int = 500):
+    return graph_runtime.topology(limit)
 
 class TransactionRequest(BaseModel):
+    session_id: str | None = None
     txn_id: str = "txn_0000"
     step: int = 1
     timestamp: str = "2026-01-01 00:00:00"
@@ -60,87 +277,347 @@ class CertInReportRequest(BaseModel):
     reasons: list[str]
     score: float
 
-def get_shap_explanation(txn_dict):
-    try:
-        import shap  # lazy: pulls in numba/llvmlite, too slow/heavy to load at server startup
-
-        model = _get_fusion_model()
-        df = _prepare_single(txn_dict)
-        fe = engineer_features(df)
-        X = fe[FEATURE_COLS_FUSION]
-        
-        explainer = shap.TreeExplainer(model)
-        shap_values = explainer.shap_values(X)
-        
-        if isinstance(shap_values, list):
-            sv = shap_values[1][0]
-        else:
-            sv = shap_values[0]
-            if len(sv.shape) > 1 and sv.shape[1] == 2:
-                 sv = sv[:, 1]
-            
-        feature_impacts = []
-        for i, col in enumerate(FEATURE_COLS_FUSION):
-            val = float(sv[i])
-            if abs(val) > 0.01:
-                feature_impacts.append({"feature": col, "impact": val})
-                
-        feature_impacts.sort(key=lambda x: abs(x["impact"]), reverse=True)
-        return feature_impacts[:5]
-    except Exception as e:
-        print(f"SHAP error: {e}")
-        return []
-
 @app.post("/evaluate/transaction")
-async def evaluate_transaction(txn: TransactionRequest):
+async def evaluate_transaction(txn: TransactionRequest, request: Request):
     txn_dict = txn.dict()
-    # Mocking the baseline tabular_score calculation to match the demo exact score requirements:
-    # "with no prior cyber compromise, score = 61 -> CHALLENGE"
-    # "FUSION -> BLOCK, score jumps to ~94"
-    # To force this exactly for the demo, we'll intercept if it's the demo txn.
-    
-    is_demo_txn = txn.amount == 750000.0 and txn.user_id == 'usr_abc'
-    
-    if is_demo_txn:
-        # Force exact demo output
-        reasons = [
-            "High baseline fraud probability (Tabular Score: 0.82)",
-            "Recent cyber compromise detected (Login from unusual IP prior to transfer)",
-            "Beneficiary is part of a known mule cluster (cluster_alpha)"
-        ]
-        return {
-            "action": "BLOCK",
-            "score": 94.0,
-            "reasons": reasons,
-            "shap_features": [
-                {"feature": "log_amount", "impact": 1.2},
-                {"feature": "cyber_flag", "impact": 2.1},
-                {"feature": "dest_balance_ratio", "impact": 0.8},
-                {"feature": "time_since_last_txn", "impact": -0.4}
-            ],
-            "counterfactual_sentence": "Counterfactual: With no prior cyber compromise, score = 61 -> CHALLENGE, not BLOCK."
-        }
-    
-    # Regular evaluation for non-demo transactions
-    result = evaluate(txn_dict)
-    shap_features = get_shap_explanation(txn_dict)
-    
-    counterfactual_sentence = ""
-    if result.get("counterfactual"):
-        cf = result["counterfactual"]
-        counterfactual_sentence = f"Counterfactual: With no prior cyber compromise, score = {cf['score']:.0f} -> {cf['action']}, not {result['action']}."
-    
+    txn_dict["request_id"] = request.state.request_id
+    txn_dict["session_id"] = txn.session_id or f"TXN_CONTEXT_{txn.txn_id}"
+    txn_dict["event_type"] = "TRANSACTION_EVALUATION"
+    result = await platform_pipeline.process(
+        txn_dict, require_existing_session=False
+    )
     return {
-        "action": result["action"],
-        "score": result["score"],
-        "reasons": result["reasons"],
-        "shap_features": shap_features,
-        "counterfactual_sentence": counterfactual_sentence
+        "action": result.decision["decision"],
+        "score": result.inference["score"],
+        "reasons": result.inference["reasons"],
+        "model_status": result.inference["status"],
+        "model_used": (
+            result.inference["implementation"]
+            if result.inference["status"] == "EXECUTED"
+            else None
+        ),
+        "fallback_used": (
+            result.inference["implementation"]
+            if result.inference["status"] == "ModelUnavailable"
+            else None
+        ),
+        "graph": result.graph,
+        "threats": result.threats,
+        "pipeline_id": result.pipeline_id,
+        "request_id": result.request_id,
+        "correlation_id": result.correlation_id,
+        "backend_ack": result.event_ack["backend_ack"],
+        "timings": result.timings,
     }
+
+@app.post("/evaluate/transaction/pipeline")
+async def evaluate_transaction_pipeline(txn: TransactionRequest):
+    txn_dict = txn.dict()
+    txn_dict["session_id"] = txn.session_id or f"TXN_CONTEXT_{txn.txn_id}"
+    txn_dict["event_type"] = "TRANSACTION_EVALUATION"
+    return (
+        await platform_pipeline.process(txn_dict, require_existing_session=False)
+    ).to_dict()
+
+@app.post("/evaluate/transaction/trust")
+async def evaluate_transaction_trust(txn: TransactionRequest):
+    return {
+        "status": "UNAVAILABLE",
+        "reason": "LEGACY_SYNTHETIC_TRUST_DISABLED",
+        "message": "Phase 2.5 does not calculate or expose synthetic trust metrics.",
+    }
+
+@app.get("/scenarios/list")
+async def list_scenarios():
+    return get_all_scenarios_list()
+
+@app.get("/scenarios/generate/{scenario_id}")
+async def generate_banking_scenario(scenario_id: str):
+    return generate_scenario(scenario_id)
+
+# --- SYNTHETIC BANKING UNIVERSE ENDPOINTS (PART 13 APIs) ---
+scenario_execution_state = {
+    "status": "IDLE",
+    "scenario_id": None,
+    "current_step": 0,
+    "total_txns": 0,
+    "paused": False
+}
+
+cached_universe = None
+
+
+def _case_from_transaction(transaction: dict, index: int) -> dict:
+    is_critical = bool(transaction.get("cyber_compromise_in_window"))
+    score = 96 if is_critical else 72
+    return {
+        "case_id": f"CASE-SYN-{index:05d}",
+        "transaction_id": transaction.get("txn_id"),
+        "customer_id": transaction.get("user_id"),
+        "status": "OPEN" if is_critical else "TRIAGE",
+        "severity": "CRITICAL" if is_critical else "HIGH",
+        "score": score,
+        "amount": transaction.get("amount", 0),
+        "created_at": transaction.get("timestamp"),
+        "reason": (
+            "Cyber compromise and mule-network evidence require analyst review."
+            if is_critical
+            else "Elevated transaction risk requires analyst review."
+        ),
+    }
+
+
+def _persist_universe_collections(universe: dict) -> None:
+    """Make explicitly generated synthetic data available to list endpoints."""
+    for customer in universe.get("customers", []):
+        store.put("customers", customer["customer_id"], customer)
+
+    transactions = universe.get("transactions", [])
+    for transaction in transactions:
+        store.put("transactions", transaction["txn_id"], transaction)
+
+    case_index = 0
+    for transaction in transactions:
+        if transaction.get("cyber_compromise_in_window") or transaction.get("amount", 0) >= 250000:
+            case_index += 1
+            case = _case_from_transaction(transaction, case_index)
+            store.put("cases", case["case_id"], case)
+
+
+def _paginated_collection(
+    collection: str,
+    page: int,
+    page_size: int,
+    sort: str,
+    q: str,
+    status: str | None = None,
+    severity: str | None = None,
+) -> dict:
+    sort_desc = sort.startswith("-")
+    sort_key = sort.lstrip("-") or None
+    normalized_query = q.casefold().strip()
+
+    def matches(item: dict) -> bool:
+        if status and str(item.get("status", "")).casefold() != status.casefold():
+            return False
+        if severity and str(item.get("severity", "")).casefold() != severity.casefold():
+            return False
+        return not normalized_query or normalized_query in json.dumps(item, default=str).casefold()
+
+    items, total = store.list_paginated(
+        collection,
+        page=page,
+        page_size=page_size,
+        sort_key=sort_key,
+        sort_desc=sort_desc,
+        filter_fn=matches,
+    )
+    return {
+        "items": items,
+        "page": page,
+        "page_size": page_size,
+        "total": total,
+        "total_pages": math.ceil(total / page_size) if total else 0,
+    }
+
+class CreateBankRequest(BaseModel):
+    bank_name: str = "Fusion National Bank"
+    bank_code: str = "FUSB"
+
+class UniverseGenerateRequest(BaseModel):
+    num_customers: int = 100
+    num_transactions: int = 500
+    seed: int = 42
+    bank_code: str = "FUSB"
+
+class ScenarioStartRequest(BaseModel):
+    scenario_id: str = "account_takeover"
+    speed_multiplier: float = 1.0
+
+@app.post("/synthetic/universe/create_bank")
+async def create_virtual_bank(req: CreateBankRequest):
+    bank = get_virtual_bank(req.bank_code)
+    return {"message": f"Virtual Bank {req.bank_name} initialized.", "bank_metadata": bank.to_dict()}
+
+@app.post("/synthetic/universe/generate")
+async def generate_synthetic_bank_universe(req: UniverseGenerateRequest):
+    global cached_universe
+    universe = generate_bank_universe(
+        num_customers=req.num_customers,
+        num_txns=req.num_transactions,
+        seed=req.seed,
+        bank_code=req.bank_code
+    )
+    graph_topology = generate_graph_topology(universe)
+    universe["graph_topology"] = graph_topology
+    cached_universe = universe
+    _persist_universe_collections(universe)
+    return universe
+
+
+@app.get("/transactions")
+async def list_transactions(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=100),
+    sort: str = "-timestamp",
+    q: str = "",
+):
+    return _paginated_collection("transactions", page, page_size, sort, q)
+
+
+@app.get("/cases")
+async def list_cases(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=100),
+    sort: str = "-created_at",
+    q: str = "",
+    status: str | None = None,
+    severity: str | None = None,
+):
+    return _paginated_collection("cases", page, page_size, sort, q, status, severity)
+
+
+@app.get("/customers")
+async def list_customers(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=100),
+    sort: str = "customer_id",
+    q: str = "",
+):
+    return _paginated_collection("customers", page, page_size, sort, q)
+
+
+@app.on_event("startup")
+async def seed_demo_scale_data_when_requested():
+    if os.environ.get("SEED_DEMO_SCALE") != "1":
+        return
+    universe = generate_bank_universe(num_customers=500, num_txns=5000, seed=42)
+    _persist_universe_collections(universe)
+
+@app.get("/synthetic/universe/preview")
+async def preview_universe(sample_size: int = 10):
+    global cached_universe
+    if not cached_universe:
+        cached_universe = generate_bank_universe(num_customers=50, num_txns=100, seed=42)
+    return {
+        "bank_metadata": cached_universe.get("bank_metadata", {}),
+        "stats": cached_universe.get("stats", {}),
+        "customers_sample": cached_universe["customers"][:sample_size],
+        "accounts_sample": cached_universe["accounts"][:sample_size],
+        "devices_sample": cached_universe["devices"][:sample_size],
+        "transactions_sample": cached_universe["transactions"][:sample_size]
+    }
+
+@app.post("/synthetic/universe/start_scenario")
+async def start_scenario_execution(req: ScenarioStartRequest):
+    global scenario_execution_state
+    scenario_execution_state = {
+        "status": "RUNNING",
+        "scenario_id": req.scenario_id,
+        "current_step": 1,
+        "speed_multiplier": req.speed_multiplier,
+        "paused": False
+    }
+    return {"message": f"Scenario {req.scenario_id} started.", "state": scenario_execution_state}
+
+@app.post("/synthetic/universe/pause")
+async def pause_scenario_execution():
+    global scenario_execution_state
+    scenario_execution_state["paused"] = True
+    scenario_execution_state["status"] = "PAUSED"
+    return {"message": "Scenario execution paused.", "state": scenario_execution_state}
+
+@app.post("/synthetic/universe/resume")
+async def resume_scenario_execution():
+    global scenario_execution_state
+    scenario_execution_state["paused"] = False
+    scenario_execution_state["status"] = "RUNNING"
+    return {"message": "Scenario execution resumed.", "state": scenario_execution_state}
+
+@app.get("/synthetic/universe/stats")
+async def get_universe_statistics():
+    global cached_universe
+    if not cached_universe:
+        cached_universe = generate_bank_universe(num_customers=50, num_txns=100, seed=42)
+    return {
+        "stats": cached_universe.get("stats", {}),
+        "scenario_execution_state": scenario_execution_state,
+        "supported_banks": list(BANK_REGISTRY.keys())
+    }
+
+@app.delete("/synthetic/universe/clear")
+async def clear_universe_state():
+    global cached_universe, scenario_execution_state
+    cached_universe = None
+    scenario_execution_state = {"status": "IDLE", "scenario_id": None, "current_step": 0, "paused": False}
+    return {"message": "Digital Banking Universe state cleared."}
+
+@app.get("/synthetic/universe/export/csv")
+async def export_synthetic_csv(num_customers: int = 100, num_txns: int = 500, seed: int = 42, bank_code: str = "FUSB"):
+    global cached_universe
+    if cached_universe:
+        universe = cached_universe
+    else:
+        universe = generate_bank_universe(num_customers=num_customers, num_txns=num_txns, seed=seed, bank_code=bank_code)
+    csv_content = export_dataset_csv(universe["transactions"])
+    return StreamingResponse(
+        io.BytesIO(csv_content.encode("utf-8")),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=fusion_synthetic_bank_universe.csv"}
+    )
+
+@app.get("/synthetic/universe/export/json")
+async def export_synthetic_json(num_customers: int = 100, num_txns: int = 500, seed: int = 42, bank_code: str = "FUSB"):
+    global cached_universe
+    if cached_universe:
+        universe = cached_universe
+    else:
+        universe = generate_bank_universe(num_customers=num_customers, num_txns=num_txns, seed=seed, bank_code=bank_code)
+    json_content = export_dataset_json(universe)
+    return StreamingResponse(
+        io.BytesIO(json_content.encode("utf-8")),
+        media_type="application/json",
+        headers={"Content-Disposition": "attachment; filename=fusion_synthetic_bank_universe.json"}
+    )
+
+@app.get("/synthetic/universe/export/parquet")
+async def export_synthetic_parquet(num_customers: int = 100, num_txns: int = 500, seed: int = 42, bank_code: str = "FUSB"):
+    global cached_universe
+    if cached_universe:
+        universe = cached_universe
+    else:
+        universe = generate_bank_universe(num_customers=num_customers, num_txns=num_txns, seed=seed, bank_code=bank_code)
+    parquet_bytes = export_dataset_parquet_bytes(universe["transactions"])
+    return StreamingResponse(
+        io.BytesIO(parquet_bytes),
+        media_type="application/octet-stream",
+        headers={"Content-Disposition": "attachment; filename=fusion_synthetic_bank_universe.parquet"}
+    )
+
+@app.get("/synthetic/universe/export/replay")
+async def export_synthetic_replay(num_customers: int = 100, num_txns: int = 500, seed: int = 42, bank_code: str = "FUSB"):
+    global cached_universe
+    if cached_universe:
+        universe = cached_universe
+    else:
+        universe = generate_bank_universe(num_customers=num_customers, num_txns=num_txns, seed=seed, bank_code=bank_code)
+    replay_content = export_dataset_replay(universe)
+    return StreamingResponse(
+        io.BytesIO(replay_content.encode("utf-8")),
+        media_type="application/json",
+        headers={"Content-Disposition": "attachment; filename=fusion_synthetic_bank_replay.json"}
+    )
+
 
 # --- QUANTUM MONITORING ---
 @app.get("/quantum/posture")
 async def get_quantum_posture():
+    return {
+        "status": "UNAVAILABLE",
+        "vulnerable_percent": None,
+        "hndl_flag": None,
+        "reason": "TLS_HANDSHAKE_TELEMETRY_NOT_CONFIGURED",
+    }
     """
     Returns the % of vulnerable sessions and a Harvest-Now-Decrypt-Later (HNDL) flag.
     In the demo, the current session used ECDHE, flagging HNDL.
@@ -247,19 +724,735 @@ def get_demo_events():
         }
     ]
 
-@app.websocket("/ws/stream")
-async def websocket_endpoint(websocket: WebSocket):
-    await websocket.accept()
-    events = get_demo_events()
-    
+# --- DIGITAL TWIN INTELLIGENCE ENGINE ENDPOINTS (PART 13 APIs) ---
+class DigitalTwinUpdateRequest(BaseModel):
+    user_id: str = "usr_abc"
+    msg_type: str = "transaction"
+    event_data: dict = {}
+
+class DigitalTwinCompareRequest(BaseModel):
+    user_id: str = "usr_abc"
+    transaction: dict = {}
+
+@app.get("/digital_twin/{user_id}")
+async def get_customer_digital_twin(user_id: str):
+    twin = get_or_create_digital_twin(user_id)
+    return twin.get_full_profile()
+
+@app.post("/digital_twin/update")
+async def update_customer_digital_twin(req: DigitalTwinUpdateRequest):
+    twin = get_or_create_digital_twin(req.user_id)
+    event_payload = req.event_data if req.event_data else {"msg_type": req.msg_type, "user_id": req.user_id}
+    updated_profile = twin.update_twin(event_payload)
+    return {"message": f"Digital Twin for {req.user_id} updated.", "profile": updated_profile}
+
+@app.post("/digital_twin/compare")
+async def compare_digital_twin_transaction(req: DigitalTwinCompareRequest):
+    twin = get_or_create_digital_twin(req.user_id)
+    txn = req.transaction if req.transaction else {"user_id": req.user_id, "amount": 750000.0, "nameDest": "ACC_MULE_NEW"}
+    comparison = twin.compare_transaction(txn)
+    return comparison
+
+@app.get("/digital_twin/{user_id}/timeline")
+async def get_digital_twin_timeline(user_id: str):
+    twin = get_or_create_digital_twin(user_id)
+    return {"user_id": user_id, "timeline": twin.timeline}
+
+@app.get("/digital_twin/{user_id}/history")
+async def get_digital_twin_history(user_id: str):
+    twin = get_or_create_digital_twin(user_id)
+    return {
+        "user_id": user_id,
+        "historical_risk": twin.risk["historical_risk"],
+        "risk_trend": twin.risk["risk_trend"],
+        "behavior_drift_index": twin.behavior["behavior_drift_index"],
+        "geo_velocity_kmh": twin.locations["geo_velocity_kmh"]
+    }
+
+@app.get("/digital_twin/{user_id}/snapshot")
+async def get_digital_twin_snapshot(user_id: str):
+    twin = get_or_create_digital_twin(user_id)
+    return {
+        "user_id": user_id,
+        "full_name": twin.identity["full_name"],
+        "kyc_status": twin.identity["kyc_status"],
+        "risk_tier": twin.identity["risk_tier"],
+        "trust_level": twin.identity["trust_level"],
+        "trusted_devices": len(twin.devices["trusted_devices"]),
+        "current_risk": twin.risk["current_risk"],
+        "mule_ring_distance": twin.graph["distance_to_known_mule_ring"],
+        "next_predicted_login": twin.predictions["predicted_next_login"]
+    }
+
+# --- PRE-TRANSACTION SESSION INTELLIGENCE ENDPOINTS ---
+class SessionAnalyseRequest(BaseModel):
+    session_id: str = "SESS_9921_CRITICAL"
+    user_id: str = "usr_abc"
+    device_id: str = "dev_9999"
+    ip: str = "185.15.2.22"
+    cyber_compromise_in_window: bool = True
+    dest_mule_cluster_id: str = "cluster_alpha"
+
+class SessionUpdateRequest(BaseModel):
+    session_id: str = "SESS_9921_CRITICAL"
+    event_data: dict = {}
+
+class SessionRecalculateRequest(BaseModel):
+    session_id: str = "SESS_9921_CRITICAL"
+
+
+class TrustRecalculateRequest(BaseModel):
+    session_id: str
+
+@app.post("/session/analyse")
+async def analyse_pre_transaction_session(req: SessionAnalyseRequest):
+    passport = session_engine.analyse_session(req.dict())
+    return passport
+
+@app.get("/session/passport/{session_id}")
+async def get_session_trust_passport(session_id: str):
+    passport = session_engine.get_passport(session_id)
+    return passport
+
+@app.post("/session/update")
+async def update_session_trust(req: SessionUpdateRequest):
+    passport = session_engine.update_session(req.session_id, req.event_data)
+    return passport
+
+@app.post("/session/recalculate")
+async def recalculate_session_trust(req: SessionRecalculateRequest):
+    passport = session_engine.get_passport(req.session_id)
+    updated = session_engine.analyse_session({"session_id": req.session_id, "user_id": passport.get("user_id", "usr_abc")})
+    return updated
+
+
+# --- PHASE 3 ENTERPRISE SESSION INTELLIGENCE & TRUST PASSPORT ---
+@app.get("/sessions")
+async def list_live_sessions(
+    state: str | None = None,
+    search: str | None = None,
+    include_closed: bool = True,
+    limit: int = 200,
+):
+    lifecycle = None
+    if state:
+        try:
+            lifecycle = SessionLifecycle(state.upper())
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=f"Unknown session state: {state}") from exc
+    sessions = session_intelligence.repository.list_sessions(
+        state=lifecycle,
+        search=search,
+        include_closed=include_closed,
+        limit=limit,
+    )
+    return {"sessions": [session.model_dump(mode="json") for session in sessions], "count": len(sessions)}
+
+
+@app.get("/sessions/{session_id}")
+async def get_live_session(session_id: str):
+    session = session_intelligence.get_session(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return session
+
+
+@app.get("/trust-passport")
+async def get_current_trust_passport(session_id: str | None = None):
+    passport = (
+        session_intelligence.repository.get_passport(session_id)
+        if session_id
+        else session_intelligence.repository.get_latest_passport()
+    )
+    if not passport:
+        raise HTTPException(status_code=404, detail="Trust Passport not found")
+    return passport.to_compatible_dict()
+
+
+@app.get("/trust-passport/{session_id}")
+async def get_trust_passport_by_session(session_id: str):
+    passport = session_intelligence.repository.get_passport(session_id)
+    if not passport:
+        raise HTTPException(status_code=404, detail="Trust Passport not found")
+    return passport.to_compatible_dict()
+
+
+@app.get("/trust-history/{session_id}")
+async def get_trust_history(
+    session_id: str,
+    range: str = Query(default="last_hour", pattern="^(last_minute|last_hour|last_day|custom)$"),
+    start: datetime.datetime | None = None,
+    end: datetime.datetime | None = None,
+    limit: int = 1000,
+):
+    if not session_intelligence.repository.get_passport(session_id):
+        raise HTTPException(status_code=404, detail="Trust Passport not found")
+    history = session_intelligence.get_history(session_id, range, start, end, limit)
+    return {
+        "session_id": session_id,
+        "range": range,
+        "snapshots": [snapshot.model_dump(mode="json") for snapshot in history],
+        "count": len(history),
+    }
+
+
+@app.get("/trust-components/{session_id}")
+async def get_trust_components(session_id: str):
+    passport = session_intelligence.repository.get_passport(session_id)
+    if not passport:
+        raise HTTPException(status_code=404, detail="Trust Passport not found")
+    return {
+        "session_id": session_id,
+        "overall_trust": passport.overall_trust,
+        "confidence": passport.confidence,
+        "trust_trend": passport.trust_trend,
+        "components": {
+            name.value: component.model_dump(mode="json")
+            for name, component in passport.components.items()
+        },
+        "deltas": [
+            delta.model_dump(mode="json")
+            for delta in session_intelligence.repository.get_deltas(session_id)
+        ],
+        "recovery_events": [
+            event.model_dump(mode="json")
+            for event in session_intelligence.repository.get_recovery_events(session_id)
+        ],
+    }
+
+
+@app.post("/trust/recalculate")
+async def recalculate_enterprise_trust(req: TrustRecalculateRequest):
     try:
-        for event in events:
-            delay = event.pop('delay', 1.0)
-            await websocket.send_json(event)
-            await asyncio.sleep(delay)
-            
+        update = session_intelligence.recalculate(req.session_id)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail="Session not found") from exc
+    envelope = update.model_dump(mode="json")
+    await trust_update_broker.publish(envelope)
+    return envelope
+
+
+@app.get("/trust/live")
+async def get_live_trust_updates(session_id: str | None = None, limit: int = 50):
+    updates = trust_update_broker.recent(session_id=session_id, limit=limit)
+    return {
+        "updates": updates,
+        "count": len(updates),
+    }
+
+# --- INVESTIGATION INTELLIGENCE LAYER ENDPOINTS ---
+class InvestigationAnalyseRequest(BaseModel):
+    case_id: str = "CASE-2026-8942"
+    user_id: str = "usr_abc"
+    amount: float = 750000.0
+    cyber_compromise_in_window: bool = True
+    dest_mule_cluster_id: str = "cluster_alpha"
+
+class BurstAnalyseRequest(BaseModel):
+    user_id: str = "usr_abc"
+    time_window_seconds: int = 60
+
+class MuleDiscoverRequest(BaseModel):
+    user_id: str = "usr_abc"
+    dest_mule_cluster_id: str = "cluster_alpha"
+
+@app.post("/investigation/analyse")
+async def analyse_investigation_intelligence(req: InvestigationAnalyseRequest):
+    brief = investigation_engine.analyse_investigation(req.dict())
+    return brief
+
+@app.post("/burst/analyse")
+async def analyse_burst_attack(req: BurstAnalyseRequest):
+    result = investigation_engine.detect_burst_attack(req.user_id, req.dict())
+    return result
+
+@app.post("/mule/discover")
+async def discover_mule_ring(req: MuleDiscoverRequest):
+    result = investigation_engine.discover_mule_ring(req.user_id, req.dict())
+    return result
+
+@app.get("/investigation/{case_id}")
+async def get_investigation_brief(case_id: str):
+    brief = investigation_engine.get_cached_investigation(case_id)
+    return brief
+
+# --- SOAR RESPONSE ORCHESTRATION ENGINE ENDPOINTS ---
+class ResponseRecommendRequest(BaseModel):
+    user_id: str = "usr_abc"
+    amount: float = 750000.0
+    cyber_compromise_in_window: bool = True
+
+class ResponseExecuteRequest(BaseModel):
+    case_id: str = "CASE-2026-8942"
+    user_id: str = "usr_abc"
+    amount: float = 750000.0
+    approval_mode: str = "AUTOMATIC_EXECUTION"
+
+class PlaybookCreateRequest(BaseModel):
+    name: str
+    scenario: str
+    description: str
+    trigger_conditions: list = []
+    priority: str = "HIGH"
+    execution_order: list = []
+
+class IncidentAssignRequest(BaseModel):
+    incident_id: str = "INC-2026-9912"
+    owner: str = "Analyst_04"
+
+class ResponseRollbackRequest(BaseModel):
+    workflow_id: str = "SOAR_WF_88291"
+    reason: str = "Analyst False Positive Override"
+
+@app.post("/response/recommend")
+async def recommend_soar_response(req: ResponseRecommendRequest):
+    recommendation = soar_engine.recommend_response(req.dict())
+    return recommendation
+
+@app.post("/response/execute")
+async def execute_soar_response(req: ResponseExecuteRequest):
+    execution = soar_engine.execute_response(req.dict())
+    return execution
+
+@app.post("/playbook/create")
+async def create_playbook(req: PlaybookCreateRequest):
+    pb = soar_engine.create_playbook(req.dict())
+    return pb
+
+@app.get("/playbook")
+async def list_playbooks():
+    return soar_engine.get_playbooks()
+
+@app.get("/incident/{incident_id}")
+async def get_incident_details(incident_id: str):
+    incident = soar_engine.get_incident(incident_id)
+    return incident
+
+@app.post("/incident/assign")
+async def assign_incident(req: IncidentAssignRequest):
+    incident = soar_engine.assign_incident(req.incident_id, req.owner)
+    return incident
+
+@app.post("/response/rollback")
+async def rollback_response(req: ResponseRollbackRequest):
+    res = soar_engine.rollback_response(req.workflow_id, req.reason)
+    return res
+
+# --- TRUST FABRIC & EVIDENCE INTEGRITY ENDPOINTS ---
+class EvidenceCreateRequest(BaseModel):
+    case_id: str = "CASE-2026-8942"
+    incident_id: str = "INC-2026-8942"
+    session_id: str = "SESS_9921_CRITICAL"
+    user_id: str = "usr_abc"
+    amount: float = 750000.0
+
+class EvidenceExportRequest(BaseModel):
+    evidence_id: str = "EVID_CASE-2026-8942_1001"
+    format: str = "pdf"
+
+@app.post("/evidence/create")
+async def create_evidence_package(req: EvidenceCreateRequest):
+    package = trust_fabric.create_evidence_package(req.dict())
+    return package
+
+@app.get("/evidence/{evidence_id}")
+async def get_evidence_package(evidence_id: str):
+    package = trust_fabric.get_evidence(evidence_id)
+    return package
+
+@app.get("/evidence/verify/{evidence_id}")
+async def verify_evidence_integrity(evidence_id: str):
+    verification = trust_fabric.verify_evidence_integrity(evidence_id)
+    return verification
+
+@app.get("/audit/{incident_id}")
+async def get_audit_trail(incident_id: str):
+    trail = trust_fabric.get_audit_trail(incident_id)
+    return trail
+
+@app.post("/evidence/export")
+async def export_evidence_bundle(req: EvidenceExportRequest):
+    bundle = trust_fabric.export_evidence_bundle(req.evidence_id, req.format)
+    return bundle
+
+# --- FUSION QUANTUM TRUST LAYER (QTL) ENDPOINTS ---
+class QuantumAnalyzeRequest(BaseModel):
+    asset_id: str = "ASSET_001"
+
+class QuantumSimulateRequest(BaseModel):
+    asset_id: str = "ASSET_001"
+    simulated_year: int = 2032
+
+@app.get("/quantum/readiness")
+async def get_quantum_readiness():
+    return quantum_trust.get_readiness_score()
+
+@app.get("/quantum/inventory")
+async def get_quantum_inventory():
+    return quantum_trust.get_inventory()
+
+@app.get("/quantum/assessment")
+async def get_quantum_assessment():
+    return quantum_trust.get_assessment()
+
+@app.post("/quantum/analyze")
+async def analyze_quantum_asset(req: QuantumAnalyzeRequest):
+    return quantum_trust.analyze_asset(req.asset_id)
+
+@app.get("/quantum/recommendations")
+async def get_quantum_recommendations():
+    return quantum_trust.get_recommendations()
+
+@app.get("/quantum/dashboard")
+async def get_quantum_dashboard():
+    return quantum_trust.get_dashboard_summary()
+
+@app.get("/quantum/compliance")
+async def get_quantum_compliance():
+    return quantum_trust.get_compliance_details()
+
+@app.post("/quantum/simulate")
+async def simulate_quantum_threat(req: QuantumSimulateRequest):
+    return quantum_trust.simulate_quantum_scenario(req.dict())
+
+@app.websocket("/ws/stream")
+
+
+
+
+
+async def websocket_endpoint(websocket: WebSocket):
+    try:
+        auth = authenticate_websocket(websocket)
+    except HTTPException as exc:
+        await websocket.close(code=4401, reason=str(exc.detail))
+        return
+    await websocket.accept()
+    session_filter = websocket.query_params.get("session_id")
+    if session_filter and "customer" in auth.roles:
+        owned_session = sdk_engine.sdk_sessions.get(session_filter)
+        if not owned_session or owned_session.get("user_id") != auth.subject:
+            await websocket.close(code=4403, reason="Session is not owned by this identity")
+            return
+    subscription = await platform_event_broker.subscribe(session_filter)
+
+    try:
+        await websocket.send_json(
+            {
+                "msg_type": "connection_ack",
+                "session_id": session_filter,
+                "authenticated_subject": auth.subject,
+            }
+        )
+        for recent_event in platform_event_broker.recent(
+            session_id=session_filter,
+            limit=20,
+        ):
+            await websocket.send_json(recent_event)
+
+        while True:
+            receive_task = asyncio.create_task(websocket.receive_text())
+            update_task = asyncio.create_task(subscription.queue.get())
+            done, pending = await asyncio.wait(
+                {receive_task, update_task},
+                return_when=asyncio.FIRST_COMPLETED,
+            )
+            for task in pending:
+                task.cancel()
+            if update_task in done:
+                await websocket.send_json(update_task.result())
+            if receive_task in done:
+                message = receive_task.result()
+                if message.lower() == "ping":
+                    await websocket.send_json({"msg_type": "pong"})
+                else:
+                    try:
+                        command = json.loads(message)
+                    except json.JSONDecodeError:
+                        command = {}
+                    if command.get("type") == "ping":
+                        await websocket.send_json({"msg_type": "pong"})
     except WebSocketDisconnect:
         print("Client disconnected")
+    except Exception as e:
+        print(f"WebSocket error: {e}")
+    finally:
+        await platform_event_broker.unsubscribe(subscription.subscription_id)
+
+# --- FUSION ADAPTIVE TRUST SDK (FAT-SDK) ENDPOINTS ---
+class SDKSessionStartRequest(BaseModel):
+    app_id: str
+    tenant_id: str
+    sdk_version: str
+    user_id: str
+    device_id: str
+    environment: str
+
+class SDKDeviceRequest(BaseModel):
+    device_id: str
+    model: str
+    manufacturer: str
+    android_version: str
+    security_patch: str
+    screen_lock_enabled: bool
+    root_detected: bool
+    emulator_detected: bool
+    frida_detected: bool
+    debugger_attached: bool
+    overlay_detected: bool
+    timezone: str
+    locale: str
+
+class SDKNetworkRequest(BaseModel):
+    session_id: str
+    network_type: str
+    carrier: str
+    vpn_detected: bool
+    proxy_detected: bool
+    roaming: bool
+    wifi_vs_cellular: str
+
+class SDKEventRequest(BaseModel):
+    session_id: str
+    device_id: str
+    event_type: str
+    amount: float = 0.0
+    sdk_version: str = "FAT-SDK v2.4.1"
+    request_id: str | None = None
+    correlation_id: str | None = None
+
+class SDKDecisionRequest(BaseModel):
+    session_id: str
+    event_type: str
+    amount: float
+    vpn_detected: bool = False
+    root_detected: bool = False
+    beneficiary_id: str | None = None
+    request_id: str | None = None
+    correlation_id: str | None = None
+
+@app.post("/sdk/session/start")
+async def sdk_session_start(req: SDKSessionStartRequest, request: Request):
+    auth = request.state.auth
+    if auth.app_id and auth.app_id != req.app_id:
+        raise HTTPException(status_code=403, detail="Token is not scoped to this application")
+    if auth.tenant_id and auth.tenant_id != req.tenant_id:
+        raise HTTPException(status_code=403, detail="Token is not scoped to this tenant")
+    if "customer" in auth.roles and auth.subject != req.user_id:
+        raise HTTPException(status_code=403, detail="Banking identity cannot start another user's session")
+    session = sdk_engine.start_session(req.model_dump())
+    device_profile = sdk_engine.device_profiles.get(session["device_id"], {})
+    device_event = {
+        **device_profile,
+        "session_id": session["session_id"],
+        "user_id": session["user_id"],
+        "device_id": session["device_id"],
+        "event_type": "DEVICE_ATTESTATION",
+    }
+    result = await platform_pipeline.process(device_event, require_existing_session=True)
+    return {
+        **session,
+        "request_id": result.request_id,
+        "correlation_id": result.correlation_id,
+        "pipeline_id": result.pipeline_id,
+        "backend_ack": result.event_ack["backend_ack"],
+        "initial_threat_count": len(result.threats),
+    }
+
+@app.post("/sdk/device")
+async def sdk_register_device(req: SDKDeviceRequest):
+    return sdk_engine.register_device(req.model_dump())
+
+@app.post("/sdk/network")
+async def sdk_register_network(req: SDKNetworkRequest, request: Request):
+    response = sdk_engine.register_network(req.model_dump())
+    session = sdk_engine.sdk_sessions.get(req.session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="SDK session is not active")
+    if "customer" in request.state.auth.roles and session["user_id"] != request.state.auth.subject:
+        raise HTTPException(status_code=403, detail="SDK session is not owned by this identity")
+    event = {
+        **req.model_dump(),
+        "event_type": "NETWORK_ATTESTATION",
+        "user_id": session["user_id"],
+        "device_id": session["device_id"],
+    }
+    await platform_pipeline.process(event, require_existing_session=True)
+    return response
+
+@app.post("/sdk/event")
+async def sdk_ingest_event(req: SDKEventRequest, request: Request):
+    event_dict = req.model_dump()
+    event_dict["request_id"] = req.request_id or request.state.request_id
+    session = sdk_engine.sdk_sessions.get(req.session_id)
+    if session:
+        event_dict["user_id"] = session["user_id"]
+        if "customer" in request.state.auth.roles and session["user_id"] != request.state.auth.subject:
+            raise HTTPException(status_code=403, detail="SDK session is not owned by this identity")
+    try:
+        result = await platform_pipeline.process(
+            event_dict, require_existing_session=True
+        )
+    except PipelineValidationError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    return result.event_ack
+
+@app.post("/sdk/request-decision")
+async def sdk_request_decision(req: SDKDecisionRequest, request: Request):
+    dec_dict = req.model_dump()
+    dec_dict["request_id"] = req.request_id or request.state.request_id
+    session = sdk_engine.sdk_sessions.get(req.session_id)
+    if session:
+        dec_dict["user_id"] = session["user_id"]
+        dec_dict["device_id"] = session["device_id"]
+        if "customer" in request.state.auth.roles and session["user_id"] != request.state.auth.subject:
+            raise HTTPException(status_code=403, detail="SDK session is not owned by this identity")
+    try:
+        result = await platform_pipeline.process(
+            dec_dict, require_existing_session=True
+        )
+    except PipelineValidationError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    decision = result.decision
+    return {
+        **decision,
+        "recommended_action": decision["decision"].replace("_", " ").title(),
+        "policy_version": sdk_engine.policy_version,
+        "decision_latency_ms": result.timings["total_ms"],
+        "pipeline_id": result.pipeline_id,
+        "request_id": result.request_id,
+        "correlation_id": result.correlation_id,
+        "backend_ack": result.event_ack["backend_ack"],
+        "model_status": result.inference["status"],
+        "model_error_code": result.inference["error_code"],
+        "graph_status": result.graph["status"],
+        "graph_backend": result.graph["backend"],
+        "timings": result.timings,
+        "model_used": (
+            result.inference["implementation"]
+            if result.inference["status"] == "EXECUTED"
+            else None
+        ),
+        "fallback_used": (
+            result.inference["implementation"]
+            if result.inference["status"] == "ModelUnavailable"
+            else None
+        ),
+    }
+
+@app.get("/sdk/policies")
+async def sdk_get_policies():
+    return sdk_engine.get_policies()
+
+@app.get("/sdk/passport")
+async def sdk_get_passport(session_id: str):
+    passport = session_intelligence.repository.get_passport(session_id)
+    if passport:
+        return passport.to_compatible_dict()
+    raise HTTPException(status_code=404, detail="No authoritative trust passport for session")
+
+@app.get("/sdk/health")
+async def sdk_get_health():
+    return sdk_engine.get_observability()
+
+@app.get("/sdk/apps")
+async def sdk_get_connected_apps():
+    return sdk_engine.get_connected_apps()
+
+@app.get("/sdk/events")
+async def sdk_get_live_events():
+    return sdk_engine.get_live_event_stream()
+
+@app.get("/sdk/error-codes")
+async def sdk_get_error_codes():
+    return sdk_engine.get_error_codes()
+
+@app.get("/metrics/evaluate")
+async def get_metrics_evaluate():
+    import json
+    import datetime
+    report_path = ROOT / "ml" / "metrics_report.md"
+    try:
+        content = report_path.read_text()
+        json_str = content.split("```json")[1].split("```")[0].strip()
+        data = json.loads(json_str)
+        mtime = report_path.stat().st_mtime
+        data["computed_at"] = datetime.datetime.fromtimestamp(mtime).isoformat()
+        return data
+    except Exception as e:
+        return {"error": str(e)}
+
+@app.get("/metrics/threshold_sweep")
+async def get_metrics_threshold_sweep():
+    import json
+    sweep_path = ROOT / "ml" / "sweep_cache.json"
+    try:
+        content = sweep_path.read_text()
+        return json.loads(content)
+    except Exception as e:
+        return {"error": str(e)}
+
+@app.get("/metrics/cost")
+async def get_metrics_cost(fn_cost: float = 250000.0, fp_cost: float = 400.0):
+    import json
+    sweep_path = ROOT / "ml" / "sweep_cache.json"
+    try:
+        content = sweep_path.read_text()
+        data = json.loads(content)
+        
+        recomputed = {}
+        for config_name, sweep_pts in data.items():
+            recomputed[config_name] = []
+            for pt in sweep_pts:
+                new_pt = dict(pt)
+                new_pt["total_cost"] = (new_pt["FN"] * fn_cost) + (new_pt["FP"] * fp_cost)
+                recomputed[config_name].append(new_pt)
+                
+        return recomputed
+    except Exception as e:
+        return {"error": str(e)}
+
+# --- ENTERPRISE CYBER THREAT INTELLIGENCE ENGINE ENDPOINTS (PHASE 2) ---
+@app.get("/threats")
+async def get_threats(status: str = None, category: str = None, severity: str = None):
+    return {"threats": cyber_threat_engine.get_all_threats(status=status, category=category, severity=severity)}
+
+@app.get("/threats/{threat_id}")
+async def get_threat_by_id(threat_id: str):
+    t = cyber_threat_engine.get_threat_by_id(threat_id)
+    if not t:
+        return {"error": "Threat not found", "threat_id": threat_id}
+    return t
+
+@app.get("/threats/session/{session_id}")
+async def get_threats_by_session(session_id: str):
+    return {"session_id": session_id, "threats": cyber_threat_engine.get_threats_by_session(session_id)}
+
+@app.get("/threats/device/{device_id}")
+async def get_threats_by_device(device_id: str):
+    return {"device_id": device_id, "threats": cyber_threat_engine.get_threats_by_device(device_id)}
+
+@app.post("/threats/evaluate")
+async def evaluate_threat_event(event: dict):
+    result = await platform_pipeline.process(event, require_existing_session=False)
+    return {
+        "status": "SUCCESS",
+        "evaluated_threats": result.threats,
+        "count": len(result.threats),
+        "graph": result.graph,
+        "pipeline_id": result.pipeline_id,
+    }
+
+@app.post("/threats/simulate")
+async def simulate_threat_scenario(payload: dict):
+    result = await platform_pipeline.process(payload, require_existing_session=False)
+    return {
+        "status": "SIMULATED",
+        "threats": result.threats,
+        "graph": result.graph,
+        "pipeline_id": result.pipeline_id,
+    }
+
 
 if __name__ == "__main__":
     import uvicorn

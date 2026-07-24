@@ -4,6 +4,7 @@
 # --- data (large / regenerable) ---
 data/raw/
 data/processed/
+data/*.mmdb
 
 # --- models (large binaries) ---
 ml/models/
@@ -42,6 +43,7 @@ Thumbs.db
 .vscode/
 .idea/
 
-# --- generated reports ---
+# --- generated reports and local databases ---
 *.pdf
 !Docs/source/*.pdf
+*.db

@@ -1,0 +1,61 @@
+:root {
+  /* Dark SOC theme — every UI colour resolves through these semantic tokens. */
+  --soc-bg-primary: 7 10 16;
+  --soc-bg-surface: 15 20 32;
+  --soc-bg-panel: 21 28 44;
+  --soc-bg-elevated: 27 36 56;
+  --soc-border-subtle: 30 41 59;
+  --soc-border-default: 42 52 71;
+  --soc-border-hover: 59 72 97;
+  --soc-text-primary: 243 244 246;
+  --soc-text-secondary: 156 163 175;
+  --soc-text-muted: 107 114 128;
+  --soc-text-inverse: 7 10 16;
+  --soc-text-on-primary: 255 255 255;
+  --soc-text-on-warning: 15 23 42;
+  --soc-brand-primary: 59 130 246;
+  --soc-brand-hover: 37 99 235;
+  --soc-status-success: 16 185 129;
+  --soc-status-warning: 245 158 11;
+  --soc-status-danger: 239 68 68;
+  --soc-status-info: 6 182 212;
+  --soc-status-quantum: 139 92 246;
+  --soc-overlay: 0 0 0;
+  --soc-selection-bg: 59 130 246;
+  --soc-font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --soc-font-mono: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+}
+
+[data-theme='light'] {
+  --soc-bg-primary: 248 250 252;
+  --soc-bg-surface: 255 255 255;
+  --soc-bg-panel: 241 245 249;
+  --soc-bg-elevated: 226 232 240;
+  --soc-border-subtle: 226 232 240;
+  --soc-border-default: 203 213 225;
+  --soc-border-hover: 148 163 184;
+  --soc-text-primary: 15 23 42;
+  --soc-text-secondary: 71 85 105;
+  --soc-text-muted: 100 116 139;
+  --soc-text-inverse: 255 255 255;
+  --soc-text-on-primary: 255 255 255;
+  --soc-text-on-warning: 15 23 42;
+  --soc-brand-primary: 37 99 235;
+  --soc-brand-hover: 29 78 216;
+  --soc-status-success: 5 150 105;
+  --soc-status-warning: 217 119 6;
+  --soc-status-danger: 220 38 38;
+  --soc-status-info: 8 145 178;
+  --soc-status-quantum: 109 40 217;
+  --soc-overlay: 15 23 42;
+  --soc-selection-bg: 37 99 235;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 1ms !important;
+  }
+}
