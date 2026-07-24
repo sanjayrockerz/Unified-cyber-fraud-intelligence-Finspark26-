@@ -65,6 +65,37 @@ data class BankingAuthResponse(
     @SerializedName("refresh_token") val refreshToken: String,
     @SerializedName("refresh_expires_at") val refreshExpiresAt: Long,
     @SerializedName("profile") val profile: BankingProfile
+    , @SerializedName("security") val security: LoginSecurityAssessment? = null
+)
+
+data class LoginSecurityAssessment(
+    @SerializedName("session_id") val sessionId: String? = null,
+    @SerializedName("status") val status: String = "ACTIVE",
+    @SerializedName("risk_score") val riskScore: Float = 0f,
+    @SerializedName("threats") val threats: List<String> = emptyList(),
+    @SerializedName("vpn_detected") val vpnDetected: Boolean = false,
+    @SerializedName("country") val country: String? = null,
+    @SerializedName("city") val city: String? = null,
+    @SerializedName("email") val email: Map<String, Any>? = null,
+)
+
+data class IdentityRegistrationRequest(
+    @SerializedName("full_name") val fullName: String,
+    val email: String,
+    @SerializedName("mobile_number") val mobileNumber: String,
+    val password: String,
+    @SerializedName("device_uuid") val deviceUuid: String,
+    @SerializedName("device_fingerprint") val deviceFingerprint: String,
+    @SerializedName("device_model") val deviceModel: String,
+    @SerializedName("device_manufacturer") val deviceManufacturer: String,
+    @SerializedName("android_version") val androidVersion: String,
+    @SerializedName("sdk_version") val sdkVersion: String,
+    @SerializedName("app_version") val appVersion: String,
+)
+
+data class IdentityRegistrationResponse(
+    @SerializedName("email_verification_required") val emailVerificationRequired: Boolean,
+    @SerializedName("customer") val customer: BankingProfile,
 )
 
 data class SDKSessionStartRequest(

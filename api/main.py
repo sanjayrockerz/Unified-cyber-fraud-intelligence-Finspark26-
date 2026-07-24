@@ -57,6 +57,7 @@ from api.platform.decision_runtime import decision_engine
 from api.platform.pairing import pairing_registry
 from api.platform.notifications import notification_service
 from api.gateway_integration import router as gateway_router
+from api.identity_trust.router import router as identity_router
 
 
 
@@ -78,6 +79,7 @@ app.add_middleware(RequestContextMiddleware)
 
 app.include_router(gateway_router)
 app.include_router(banking_auth_router)
+app.include_router(identity_router)
 
 
 class PairingRequest(BaseModel):
@@ -1241,6 +1243,13 @@ async def sdk_session_start(req: SDKSessionStartRequest, request: Request):
     if "customer" in auth.roles and auth.subject != req.user_id:
         raise HTTPException(status_code=403, detail="Banking identity cannot start another user's session")
     session = sdk_engine.start_session(req.model_dump())
+    from api.identity_trust import identity_trust
+    identity_trust.bind_sdk_session(
+        security_session_id=None,
+        sdk_session_id=session["session_id"],
+        user_id=session["user_id"],
+        device_id=session["device_id"],
+    )
     device_profile = sdk_engine.device_profiles.get(session["device_id"], {})
     device_event = {
         **device_profile,
@@ -1277,6 +1286,12 @@ async def sdk_register_network(req: SDKNetworkRequest, request: Request):
         "user_id": session["user_id"],
         "device_id": session["device_id"],
     }
+    from api.identity_trust import identity_trust
+    if req.vpn_detected or req.proxy_detected:
+        identity_trust.record_activity(
+            sdk_session_id=req.session_id, event_type="VPN_DETECTED", user_id=session["user_id"],
+            device_id=session["device_id"], risk_delta=30, metadata=req.model_dump(),
+        )
     await platform_pipeline.process(event, require_existing_session=True)
     return response
 
@@ -1295,7 +1310,165 @@ async def sdk_ingest_event(req: SDKEventRequest, request: Request):
         )
     except PipelineValidationError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+    from api.identity_trust import identity_trust
+    identity_trust.record_activity(
+        sdk_session_id=req.session_id, event_type=req.event_type, user_id=event_dict.get("user_id", ""),
+        device_id=event_dict.get("device_id", ""), risk_delta=15 if req.event_type in {"TRANSFER", "QR_PAYMENT", "BENEFICIARY_ADDED"} else 0,
+        metadata={"amount": req.amount},
+    )
     return result.event_ack
+
+@app.post("/sdk/request-decision")
+async def sdk_request_decision(req: SDKDecisionRequest, request: Request):
+    dec_dict = req.model_dump()
+    dec_dict["request_id"] = req.request_id or request.state.request_id
+    session = sdk_engine.sdk_sessions.get(req.session_id)
+    if session:
+        dec_dict["user_id"] = session["user_id"]
+        dec_dict["device_id"] = session["device_id"]
+        if "customer" in request.state.auth.roles and session["user_id"] != request.state.auth.subject:
+            raise HTTPException(status_code=403, detail="SDK session is not owned by this identity")
+    try:
+        result = await platform_pipeline.process(
+            dec_dict, require_existing_session=True
+        )
+    except PipelineValidationError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    decision = result.decision
+    return {
+        **decision,
+        "recommended_action": decision["decision"].replace("_", " ").title(),
+        "policy_version": sdk_engine.policy_version,
+        "decision_latency_ms": result.timings["total_ms"],
+        "pipeline_id": result.pipeline_id,
+        "request_id": result.request_id,
+        "correlation_id": result.correlation_id,
+        "backend_ack": result.event_ack["backend_ack"],
+        "model_status": result.inference["status"],
+        "model_error_code": result.inference["error_code"],
+        "graph_status": result.graph["status"],
+        "graph_backend": result.graph["backend"],
+        "timings": result.timings,
+        "model_used": (
+            result.inference["implementation"]
+            if result.inference["status"] == "EXECUTED"
+            else None
+        ),
+        "fallback_used": (
+            result.inference["implementation"]
+            if result.inference["status"] == "ModelUnavailable"
+            else None
+        ),
+    }
+
+@app.get("/sdk/policies")
+async def sdk_get_policies():
+    return sdk_engine.get_policies()
+
+@app.get("/sdk/passport")
+async def sdk_get_passport(session_id: str):
+    passport = session_intelligence.repository.get_passport(session_id)
+    if passport:
+        return passport.to_compatible_dict()
+    raise HTTPException(status_code=404, detail="No authoritative trust passport for session")
+
+@app.get("/sdk/health")
+async def sdk_get_health():
+    return sdk_engine.get_observability()
+
+@app.get("/sdk/apps")
+async def sdk_get_connected_apps():
+    return sdk_engine.get_connected_apps()
+
+@app.get("/sdk/events")
+async def sdk_get_live_events():
+    return sdk_engine.get_live_event_stream()
+
+@app.get("/sdk/error-codes")
+async def sdk_get_error_codes():
+    return sdk_engine.get_error_codes()
+
+@app.get("/metrics/evaluate")
+async def get_metrics_evaluate():
+    import json
+    import datetime
+    report_path = ROOT / "ml" / "metrics_report.md"
+    try:
+        content = report_path.read_text()
+        json_str = content.split("```json")[1].split("```")[0].strip()
+        data = json.loads(json_str)
+        mtime = report_path.stat().st_mtime
+        data["computed_at"] = datetime.datetime.fromtimestamp(mtime).isoformat()
+        return data
+    except Exception as e:
+        return {"error": str(e)}
+
+@app.get("/metrics/threshold_sweep")
+async def get_metrics_threshold_sweep():
+    import json
+    sweep_path = ROOT / "ml" / "sweep_cache.json"
+    try:
+        content = sweep_path.read_text()
+        return json.loads(content)
+    except Exception as e:
+        return {"error": str(e)}
+
+@app.get("/metrics/cost")
+async def get_metrics_cost(fn_cost: float = 250000.0, fp_cost: float = 400.0):
+    import json
+    sweep_path = ROOT / "ml" / "sweep_cache.json"
+    try:
+        content = sweep_path.read_text()
+        data = json.loads(content)
+        
+        recomputed = {}
+        for config_name, sweep_pts in data.items():
+            recomputed[config_name] = []
+            for pt in sweep_pts:
+                new_pt = dict(pt)
+                new_pt["total_cost"] = (new_pt["FN"] * fn_cost) + (new_pt["FP"] * fp_cost)
+                recomputed[config_name].append(new_pt)
+                
+        return recomputed
+    except Exception as e:
+        return {"error": str(e)}
+
+# --- ENTERPRISE CYBER THREAT INTELLIGENCE ENGINE ENDPOINTS (PHASE 2) ---
+@app.get("/threats")
+async def get_threats(status: str = None, category: str = None, severity: str = None):
+    return {"threats": cyber_threat_engine.get_all_threats(status=status, category=category, severity=severity)}
+
+@app.get("/threats/{threat_id}")
+async def get_threat_by_id(threat_id: str):
+    t = cyber_threat_engine.get_threat_by_id(threat_id)
+    if not t:
+        return {"error": "Threat not found", "threat_id": threat_id}
+    return t
+
+@app.get("/threats/session/{session_id}")
+async def get_threats_by_session(session_id: str):
+    return {"session_id": session_id, "threats": cyber_threat_engine.get_threats_by_session(session_id)}
+
+@app.get("/threats/device/{device_id}")
+async def get_threats_by_device(device_id: str):
+    return {"device_id": device_id, "threats": cyber_threat_engine.get_threats_by_device(device_id)}
+
+@app.post("/threats/evaluate")
+async def evaluate_threat_event(event: dict):
+    result = await platform_pipeline.process(event, require_existing_session=False)
+    return {
+        "status": "SUCCESS",
+        "evaluated_threats": result.threats,
+        "count": len(result.threats),
+        "graph": result.graph,
+        "pipeline_id": result.pipeline_id,
+    }
+
+@app.post("/threats/simulate")
+async def simulate_threat_scenario(payload: dict):
+    result = await platform_pipeline.process(payload, require_existing_session=False)
+    return {
+        "status": "SIMULATED",
 
 @app.post("/sdk/request-decision")
 async def sdk_request_decision(req: SDKDecisionRequest, request: Request):
@@ -1453,6 +1626,8 @@ async def simulate_threat_scenario(payload: dict):
         "pipeline_id": result.pipeline_id,
     }
 
+from copilot_engine import router as copilot_router
+app.include_router(copilot_router)
 
 if __name__ == "__main__":
     import uvicorn

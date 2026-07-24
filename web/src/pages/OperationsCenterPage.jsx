@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { authenticatedWebSocketUrl } from '../platformAuth';
 import { useNavigate } from 'react-router-dom';
 import { ShieldAlert, Radio, RefreshCw, Upload, Terminal, Landmark, User, ChevronDown, ChevronUp } from 'lucide-react';
@@ -19,6 +19,7 @@ import NarrativeAIStoryteller from '../components/runtime/NarrativeAIStoryteller
 import CSVSchemaMapperModal from '../components/runtime/CSVSchemaMapperModal';
 import SessionTrustPassportPanel from '../components/trust/SessionTrustPassportPanel';
 import InvestigationIntelligencePanel from '../components/investigation/InvestigationIntelligencePanel';
+import AICopilotPanel from '../components/copilot/AICopilotPanel';
 
 const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8001' : '');
 const WS_BASE = API_BASE.replace(/^http/, 'ws');
@@ -296,6 +297,11 @@ export default function OperationsCenterPage() {
 
       {/* SECTION 5 & 6: DECISION SUMMARY & NARRATIVE AI RESPONSE */}
       <NarrativeAIStoryteller activeTxn={activeTxnPayload} evaluation={activeCase} />
+
+      {/* SECTION 7: FUSION AI COPILOT */}
+      <div className="h-[500px]">
+        <AICopilotPanel activeContext={{ user_id: activeCase?.user_id, session_id: 'SESS_9921_CRITICAL' }} />
+      </div>
 
       {/* PROGRESSIVE DISCLOSURE: EXPANDABLE SECONDARY RAW STREAM FEEDS */}
       <div className="bg-soc-surface border border-soc-border rounded-xl overflow-hidden shadow-lg">

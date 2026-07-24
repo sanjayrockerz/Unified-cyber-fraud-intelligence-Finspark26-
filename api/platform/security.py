@@ -27,6 +27,10 @@ PUBLIC_PATHS = {
     "/device/pair",
     "/device/register",
     "/gateway/webhook",
+    "/identity/register",
+    "/identity/login",
+    "/identity/refresh",
+    "/identity/password-reset",
 }
 
 

@@ -51,6 +51,22 @@ services:
         sync: false
       - key: GATEWAY_WEBHOOK_SECRET
         sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: IDENTITY_SUPABASE_REQUIRED
+        value: false
+      - key: SECURITY_EMAIL_PROVIDER
+        value: resend
+      - key: RESEND_API_KEY
+        sync: false
+      - key: SECURITY_EMAIL_FROM
+        sync: false
+      - key: IPQUALITYSCORE_API_KEY
+        sync: false
       - key: RAZORPAY_KEY_ID
         sync: false
       - key: RAZORPAY_KEY_SECRET

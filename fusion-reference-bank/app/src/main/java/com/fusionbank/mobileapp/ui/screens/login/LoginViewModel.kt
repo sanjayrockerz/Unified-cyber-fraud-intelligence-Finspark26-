@@ -40,6 +40,11 @@ class LoginViewModel @Inject constructor() : ViewModel() {
         Fusion.login(_username.value, _password.value) { result ->
             _isLoading.value = false
             result.onSuccess {
+                Fusion.lastLoginSecurity.value?.let { security ->
+                    if (security.riskScore >= 35f) {
+                        _errorMessage.value = "Suspicious login detected. A security notification has been sent to your registered email."
+                    }
+                }
                 onSuccess()
             }.onFailure { ex ->
                 _errorMessage.value = ex.message ?: "Authentication / SDK Session failed"

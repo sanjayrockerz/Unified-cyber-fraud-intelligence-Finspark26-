@@ -22,6 +22,7 @@ import com.fusionbank.mobileapp.ui.theme.*
 @Composable
 fun LoginScreen(
     onLoginSuccess: () -> Unit,
+    onRegister: () -> Unit,
     viewModel: LoginViewModel = hiltViewModel()
 ) {
     val username by viewModel.username.collectAsState()
@@ -133,6 +134,10 @@ fun LoginScreen(
                         } else {
                             Text("SIGN IN & START SESSION", fontWeight = FontWeight.Bold)
                         }
+                    }
+
+                    TextButton(onClick = onRegister, modifier = Modifier.fillMaxWidth()) {
+                        Text("CREATE CUSTOMER ACCOUNT", color = AccentCyan)
                     }
 
                 }

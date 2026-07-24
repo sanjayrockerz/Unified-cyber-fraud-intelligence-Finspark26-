@@ -36,6 +36,15 @@ class RegisterRequest(BaseModel):
     email: str = Field(min_length=3, max_length=256)
     display_name: str = Field(min_length=1, max_length=256)
     phone: str = ""
+    customer_id: str | None = None
+    account_number: str | None = None
+    device_uuid: str | None = None
+    device_fingerprint: str | None = None
+    device_model: str | None = None
+    device_manufacturer: str | None = None
+    android_version: str | None = None
+    sdk_version: str | None = None
+    app_version: str | None = None
 
 
 class RefreshRequest(BaseModel):
@@ -128,6 +137,7 @@ class BankingAuthService:
             record = {
                 "username": username,
                 "user_id": str(item.get("user_id") or f"USR_{uuid.uuid4().hex[:12].upper()}"),
+                "customer_id": str(item.get("customer_id") or item.get("user_id") or f"CUS_{uuid.uuid4().hex[:12].upper()}"),
                 "display_name": str(item.get("display_name") or username),
                 "email": str(item.get("email") or ""),
                 "tenant_id": str(item.get("tenant_id") or "TENANT_FUSB_001"),
@@ -155,6 +165,7 @@ class BankingAuthService:
     def _public_profile(user: dict[str, Any]) -> dict[str, Any]:
         return {
             "user_id": user["user_id"],
+            "customer_id": user.get("customer_id") or user["user_id"],
             "username": user["username"],
             "display_name": user["display_name"],
             "email": user["email"],
@@ -227,8 +238,10 @@ class BankingAuthService:
         default_app = os.getenv("FUSION_DEFAULT_APP_ID", "com.fusionbank.mobileapp")
         user = {
             "username": username, "user_id": f"USR_{uuid.uuid4().hex[:12].upper()}",
+            "customer_id": request.customer_id or f"CUS_{uuid.uuid4().hex[:12].upper()}",
             "display_name": request.display_name, "email": request.email, "phone": request.phone,
             "tenant_id": default_tenant, "app_id": default_app,
+            "account_number": request.account_number or f"FUS-{uuid.uuid4().hex[:12].upper()}",
             "password_hash": _password_hash(request.password), "disabled": False,
             "registered_devices": [], "active_sessions": [], "transaction_history": [],
             "known_locations": [], "known_networks": [], "known_beneficiaries": [],
@@ -278,8 +291,15 @@ router = APIRouter(prefix="/banking", tags=["Banking Authentication"])
 
 
 @router.post("/auth/login")
-async def login(payload: LoginRequest):
+async def login(payload: LoginRequest, request: Request):
     pair, profile = banking_auth.login(payload)
+    from api.identity_trust import identity_trust
+    security = identity_trust.evaluate_login(
+        customer=profile,
+        device_id=payload.device_id,
+        request=request,
+        device={"device_uuid": payload.device_id},
+    )
     from api.platform.notifications import notification_service
     if profile.get("new_device"):
         notification_service.create(
@@ -295,12 +315,32 @@ async def login(payload: LoginRequest):
             "device_id": payload.device_id,
             "severity": "WARNING",
         })
-    return {**pair.to_dict(), "profile": profile}
+    return {**pair.to_dict(), "profile": profile, "security": security}
 
 
 @router.post("/auth/register", status_code=201)
-async def register(payload: RegisterRequest):
-    return banking_auth.register(payload)
+async def register(payload: RegisterRequest, request: Request):
+    result = banking_auth.register(payload)
+    from api.identity_trust import identity_trust
+    identity = identity_trust.register_customer(
+        username=payload.username,
+        password=payload.password,
+        email=payload.email,
+        display_name=payload.display_name,
+        phone=payload.phone,
+        customer_id=payload.customer_id,
+        account_number=payload.account_number,
+        device={
+            "device_uuid": payload.device_uuid,
+            "fingerprint": payload.device_fingerprint or "",
+            "model": payload.device_model or "unknown",
+            "manufacturer": payload.device_manufacturer or "unknown",
+            "android_version": payload.android_version or "unknown",
+            "sdk_version": payload.sdk_version or "unknown",
+            "app_version": payload.app_version or "unknown",
+        } if payload.device_uuid else None,
+    )
+    return {**result, "identity": identity}
 
 
 @router.post("/auth/refresh")

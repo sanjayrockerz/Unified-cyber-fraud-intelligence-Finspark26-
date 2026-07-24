@@ -10,6 +10,7 @@ import com.fusionbank.mobileapp.ui.screens.beneficiary.BeneficiaryScreen
 import com.fusionbank.mobileapp.ui.screens.bill.BillPaymentScreen
 import com.fusionbank.mobileapp.ui.screens.dashboard.DashboardScreen
 import com.fusionbank.mobileapp.ui.screens.login.LoginScreen
+import com.fusionbank.mobileapp.ui.screens.registration.RegistrationScreen
 import com.fusionbank.mobileapp.ui.screens.pairing.PairingScreen
 import com.fusionbank.mobileapp.ui.screens.profile.ProfileScreen
 import com.fusionbank.mobileapp.ui.screens.qr.QrPaymentScreen
@@ -21,6 +22,7 @@ import com.fusionbank.mobileapp.ui.screens.trust.TrustPassportScreen
 object Destinations {
     const val SPLASH = "splash"
     const val LOGIN = "login"
+    const val REGISTRATION = "registration"
     const val PAIRING = "pairing"
     const val DASHBOARD = "dashboard"
     const val ACCOUNTS = "accounts"
@@ -72,7 +74,15 @@ fun NavGraph(
                     navController.navigate(Destinations.DASHBOARD) {
                         popUpTo(Destinations.LOGIN) { inclusive = true }
                     }
-                }
+                },
+                onRegister = { navController.navigate(Destinations.REGISTRATION) }
+            )
+        }
+
+        composable(Destinations.REGISTRATION) {
+            RegistrationScreen(
+                onRegistered = { navController.popBackStack() },
+                onBack = { navController.popBackStack() },
             )
         }
 
