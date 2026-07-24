@@ -76,6 +76,12 @@ fun LoginScreen(
                         style = MaterialTheme.typography.titleMedium,
                         color = TextPrimaryDark
                     )
+                    Text(
+                        text = "Demo: demo_user / FusionDemo!2026",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = TextSecondaryDark,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
                     Spacer(modifier = Modifier.height(16.dp))
 
                     OutlinedTextField(

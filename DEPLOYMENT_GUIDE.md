@@ -30,6 +30,16 @@ short-lived dashboard token at runtime as
 `window.__FUSION_CONFIG__.accessToken`; do not compile it into the bundle.
 Serve `web/dist` over HTTPS with SPA fallback.
 
+For a Vercel deployment, set these server-side/project environment variables:
+
+- `VITE_API_BASE=https://<public-render-api>`
+- `FUSION_API_BASE=https://<public-render-api>`
+- `FUSION_DASHBOARD_CLIENT_ID` and `FUSION_DASHBOARD_CLIENT_SECRET` matching
+  an entry in the backend's `FUSION_AUTH_CLIENTS_JSON`
+
+The repository includes both `api/token.js` and `web/api/token.js` so the token
+proxy works whether the Vercel project root is the repository or `web`.
+
 ## Android
 
 Provide release URLs and signing properties through environment/Gradle
@@ -62,4 +72,3 @@ Keep the previous backend image, dashboard assets, and signed AAB. Database
 changes are additive key/value collections. Revert the application version
 while retaining refresh/user records; clients will establish fresh SDK
 sessions after reconnect.
-

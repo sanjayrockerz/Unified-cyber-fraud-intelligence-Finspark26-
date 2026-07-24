@@ -9,6 +9,7 @@ export default function DeveloperPlatformPage() {
   const [events, setEvents] = useState([]);
   const [synthetic, setSynthetic] = useState(null);
   const [error, setError] = useState(null);
+  const [mobileBackend, setMobileBackend] = useState(import.meta.env.VITE_MOBILE_API_BASE || (import.meta.env.DEV ? 'http://10.0.2.2:8001' : API_BASE));
 
   const refresh = async () => {
     try {
@@ -24,7 +25,9 @@ export default function DeveloperPlatformPage() {
 
   const generatePairing = async () => {
     setError(null);
-    const response = await fetch(`${API_BASE}/device/pair`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+    const backend = mobileBackend.trim().replace(/\/$/, '');
+    const ws = backend.replace(/^https?/, value => value === 'https' ? 'wss' : 'ws') + '/ws/stream';
+    const response = await fetch(`${API_BASE}/device/pair`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ backend_url: backend, ws_url: ws }) });
     if (!response.ok) throw new Error(`Pairing generation failed: HTTP ${response.status}`);
     setPairing((await response.json()).pairing);
   };
@@ -62,7 +65,7 @@ export default function DeveloperPlatformPage() {
     {error && <div className="text-soc-danger">{error}</div>}
     <section className="grid lg:grid-cols-3 gap-4">
       <div className="bg-soc-surface border border-soc-border rounded-xl p-4 space-y-3"><h2 className="font-bold text-soc-text">Developer Downloads</h2><button onClick={() => downloadArtifact('/download/apk', 'fusion-risk-os-demo.apk').catch((e) => setError(e.message))} className="flex items-center gap-2 text-soc-info"><Download className="w-4 h-4" />Download APK</button><button onClick={() => downloadArtifact('/download/sdk', 'fusion-sdk-reference.md').catch((e) => setError(e.message))} className="flex items-center gap-2 text-soc-info"><Download className="w-4 h-4" />Download SDK reference</button></div>
-      <div className="lg:col-span-2 bg-soc-surface border border-soc-border rounded-xl p-4 space-y-3"><div className="flex items-center justify-between"><h2 className="font-bold text-soc-text">Device Pairing</h2><button onClick={() => generatePairing().catch((e) => setError(e.message))} className="px-3 py-2 bg-soc-info text-soc-muted rounded font-bold">Generate Pairing QR</button></div>{pairing ? <><pre className="bg-soc-panel p-3 rounded text-soc-success whitespace-pre-wrap break-all">{pairingText}</pre><button onClick={() => navigator.clipboard?.writeText(pairingText)} className="flex items-center gap-2 text-soc-info"><Copy className="w-4 h-4" />Copy QR payload</button><p className="text-soc-muted">Encode this JSON as a QR code. It contains only temporary pairing configuration.</p></> : <p className="text-soc-muted">Generate a five-minute pairing payload for a fresh APK.</p>}</div>
+      <div className="lg:col-span-2 bg-soc-surface border border-soc-border rounded-xl p-4 space-y-3"><div className="flex items-center justify-between"><h2 className="font-bold text-soc-text">Device Pairing</h2><button onClick={() => generatePairing().catch((e) => setError(e.message))} className="px-3 py-2 bg-soc-info text-soc-muted rounded font-bold">Generate Pairing QR</button></div><label className="block text-soc-muted">APK backend URL<input value={mobileBackend} onChange={event => setMobileBackend(event.target.value)} className="mt-1 w-full bg-soc-panel border border-soc-border rounded px-3 py-2 text-soc-text" /></label>{pairing ? <><pre className="bg-soc-panel p-3 rounded text-soc-success whitespace-pre-wrap break-all">{pairingText}</pre><button onClick={() => navigator.clipboard?.writeText(pairingText)} className="flex items-center gap-2 text-soc-info"><Copy className="w-4 h-4" />Copy QR payload</button><p className="text-soc-muted">Use `10.0.2.2` for the Android Emulator. Use your computer’s LAN IP for a physical phone.</p></> : <p className="text-soc-muted">Generate a five-minute pairing payload for a fresh APK.</p>}</div>
     </section>
     <section className="bg-soc-surface border border-soc-warning/30 rounded-xl p-4 flex items-center justify-between"><div><h2 className="font-bold text-soc-warning">Synthetic Data Lab</h2><p className="text-soc-muted">Synthetic sessions use the same pipeline and remain visually marked; they never appear as live devices.</p>{synthetic && <p className="text-soc-warning mt-2">{synthetic.status} Â· {synthetic.scenario_id} Â· speed Ã—{synthetic.speed_multiplier}</p>}</div><button onClick={() => startSynthetic().catch((e) => setError(e.message))} className="px-3 py-2 border border-soc-warning text-soc-warning rounded">Start Synthetic Sessions</button></section>
     <section className="grid lg:grid-cols-2 gap-4"><LiveTable title="Connected Devices" icon={<Smartphone className="w-4 h-4" />} rows={devices} empty="No live APKs paired yet." /><LiveTable title="Active Sessions" icon={<Wifi className="w-4 h-4" />} rows={sessions} empty="No authenticated sessions yet." /></section>

@@ -13,10 +13,10 @@ import javax.inject.Inject
 @HiltViewModel
 class LoginViewModel @Inject constructor() : ViewModel() {
 
-    private val _username = MutableStateFlow("")
+    private val _username = MutableStateFlow("demo_user")
     val username: StateFlow<String> = _username.asStateFlow()
 
-    private val _password = MutableStateFlow("")
+    private val _password = MutableStateFlow("FusionDemo!2026")
     val password: StateFlow<String> = _password.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
