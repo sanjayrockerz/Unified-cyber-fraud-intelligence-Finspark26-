@@ -1,0 +1,39 @@
+# Ignore Python source files and cache files to prevent Vercel building Python Serverless Functions
+**/*.py
+**/*.pyc
+**/__pycache__
+.venv
+venv
+.pytest_cache
+requirements.txt
+requirements-render.txt
+pyproject.toml
+.python-version
+
+# Ignore SQLite databases
+*.db
+*.db-shm
+*.db-wal
+
+# Ignore ML/Data directories and other server-specific folders
+data/
+ml/
+graph/
+supabase/
+scripts/
+tests/
+Docs/
+*.md
+*.txt
+*.yaml
+*.json
+!package.json
+!vercel.json
+!web/package.json
+!web/package-lock.json
+!web/vite.config.js
+!web/tailwind.config.js
+!web/postcss.config.js
+!web/index.html
+!web/src/**
+!api/token.js
