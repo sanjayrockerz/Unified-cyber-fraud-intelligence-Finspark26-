@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { ShieldAlert, FileText, CheckCircle2, Lock, Sparkles, Download, MessageSquare } from 'lucide-react';
 
 export default function EvidenceLocker({ currentTxn, evaluation, onDownloadReport }) {
   const [notes, setNotes] = useState(
-    "Investigation Note: High-risk correlation confirmed between impossible travel login (4,500km from Mumbai) and immediate ₹7.5L UPI transfer to flagged mule cluster ACC_MULE_NEW."
+    "Investigation Note: High-risk correlation confirmed between impossible travel login (4,500km from Mumbai) and immediate â‚¹7.5L UPI transfer to flagged mule cluster ACC_MULE_NEW."
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [decisionExecuted, setDecisionExecuted] = useState(null);
@@ -38,7 +38,7 @@ export default function EvidenceLocker({ currentTxn, evaluation, onDownloadRepor
           
           <div className="p-2 rounded bg-soc-surface border border-soc-border flex items-center justify-between text-xs font-mono">
             <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-rose-500"></span>
+              <span className="w-2 h-2 rounded-full bg-soc-danger"></span>
               <span className="text-soc-text">Cyber Alert: Impossible Travel (RU IP: 185.15.2.22)</span>
             </div>
             <span className="text-soc-dim text-[10px]">T-0:40s</span>
@@ -46,15 +46,15 @@ export default function EvidenceLocker({ currentTxn, evaluation, onDownloadRepor
 
           <div className="p-2 rounded bg-soc-surface border border-soc-border flex items-center justify-between text-xs font-mono">
             <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-amber-500"></span>
-              <span className="text-soc-text">CBS Txn: INR 7,500,000.00 (ACC_ABC_123 → ACC_MULE_NEW)</span>
+              <span className="w-2 h-2 rounded-full bg-soc-warning"></span>
+              <span className="text-soc-text">CBS Txn: INR 7,500,000.00 (ACC_ABC_123 â†’ ACC_MULE_NEW)</span>
             </div>
             <span className="text-soc-dim text-[10px]">T+0:00s</span>
           </div>
 
           <div className="p-2 rounded bg-soc-surface border border-soc-border flex items-center justify-between text-xs font-mono">
             <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-purple-500"></span>
+              <span className="w-2 h-2 rounded-full bg-soc-quantum"></span>
               <span className="text-soc-text">Neo4j Ring: Mule Cluster Alpha (6 Shared Nodes)</span>
             </div>
             <span className="text-soc-dim text-[10px]">Graph Match</span>
@@ -80,16 +80,16 @@ export default function EvidenceLocker({ currentTxn, evaluation, onDownloadRepor
       {/* Decision Execution Bar */}
       <div>
         {decisionExecuted ? (
-          <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-lg flex items-center justify-between">
+          <div className="p-3 bg-soc-success/10 border border-soc-success/30 rounded-lg flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-              <span className="text-xs font-mono font-bold text-emerald-400">
+              <CheckCircle2 className="w-5 h-5 text-soc-success" />
+              <span className="text-xs font-mono font-bold text-soc-success">
                 CASE RESOLVED: {decisionExecuted} EXECUTION RECORDED
               </span>
             </div>
             <button
               onClick={onDownloadReport}
-              className="px-3 py-1 bg-soc-primary hover:bg-blue-600 text-white rounded text-xs font-mono flex items-center gap-1.5 transition-colors shadow"
+              className="px-3 py-1 bg-soc-primary hover:bg-soc-primary text-soc-onPrimary rounded text-xs font-mono flex items-center gap-1.5 transition-colors shadow"
             >
               <Download className="w-3.5 h-3.5" />
               <span>Download CERT-In PDF</span>
@@ -100,7 +100,7 @@ export default function EvidenceLocker({ currentTxn, evaluation, onDownloadRepor
             <button
               onClick={() => handleAction('BLOCK & INTERCEPT')}
               disabled={isSubmitting}
-              className="flex-1 px-3 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-mono font-bold flex items-center justify-center gap-1.5 transition-colors shadow-lg shadow-rose-950/40"
+              className="flex-1 px-3 py-2 bg-soc-danger hover:bg-soc-danger text-soc-onPrimary rounded-lg text-xs font-mono font-bold flex items-center justify-center gap-1.5 transition-colors shadow-lg shadow-rose-950/40"
             >
               <ShieldAlert className="w-4 h-4" />
               <span>{isSubmitting ? 'ENFORCING...' : 'CONFIRM BLOCK'}</span>
@@ -109,7 +109,7 @@ export default function EvidenceLocker({ currentTxn, evaluation, onDownloadRepor
             <button
               onClick={() => handleAction('CHALLENGE MFA')}
               disabled={isSubmitting}
-              className="px-3 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-mono font-bold flex items-center justify-center gap-1.5 transition-colors"
+              className="px-3 py-2 bg-soc-warning hover:bg-soc-warning text-soc-onPrimary rounded-lg text-xs font-mono font-bold flex items-center justify-center gap-1.5 transition-colors"
             >
               <span>STEP-UP MFA</span>
             </button>
@@ -128,3 +128,4 @@ export default function EvidenceLocker({ currentTxn, evaluation, onDownloadRepor
     </div>
   );
 }
+

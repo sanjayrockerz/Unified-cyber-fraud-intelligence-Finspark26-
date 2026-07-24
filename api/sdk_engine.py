@@ -1,6 +1,7 @@
 import time
 import datetime
 import hashlib
+import os
 import uuid
 from typing import Dict, List, Any
 
@@ -79,8 +80,8 @@ class FusionAdaptiveTrustSDKEngine:
         ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S IST")
         session = {
             "session_id": session_id,
-            "app_id": data.get("app_id", "com.fusionbank.mobileapp"),
-            "tenant_id": data.get("tenant_id", "TENANT_FUSB_001"),
+            "app_id": data.get("app_id") or os.getenv("FUSION_DEFAULT_APP_ID", "com.fusionbank.mobileapp"),
+            "tenant_id": data.get("tenant_id") or os.getenv("FUSION_DEFAULT_TENANT_ID", "TENANT_FUSB_001"),
             "sdk_version": data.get("sdk_version", "FAT-SDK v2.4.1"),
             "user_id": data.get("user_id", "usr_sdk_demo"),
             "device_id": data.get("device_id") or f"DEV_{uuid.uuid4().hex[:8].upper()}",

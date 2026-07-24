@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { Search, CheckCircle2, ArrowRight, ShieldAlert, History } from 'lucide-react';
 import EnterpriseBadge from '../common/EnterpriseBadge';
 
@@ -49,13 +49,13 @@ export default function SimilarIncidentSearch({ activeCase }) {
             <div className="space-y-1">
               <div className="flex items-center gap-2">
                 <span className="font-bold text-soc-primary">{c.id}</span>
-                <span className="px-2 py-0.2 text-[10px] bg-emerald-500/20 text-emerald-400 font-bold rounded border border-emerald-500/40">
+                <span className="px-2 py-0.2 text-[10px] bg-soc-success/20 text-soc-success font-bold rounded border border-soc-success/40">
                   {c.match}
                 </span>
                 <EnterpriseBadge action={c.action} score={90} size="sm" />
               </div>
               <p className="text-[11px] text-soc-muted">{c.reason}</p>
-              <div className="text-[10px] text-emerald-400 font-bold">{c.recovered}</div>
+              <div className="text-[10px] text-soc-success font-bold">{c.recovered}</div>
             </div>
 
             <button className="px-3 py-1 bg-soc-surface hover:bg-soc-border border border-soc-border text-soc-text rounded text-xs font-bold flex items-center gap-1 transition-colors">
@@ -68,3 +68,4 @@ export default function SimilarIncidentSearch({ activeCase }) {
     </div>
   );
 }
+

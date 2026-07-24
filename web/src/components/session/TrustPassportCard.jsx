@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { Activity, Clock3, ShieldCheck, TrendingDown, TrendingUp } from 'lucide-react';
 import Card from '../common/Card';
 
@@ -28,7 +28,7 @@ export default function TrustPassportCard({ passport, connectionState }) {
         <>
           <span className="flex items-center gap-2"><ShieldCheck className="h-4 w-4" /> Trust Passport</span>
           <span className="flex items-center gap-1 text-[10px] normal-case text-soc-muted">
-            <span className={`h-2 w-2 rounded-full ${connectionState === 'LIVE' ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
+            <span className={`h-2 w-2 rounded-full ${connectionState === 'LIVE' ? 'bg-soc-success animate-pulse' : 'bg-soc-warning'}`} />
             {connectionState}
           </span>
         </>
@@ -52,13 +52,13 @@ export default function TrustPassportCard({ passport, connectionState }) {
             label="Trend"
             value={passport.trust_trend}
             icon={TrendIcon}
-            valueClass={passport.trust_trend === 'DECLINING' ? 'text-rose-300' : 'text-emerald-300'}
+            valueClass={passport.trust_trend === 'DECLINING' ? 'text-soc-danger' : 'text-soc-success'}
           />
           <Info label="Policy version" value={passport.version} icon={ShieldCheck} />
           <Info label="Passport ID" value={passport.passport_id} icon={ShieldCheck} />
           <Info
             label="Last update"
-            value={passport.updated_time ? new Date(passport.updated_time).toLocaleTimeString() : '—'}
+            value={passport.updated_time ? new Date(passport.updated_time).toLocaleTimeString() : 'â€”'}
             icon={Clock3}
           />
         </div>
@@ -74,8 +74,9 @@ function Info({ label, value, icon: Icon, valueClass = 'text-soc-text' }) {
         <Icon className="h-3 w-3" /> {label}
       </div>
       <div className={`truncate font-mono text-xs font-bold ${valueClass}`} title={String(value ?? '')}>
-        {value ?? '—'}
+        {value ?? 'â€”'}
       </div>
     </div>
   );
 }
+

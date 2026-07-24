@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 
 export default function Button({ 
   children, 
@@ -13,10 +13,10 @@ export default function Button({
   const base = 'inline-flex items-center justify-center font-mono font-bold rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-soc-primary/50 disabled:opacity-50 disabled:cursor-not-allowed select-none';
   
   const variants = {
-    primary: 'bg-soc-primary hover:bg-blue-600 text-white shadow-md shadow-blue-950/40',
-    danger: 'bg-soc-danger hover:bg-rose-600 text-white shadow-md shadow-rose-950/40',
-    warning: 'bg-soc-warning hover:bg-amber-600 text-white shadow-md shadow-amber-950/40',
-    success: 'bg-soc-success hover:bg-emerald-600 text-white shadow-md shadow-emerald-950/40',
+    primary: 'bg-soc-primary hover:bg-soc-primary text-soc-onPrimary shadow-md shadow-blue-950/40',
+    danger: 'bg-soc-danger hover:bg-soc-danger text-soc-onPrimary shadow-md shadow-rose-950/40',
+    warning: 'bg-soc-warning hover:bg-soc-warning text-soc-onPrimary shadow-md shadow-amber-950/40',
+    success: 'bg-soc-success hover:bg-soc-success text-soc-onPrimary shadow-md shadow-emerald-950/40',
     secondary: 'bg-soc-panel hover:bg-soc-border border border-soc-border text-soc-text',
     ghost: 'bg-transparent hover:bg-soc-panel text-soc-muted hover:text-soc-text'
   };
@@ -39,3 +39,4 @@ export default function Button({
     </button>
   );
 }
+

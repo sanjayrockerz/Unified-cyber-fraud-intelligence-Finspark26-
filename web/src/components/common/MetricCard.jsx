@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 
 export default function MetricCard({ title, value, subtext, icon: Icon, trend, color = 'primary' }) {
   const colors = {
@@ -6,7 +6,7 @@ export default function MetricCard({ title, value, subtext, icon: Icon, trend, c
     danger: 'text-soc-danger bg-soc-danger/10 border-soc-danger/30',
     warning: 'text-soc-warning bg-soc-warning/10 border-soc-warning/30',
     success: 'text-soc-success bg-soc-success/10 border-soc-success/30',
-    quantum: 'text-purple-400 bg-purple-500/10 border-purple-500/30'
+    quantum: 'text-soc-quantum bg-soc-quantum/10 border-soc-quantum/30'
   };
 
   return (
@@ -24,3 +24,4 @@ export default function MetricCard({ title, value, subtext, icon: Icon, trend, c
     </div>
   );
 }
+

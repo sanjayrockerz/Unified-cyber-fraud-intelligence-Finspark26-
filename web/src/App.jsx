@@ -1,6 +1,7 @@
 import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import AppLayout from './components/layout/AppLayout';
+import PageHeader from './components/common/PageHeader';
 import { ThemeProvider } from './context/ThemeContext';
 import { SidebarProvider } from './context/SidebarContext';
 import { SearchProvider } from './context/SearchContext';
@@ -10,12 +11,32 @@ import { CaseProvider } from './context/CaseContext';
 import { ReplayProvider } from './context/ReplayContext';
 
 const ThreatDashboard = lazy(() => import('./pages/CyberThreatIntelligencePage'));
+const OperationsCenterPage = lazy(() => import('./pages/OperationsCenterPage'));
+const CasesPage = lazy(() => import('./pages/CasesPage'));
+const CustomersPage = lazy(() => import('./pages/CustomersPage'));
+const InvestigationPage = lazy(() => import('./pages/InvestigationPage'));
+const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage'));
+const ReportsPage = lazy(() => import('./pages/ReportsPage'));
+const SessionIntelligencePage = lazy(() => import('./pages/SessionIntelligencePage'));
 const GraphPage = lazy(() => import('./pages/GraphPage'));
+const ExecutiveCommandCenterPage = lazy(() => import('./pages/ExecutiveCommandCenterPage'));
+const TelemetryPage = lazy(() => import('./pages/TelemetryPage'));
+const BankingPage = lazy(() => import('./pages/BankingPage'));
+const SyntheticLabPage = lazy(() => import('./pages/SyntheticLabPage'));
 const DeveloperPlatformPage = lazy(() => import('./pages/DeveloperPlatformPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 
 function Loading() {
   return <div className="p-6 text-soc-muted">Loading platform view…</div>;
+}
+
+function RouteSurface({ title, description, children }) {
+  return (
+    <div className="mx-auto flex max-w-[1800px] flex-col gap-6 pb-8">
+      <PageHeader title={title} description={description} />
+      {children}
+    </div>
+  );
 }
 
 export default function App() {
@@ -31,13 +52,24 @@ export default function App() {
                     <Suspense fallback={<Loading />}>
                       <Routes>
                         <Route path="/" element={<AppLayout quantumData={null} />}>
-                          <Route index element={<Navigate to="/threats" replace />} />
-                          <Route path="dashboard" element={<Navigate to="/threats" replace />} />
-                          <Route path="threats" element={<ThreatDashboard />} />
-                          <Route path="graph" element={<GraphPage />} />
-                          <Route path="developer" element={<DeveloperPlatformPage />} />
-                          <Route path="settings" element={<SettingsPage />} />
-                          <Route path="*" element={<Navigate to="/threats" replace />} />
+                          <Route index element={<ThreatDashboard />} />
+                          <Route path="dashboard" element={<Navigate to="/operations" replace />} />
+                          <Route path="threats" element={<Navigate to="/" replace />} />
+                          <Route path="operations" element={<RouteSurface title="Operations Center" description="Monitor the live pre-transaction protection workflow and take action on the riskiest decision."><OperationsCenterPage /></RouteSurface>} />
+                          <Route path="cases" element={<CasesPage />} />
+                          <Route path="customers" element={<CustomersPage />} />
+                          <Route path="investigation/:caseId?" element={<RouteSurface title="Investigation" description="Follow linked fraud, cyber, and evidence signals through one focused case workspace."><InvestigationPage /></RouteSurface>} />
+                          <Route path="analytics" element={<RouteSurface title="Analytics" description="Measure fusion performance using reproducible security and fraud metrics."><AnalyticsPage /></RouteSurface>} />
+                          <Route path="reports" element={<RouteSurface title="Reports" description="Export decision evidence and regulatory-ready incident documentation."><ReportsPage /></RouteSurface>} />
+                          <Route path="sessions" element={<RouteSurface title="Session Intelligence" description="Assess trust across the banking session before a transaction is released."><SessionIntelligencePage /></RouteSurface>} />
+                          <Route path="graph" element={<RouteSurface title="Graph Runtime" description="Inspect connected accounts, devices, IPs, and mule-network context."><GraphPage /></RouteSurface>} />
+                          <Route path="executive" element={<RouteSurface title="Executive Command Center" description="Understand the current risk posture and decision impact at a glance."><ExecutiveCommandCenterPage /></RouteSurface>} />
+                          <Route path="telemetry" element={<RouteSurface title="Telemetry" description="Review the latest cyber signals flowing into the fraud decision."><TelemetryPage /></RouteSurface>} />
+                          <Route path="banking" element={<RouteSurface title="Banking" description="Inspect transaction context and beneficiary relationships before release."><BankingPage /></RouteSurface>} />
+                          <Route path="synthetic-lab" element={<RouteSurface title="Synthetic Lab" description="Generate reproducible banking universes for demonstration and scale testing."><SyntheticLabPage /></RouteSurface>} />
+                          <Route path="developer" element={<RouteSurface title="SDK Runtime" description="Connect devices and observe authenticated integration events."><DeveloperPlatformPage /></RouteSurface>} />
+                          <Route path="settings" element={<RouteSurface title="Settings" description="Tune the presentation-layer operating thresholds for the demo environment."><SettingsPage /></RouteSurface>} />
+                          <Route path="*" element={<Navigate to="/" replace />} />
                         </Route>
                       </Routes>
                     </Suspense>

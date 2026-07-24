@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { 
   ShieldAlert, 
   Layers, 
@@ -19,7 +19,7 @@ import {
   DollarSign
 } from 'lucide-react';
 
-const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8001' : 'https://fusion.example.invalid');
+const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8001' : '');
 
 export default function InvestigationIntelligencePanel({ caseId = 'CASE-2026-8942', activeTxn = null }) {
   const [brief, setBrief] = useState(null);
@@ -74,7 +74,7 @@ export default function InvestigationIntelligencePanel({ caseId = 'CASE-2026-894
       {/* 1. ENTERPRISE INVESTIGATION BRIEF HEADER */}
       <div className="p-4 bg-soc-panel border border-soc-border rounded-xl flex flex-wrap items-center justify-between gap-4 shadow-md">
         <div className="flex items-center gap-3">
-          <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-400">
+          <div className="p-3 bg-soc-danger/10 border border-soc-danger/30 rounded-xl text-soc-danger">
             <Layers className="w-6 h-6 animate-pulse" />
           </div>
           <div>
@@ -82,7 +82,7 @@ export default function InvestigationIntelligencePanel({ caseId = 'CASE-2026-894
               <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded bg-soc-bg border border-soc-border text-soc-muted">
                 NETWORK-LEVEL FRAUD INTELLIGENCE BRIEF #{brief.case_id}
               </span>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/40">
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-soc-danger/20 text-soc-danger border border-soc-danger/40">
                 LOSS PREVENTED: {fusion_investigation_summary.estimated_loss_prevented}
               </span>
             </div>
@@ -95,12 +95,12 @@ export default function InvestigationIntelligencePanel({ caseId = 'CASE-2026-894
         <div className="flex items-center gap-6 text-xs">
           <div className="flex flex-col border-r border-soc-border pr-6">
             <span className="text-[10px] text-soc-dim uppercase">Decision Quality</span>
-            <span className="font-bold text-emerald-400 text-[11px]">{decision_quality.decision_quality_score}% ({decision_quality.quality_tier})</span>
+            <span className="font-bold text-soc-success text-[11px]">{decision_quality.decision_quality_score}% ({decision_quality.quality_tier})</span>
           </div>
 
           <div className="flex flex-col border-r border-soc-border pr-6">
             <span className="text-[10px] text-soc-dim uppercase">Threat Confidence</span>
-            <span className="font-bold text-rose-400 text-[11px]">{fusion_investigation_summary.threat_confidence}</span>
+            <span className="font-bold text-soc-danger text-[11px]">{fusion_investigation_summary.threat_confidence}</span>
           </div>
 
           <button 
@@ -123,7 +123,7 @@ export default function InvestigationIntelligencePanel({ caseId = 'CASE-2026-894
             className="w-full p-3 flex items-center justify-between bg-soc-surface/60 hover:bg-soc-surface text-left transition-colors"
           >
             <div className="flex items-center gap-3">
-              <div className="p-1.5 rounded bg-rose-500/20 text-rose-400">
+              <div className="p-1.5 rounded bg-soc-danger/20 text-soc-danger">
                 <GitCommit className="w-4 h-4" />
               </div>
               <div>
@@ -133,7 +133,7 @@ export default function InvestigationIntelligencePanel({ caseId = 'CASE-2026-894
             </div>
 
             <div className="flex items-center gap-4">
-              <span className="text-[10px] font-mono font-bold px-2 py-0.5 bg-rose-500/10 text-rose-400 border border-rose-500/30 rounded">
+              <span className="text-[10px] font-mono font-bold px-2 py-0.5 bg-soc-danger/10 text-soc-danger border border-soc-danger/30 rounded">
                 Stage 5 Execution Attempt
               </span>
               {expandedSection === 'narrative' ? <ChevronUp className="w-4 h-4 text-soc-dim" /> : <ChevronDown className="w-4 h-4 text-soc-dim" />}
@@ -167,7 +167,7 @@ export default function InvestigationIntelligencePanel({ caseId = 'CASE-2026-894
             className="w-full p-3 flex items-center justify-between bg-soc-surface/60 hover:bg-soc-surface text-left transition-colors"
           >
             <div className="flex items-center gap-3">
-              <div className="p-1.5 rounded bg-amber-500/20 text-amber-400">
+              <div className="p-1.5 rounded bg-soc-warning/20 text-soc-warning">
                 <Radio className="w-4 h-4" />
               </div>
               <div>
@@ -177,7 +177,7 @@ export default function InvestigationIntelligencePanel({ caseId = 'CASE-2026-894
             </div>
 
             <div className="flex items-center gap-4">
-              <span className="text-[10px] font-mono font-bold px-2 py-0.5 bg-rose-500/10 text-rose-400 border border-rose-500/30 rounded">
+              <span className="text-[10px] font-mono font-bold px-2 py-0.5 bg-soc-danger/10 text-soc-danger border border-soc-danger/30 rounded">
                 Severity: {burst_attack_intelligence.burst_severity}
               </span>
               {expandedSection === 'burst' ? <ChevronUp className="w-4 h-4 text-soc-dim" /> : <ChevronDown className="w-4 h-4 text-soc-dim" />}
@@ -196,7 +196,7 @@ export default function InvestigationIntelligencePanel({ caseId = 'CASE-2026-894
                     <span className="text-[10px] text-soc-dim uppercase block">{sig.signal}</span>
                     <div className="font-bold text-soc-text">{sig.count} / Threshold {sig.threshold}</div>
                     <span className={`text-[9px] px-1.5 py-0.2 rounded font-bold inline-block ${
-                      sig.status.includes('CRITICAL') || sig.status.includes('EXCEEDED') ? 'bg-rose-500/20 text-rose-300' : 'bg-emerald-500/20 text-emerald-300'
+                      sig.status.includes('CRITICAL') || sig.status.includes('EXCEEDED') ? 'bg-soc-danger/20 text-soc-danger' : 'bg-soc-success/20 text-soc-success'
                     }`}>
                       {sig.status}
                     </span>
@@ -224,7 +224,7 @@ export default function InvestigationIntelligencePanel({ caseId = 'CASE-2026-894
             </div>
 
             <div className="flex items-center gap-4">
-              <span className="text-[10px] font-mono font-bold px-2 py-0.5 bg-rose-500/10 text-rose-400 border border-rose-500/30 rounded">
+              <span className="text-[10px] font-mono font-bold px-2 py-0.5 bg-soc-danger/10 text-soc-danger border border-soc-danger/30 rounded">
                 Mule Ring Risk: {graph_mule_intelligence.ring_risk_score}%
               </span>
               {expandedSection === 'mule' ? <ChevronUp className="w-4 h-4 text-soc-dim" /> : <ChevronDown className="w-4 h-4 text-soc-dim" />}
@@ -241,7 +241,7 @@ export default function InvestigationIntelligencePanel({ caseId = 'CASE-2026-894
                   <ul className="space-y-1">
                     {graph_mule_intelligence.graph_patterns_discovered?.map((pat, i) => (
                       <li key={i} className="flex items-center gap-2 text-[11px] text-soc-text">
-                        <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-soc-danger" />
                         <span>{pat}</span>
                       </li>
                     ))}
@@ -254,7 +254,7 @@ export default function InvestigationIntelligencePanel({ caseId = 'CASE-2026-894
                     {graph_mule_intelligence.ring_members?.map((m, i) => (
                       <div key={i} className="p-2 bg-soc-panel border border-soc-border rounded text-[11px] flex justify-between items-center">
                         <span className="font-bold text-soc-text">{m.account}</span>
-                        <span className="text-[10px] text-rose-400 font-bold">{m.type}</span>
+                        <span className="text-[10px] text-soc-danger font-bold">{m.type}</span>
                       </div>
                     ))}
                   </div>
@@ -271,17 +271,17 @@ export default function InvestigationIntelligencePanel({ caseId = 'CASE-2026-894
             className="w-full p-3 flex items-center justify-between bg-soc-surface/60 hover:bg-soc-surface text-left transition-colors"
           >
             <div className="flex items-center gap-3">
-              <div className="p-1.5 rounded bg-emerald-500/20 text-emerald-400">
+              <div className="p-1.5 rounded bg-soc-success/20 text-soc-success">
                 <Award className="w-4 h-4" />
               </div>
               <div>
                 <span className="font-bold text-soc-text text-xs">4. Multi-Vector Decision Quality Score</span>
-                <div className="text-[10px] text-soc-muted">Model Agreement: {decision_quality.model_agreement_percent}% • Evidence Completeness: {decision_quality.evidence_completeness_percent}%</div>
+                <div className="text-[10px] text-soc-muted">Model Agreement: {decision_quality.model_agreement_percent}% â€¢ Evidence Completeness: {decision_quality.evidence_completeness_percent}%</div>
               </div>
             </div>
 
             <div className="flex items-center gap-4">
-              <span className="text-[10px] font-mono font-bold px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 rounded">
+              <span className="text-[10px] font-mono font-bold px-2 py-0.5 bg-soc-success/10 text-soc-success border border-soc-success/30 rounded">
                 Quality: {decision_quality.decision_quality_score}%
               </span>
               {expandedSection === 'quality' ? <ChevronUp className="w-4 h-4 text-soc-dim" /> : <ChevronDown className="w-4 h-4 text-soc-dim" />}
@@ -299,7 +299,7 @@ export default function InvestigationIntelligencePanel({ caseId = 'CASE-2026-894
                       <span className="font-bold text-soc-text">{c.vector} (Weight: {c.weight * 100}%)</span>
                       <div className="text-[10px] text-soc-muted">{c.reason}</div>
                     </div>
-                    <span className="font-mono font-bold text-rose-400 text-sm">{c.impact}</span>
+                    <span className="font-mono font-bold text-soc-danger text-sm">{c.impact}</span>
                   </div>
                 ))}
               </div>
@@ -324,7 +324,7 @@ export default function InvestigationIntelligencePanel({ caseId = 'CASE-2026-894
             </div>
 
             <div className="flex items-center gap-4">
-              <span className="text-[10px] font-mono font-bold px-2 py-0.5 bg-rose-500/10 text-rose-400 border border-rose-500/30 rounded">
+              <span className="text-[10px] font-mono font-bold px-2 py-0.5 bg-soc-danger/10 text-soc-danger border border-soc-danger/30 rounded">
                 Executive Brief Ready
               </span>
               {expandedSection === 'summary' ? <ChevronUp className="w-4 h-4 text-soc-dim" /> : <ChevronDown className="w-4 h-4 text-soc-dim" />}
@@ -340,11 +340,11 @@ export default function InvestigationIntelligencePanel({ caseId = 'CASE-2026-894
                 </div>
                 <div className="p-3 bg-soc-panel border border-soc-border rounded space-y-1">
                   <span className="text-[10px] text-soc-dim uppercase">Cyber Threat Classification</span>
-                  <div className="text-rose-400 font-bold">{fusion_investigation_summary.cyber_threat}</div>
+                  <div className="text-soc-danger font-bold">{fusion_investigation_summary.cyber_threat}</div>
                 </div>
                 <div className="p-3 bg-soc-panel border border-soc-border rounded space-y-1">
                   <span className="text-[10px] text-soc-dim uppercase">Recommended Response</span>
-                  <div className="text-rose-300 font-bold text-[11px]">{fusion_investigation_summary.recommended_response}</div>
+                  <div className="text-soc-danger font-bold text-[11px]">{fusion_investigation_summary.recommended_response}</div>
                 </div>
               </div>
             </div>
@@ -356,3 +356,4 @@ export default function InvestigationIntelligencePanel({ caseId = 'CASE-2026-894
     </div>
   );
 }
+

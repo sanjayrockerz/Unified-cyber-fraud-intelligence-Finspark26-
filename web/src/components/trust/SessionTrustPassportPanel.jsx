@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { 
   ShieldCheck, 
   ShieldAlert, 
@@ -20,7 +20,7 @@ import {
   ExternalLink
 } from 'lucide-react';
 
-const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8001' : 'https://fusion.example.invalid');
+const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8001' : '');
 
 export default function SessionTrustPassportPanel({ sessionId = 'SESS_9921_CRITICAL', activeTxn = null }) {
   const [passport, setPassport] = useState(null);
@@ -79,12 +79,12 @@ export default function SessionTrustPassportPanel({ sessionId = 'SESS_9921_CRITI
       {/* 1. PRIMARY PASSPORT CARD (COMPACT HIGH-IMPACT HEADER) */}
       <div className={`p-4 rounded-xl border flex flex-wrap items-center justify-between gap-4 shadow-lg transition-all ${
         isBlock 
-          ? 'bg-rose-500/10 border-rose-500/40 shadow-rose-500/5' 
-          : (isChallenge ? 'bg-amber-500/10 border-amber-500/40 shadow-amber-500/5' : 'bg-emerald-500/10 border-emerald-500/40')
+          ? 'bg-soc-danger/10 border-soc-danger/40 shadow-rose-500/5' 
+          : (isChallenge ? 'bg-soc-warning/10 border-soc-warning/40 shadow-amber-500/5' : 'bg-soc-success/10 border-soc-success/40')
       }`}>
         <div className="flex items-center gap-4">
           <div className={`p-3 rounded-xl border ${
-            isBlock ? 'bg-rose-500/20 border-rose-500/40 text-rose-400' : (isChallenge ? 'bg-amber-500/20 border-amber-500/40 text-amber-400' : 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400')
+            isBlock ? 'bg-soc-danger/20 border-soc-danger/40 text-soc-danger' : (isChallenge ? 'bg-soc-warning/20 border-soc-warning/40 text-soc-warning' : 'bg-soc-success/20 border-soc-success/40 text-soc-success')
           }`}>
             {isBlock ? <ShieldX className="w-7 h-7 animate-pulse" /> : (isChallenge ? <ShieldAlert className="w-7 h-7" /> : <ShieldCheck className="w-7 h-7" />)}
           </div>
@@ -95,13 +95,13 @@ export default function SessionTrustPassportPanel({ sessionId = 'SESS_9921_CRITI
                 PRE-TRANSACTION SESSION PASSPORT #{passport.session_id}
               </span>
               <span className={`text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded border ${
-                monitoring_level === 'CRITICAL' ? 'bg-rose-500/20 text-rose-300 border-rose-500/40' : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                monitoring_level === 'CRITICAL' ? 'bg-soc-danger/20 text-soc-danger border-soc-danger/40' : 'bg-soc-success/20 text-soc-success border-soc-success/40'
               }`}>
                 MONITORING: {monitoring_level}
               </span>
             </div>
             <h2 className="text-base font-black text-soc-text tracking-wide mt-1 flex items-center gap-3">
-              PRE-TRANSACTION VERDICT: <span className={isBlock ? 'text-rose-400' : (isChallenge ? 'text-amber-400' : 'text-emerald-400')}>{decision}</span>
+              PRE-TRANSACTION VERDICT: <span className={isBlock ? 'text-soc-danger' : (isChallenge ? 'text-soc-warning' : 'text-soc-success')}>{decision}</span>
               <span className="text-xs text-soc-dim font-normal">| Overall Session Trust: <strong className="text-soc-text font-black">{overall_trust}%</strong></span>
             </h2>
           </div>
@@ -118,10 +118,10 @@ export default function SessionTrustPassportPanel({ sessionId = 'SESS_9921_CRITI
 
           <div className="flex flex-col border-r border-soc-border pr-6">
             <span className="text-[10px] text-soc-dim uppercase flex items-center gap-1">
-              <Zap className="w-3 h-3 text-amber-400" />
+              <Zap className="w-3 h-3 text-soc-warning" />
               <span>Pipeline Latency</span>
             </span>
-            <span className="font-bold text-amber-400 text-[11px]">{performance_metrics?.total_latency_ms} ms</span>
+            <span className="font-bold text-soc-warning text-[11px]">{performance_metrics?.total_latency_ms} ms</span>
           </div>
 
           <button 
@@ -161,7 +161,7 @@ export default function SessionTrustPassportPanel({ sessionId = 'SESS_9921_CRITI
                 className="w-full p-3 flex items-center justify-between bg-soc-surface/60 hover:bg-soc-surface text-left transition-colors"
               >
                 <div className="flex items-center gap-3">
-                  <div className={`p-1.5 rounded ${isLowScore ? 'bg-rose-500/20 text-rose-400' : 'bg-soc-bg text-soc-primary'}`}>
+                  <div className={`p-1.5 rounded ${isLowScore ? 'bg-soc-danger/20 text-soc-danger' : 'bg-soc-bg text-soc-primary'}`}>
                     <Icon className="w-4 h-4" />
                   </div>
                   <div>
@@ -174,7 +174,7 @@ export default function SessionTrustPassportPanel({ sessionId = 'SESS_9921_CRITI
 
                 <div className="flex items-center gap-4">
                   <div className="text-right">
-                    <span className={`font-mono font-bold text-xs ${isLowScore ? 'text-rose-400' : 'text-emerald-400'}`}>
+                    <span className={`font-mono font-bold text-xs ${isLowScore ? 'text-soc-danger' : 'text-soc-success'}`}>
                       {score}% Trust
                     </span>
                     <div className="text-[10px] text-soc-dim">{chk.data?.execution_time_ms} ms</div>
@@ -193,8 +193,8 @@ export default function SessionTrustPassportPanel({ sessionId = 'SESS_9921_CRITI
                       <span className="text-[10px] text-soc-dim uppercase font-bold">Mapped MITRE ATT&CK Techniques:</span>
                       <div className="flex flex-wrap gap-2">
                         {chk.data.mitre_techniques.map((m, i) => (
-                          <span key={i} className="px-2 py-0.5 rounded bg-rose-500/10 border border-rose-500/30 text-rose-300 text-[10px] font-bold flex items-center gap-1">
-                            <ExternalLink className="w-3 h-3 text-rose-400" />
+                          <span key={i} className="px-2 py-0.5 rounded bg-soc-danger/10 border border-soc-danger/30 text-soc-danger text-[10px] font-bold flex items-center gap-1">
+                            <ExternalLink className="w-3 h-3 text-soc-danger" />
                             <span>{m.id}: {m.name} ({m.tactic})</span>
                           </span>
                         ))}
@@ -232,3 +232,4 @@ export default function SessionTrustPassportPanel({ sessionId = 'SESS_9921_CRITI
     </div>
   );
 }
+

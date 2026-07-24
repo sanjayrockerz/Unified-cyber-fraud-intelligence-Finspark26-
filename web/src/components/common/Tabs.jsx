@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 
 export default function Tabs({ tabs = [], activeTab, onChange }) {
   return (
@@ -9,7 +9,7 @@ export default function Tabs({ tabs = [], activeTab, onChange }) {
           onClick={() => onChange(t.id)}
           className={`px-3 py-1 rounded text-xs font-mono transition-colors ${
             activeTab === t.id
-              ? 'bg-soc-primary text-white font-bold shadow'
+              ? 'bg-soc-primary text-soc-onPrimary font-bold shadow'
               : 'text-soc-muted hover:text-soc-text hover:bg-soc-panel'
           }`}
         >
@@ -19,3 +19,4 @@ export default function Tabs({ tabs = [], activeTab, onChange }) {
     </div>
   );
 }
+

@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Play, CheckCircle2, ShieldAlert, Zap, FileText, ChevronDown, ChevronUp, RefreshCw, RotateCcw } from 'lucide-react';
 
-const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8001' : 'https://fusion.example.invalid');
+const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8001' : '');
 
 export default function ResponseOrchestrator({ activeCase, onDownloadReport }) {
   const [soarData, setSoarData] = useState(null);
@@ -105,12 +105,12 @@ export default function ResponseOrchestrator({ activeCase, onDownloadReport }) {
               <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded bg-soc-bg border border-soc-border text-soc-muted">
                 FUSION SOAR RESPONSE ORCHESTRATOR
               </span>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-soc-success/20 text-soc-success border border-soc-success/30">
                 PLAYBOOK: {matched_playbook?.id}
               </span>
             </div>
             <h2 className="text-base font-black text-soc-text tracking-wide mt-1 flex items-center gap-3">
-              RECOMMENDED VERDICT: <span className="text-rose-400">{primary_verdict}</span>
+              RECOMMENDED VERDICT: <span className="text-soc-danger">{primary_verdict}</span>
             </h2>
           </div>
         </div>
@@ -118,21 +118,21 @@ export default function ResponseOrchestrator({ activeCase, onDownloadReport }) {
         <div className="flex items-center gap-4 text-xs font-mono">
           <div className="flex flex-col text-right">
             <span className="text-[10px] text-soc-dim uppercase">SOAR Latency</span>
-            <span className="font-bold text-amber-400 text-sm">{execution_latency_ms} ms</span>
+            <span className="font-bold text-soc-warning text-sm">{execution_latency_ms} ms</span>
           </div>
 
           {!executionResult ? (
             <button
               onClick={handleExecutePlaybook}
               disabled={isExecuting}
-              className="px-4 py-2 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white rounded-lg font-bold flex items-center gap-2 transition-all shadow-lg shadow-rose-950/40"
+              className="px-4 py-2 bg-soc-danger hover:bg-soc-danger disabled:opacity-50 text-soc-onPrimary rounded-lg font-bold flex items-center gap-2 transition-all shadow-lg shadow-rose-950/40"
             >
               {isExecuting ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4 fill-current" />}
               <span>{isExecuting ? 'ORCHESTRATING SOAR WORKFLOW...' : 'EXECUTE RESPONSE WORKFLOW'}</span>
             </button>
           ) : (
             <div className="flex items-center gap-3">
-              <span className="px-3 py-1.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 rounded-lg font-bold flex items-center gap-1.5">
+              <span className="px-3 py-1.5 bg-soc-success/20 text-soc-success border border-soc-success/40 rounded-lg font-bold flex items-center gap-1.5">
                 <CheckCircle2 className="w-4 h-4" />
                 <span>WORKFLOW EXECUTED ({executionResult.incident?.incident_id})</span>
               </span>
@@ -141,7 +141,7 @@ export default function ResponseOrchestrator({ activeCase, onDownloadReport }) {
                 className="px-3 py-1.5 bg-soc-panel hover:bg-soc-border border border-soc-border text-soc-text rounded-lg font-bold flex items-center gap-1.5 transition-colors"
                 title="Rollback Response Workflow"
               >
-                <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
+                <RotateCcw className="w-3.5 h-3.5 text-soc-warning" />
                 <span>Rollback</span>
               </button>
             </div>
@@ -159,7 +159,7 @@ export default function ResponseOrchestrator({ activeCase, onDownloadReport }) {
             className="w-full p-3 flex items-center justify-between bg-soc-surface/60 hover:bg-soc-surface text-left transition-colors"
           >
             <div className="flex items-center gap-3">
-              <div className="p-1.5 rounded bg-rose-500/20 text-rose-400">
+              <div className="p-1.5 rounded bg-soc-danger/20 text-soc-danger">
                 <ShieldAlert className="w-4 h-4" />
               </div>
               <div>
@@ -176,7 +176,7 @@ export default function ResponseOrchestrator({ activeCase, onDownloadReport }) {
                 {recommended_actions?.map((act, idx) => (
                   <div key={idx} className="p-3 bg-soc-panel border border-soc-border rounded-lg space-y-1">
                     <div className="flex justify-between items-center">
-                      <span className="font-bold text-rose-400 uppercase text-[11px]">{act.action}</span>
+                      <span className="font-bold text-soc-danger uppercase text-[11px]">{act.action}</span>
                       <span className="text-[9px] px-1.5 py-0.2 rounded bg-soc-bg border border-soc-border text-soc-dim">{act.status}</span>
                     </div>
                     <div className="text-soc-text font-bold text-[10px] truncate">{act.target}</div>
@@ -199,7 +199,7 @@ export default function ResponseOrchestrator({ activeCase, onDownloadReport }) {
                 <FileText className="w-4 h-4" />
               </div>
               <div>
-                <span className="font-bold text-soc-text text-xs">2. Matched SOAR Playbook — {matched_playbook?.name}</span>
+                <span className="font-bold text-soc-text text-xs">2. Matched SOAR Playbook â€” {matched_playbook?.name}</span>
                 <div className="text-[10px] text-soc-muted">{matched_playbook?.description}</div>
               </div>
             </div>
@@ -211,11 +211,11 @@ export default function ResponseOrchestrator({ activeCase, onDownloadReport }) {
               <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                 <div className="p-2.5 bg-soc-panel border border-soc-border rounded space-y-1">
                   <span className="text-[10px] text-soc-dim uppercase">Playbook Priority</span>
-                  <div className="text-rose-400 font-bold">{matched_playbook?.priority}</div>
+                  <div className="text-soc-danger font-bold">{matched_playbook?.priority}</div>
                 </div>
                 <div className="p-2.5 bg-soc-panel border border-soc-border rounded space-y-1">
                   <span className="text-[10px] text-soc-dim uppercase">Required DQS</span>
-                  <div className="text-emerald-400 font-bold">{matched_playbook?.required_dqs}%</div>
+                  <div className="text-soc-success font-bold">{matched_playbook?.required_dqs}%</div>
                 </div>
                 <div className="p-2.5 bg-soc-panel border border-soc-border rounded space-y-1">
                   <span className="text-[10px] text-soc-dim uppercase">Approval Rules</span>
@@ -239,7 +239,7 @@ export default function ResponseOrchestrator({ activeCase, onDownloadReport }) {
                 className="w-full p-3 flex items-center justify-between bg-soc-surface/60 hover:bg-soc-surface text-left transition-colors"
               >
                 <div className="flex items-center gap-3">
-                  <div className="p-1.5 rounded bg-emerald-500/20 text-emerald-400">
+                  <div className="p-1.5 rounded bg-soc-success/20 text-soc-success">
                     <CheckCircle2 className="w-4 h-4" />
                   </div>
                   <div>
@@ -276,4 +276,5 @@ export default function ResponseOrchestrator({ activeCase, onDownloadReport }) {
     </div>
   );
 }
+
 

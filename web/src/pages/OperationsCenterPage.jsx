@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+﻿import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { authenticatedWebSocketUrl } from '../platformAuth';
 import { useNavigate } from 'react-router-dom';
 import { ShieldAlert, Radio, RefreshCw, Upload, Terminal, Landmark, User, ChevronDown, ChevronUp } from 'lucide-react';
@@ -20,7 +20,7 @@ import CSVSchemaMapperModal from '../components/runtime/CSVSchemaMapperModal';
 import SessionTrustPassportPanel from '../components/trust/SessionTrustPassportPanel';
 import InvestigationIntelligencePanel from '../components/investigation/InvestigationIntelligencePanel';
 
-const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8001' : 'https://fusion.example.invalid');
+const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8001' : '');
 const WS_BASE = API_BASE.replace(/^http/, 'ws');
 
 export default function OperationsCenterPage() {
@@ -194,20 +194,20 @@ export default function OperationsCenterPage() {
   };
 
   return (
-    <div className="flex flex-col gap-5 max-w-[1850px] mx-auto select-none font-sans text-soc-text pb-8">
+    <div className="flex w-full min-w-0 flex-col gap-5 max-w-[1850px] mx-auto select-none font-sans text-soc-text pb-8">
       
       {/* SECTION 1: MISSION OVERVIEW (PRE-TRANSACTION PLATFORM HEADER) */}
       <div className="bg-soc-surface border border-soc-border rounded-xl p-4 flex flex-wrap items-center justify-between gap-4 shadow-xl">
-        <div className="flex items-center gap-3.5">
+        <div className="flex min-w-0 items-center gap-3.5">
           <div className="p-3 bg-soc-primary/20 border border-soc-primary/40 rounded-xl">
             <ShieldAlert className="w-7 h-7 text-soc-primary animate-pulse" />
           </div>
-          <div>
-            <div className="flex items-center gap-2">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-base font-mono font-black text-soc-text tracking-wider uppercase">
-                Fusion Risk OS — Pre-Transaction Cyber Fraud Prevention Platform
+                Fusion Risk OS â€” Pre-Transaction Cyber Fraud Prevention Platform
               </h1>
-              <span className="text-[10px] font-mono px-2.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-bold border border-emerald-500/30">
+              <span className="text-[10px] font-mono px-2.5 py-0.5 rounded bg-soc-success/20 text-soc-success font-bold border border-soc-success/30">
                 PRE-TRANSACTION PROTECTION ACTIVE
               </span>
             </div>
@@ -217,15 +217,15 @@ export default function OperationsCenterPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-6 text-xs font-mono">
+        <div className="flex flex-wrap items-center justify-end gap-4 text-xs font-mono">
           <div className="flex flex-col text-right">
             <span className="text-[10px] text-soc-dim uppercase font-semibold">Total Loss Prevented</span>
-            <span className="font-mono font-black text-emerald-400 text-sm">INR {totalLossPrevented.toLocaleString('en-IN')}</span>
+            <span className="font-mono font-black text-soc-success text-sm">INR {totalLossPrevented.toLocaleString('en-IN')}</span>
           </div>
 
           <div className="flex flex-col text-right border-l border-soc-border pl-6">
             <span className="text-[10px] text-soc-dim uppercase font-semibold">Pre-Tx Engine SLA</span>
-            <span className="font-mono font-bold text-amber-400 text-sm">0.14 ms</span>
+            <span className="font-mono font-bold text-soc-warning text-sm">0.14 ms</span>
           </div>
 
           <div className="flex items-center gap-2 pl-2">
@@ -239,7 +239,7 @@ export default function OperationsCenterPage() {
 
             <button
               onClick={connectWebSocket}
-              className="px-3 py-1.5 bg-soc-primary hover:bg-blue-600 text-white rounded-lg font-mono font-bold flex items-center gap-1.5 transition-colors shadow"
+              className="px-3 py-1.5 bg-soc-primary hover:bg-soc-primary text-soc-onPrimary rounded-lg font-mono font-bold flex items-center gap-1.5 transition-colors shadow"
             >
               <RefreshCw className="w-3.5 h-3.5" />
               <span>Replay Stream</span>
@@ -250,16 +250,16 @@ export default function OperationsCenterPage() {
 
       {/* SECTION 2: ACTIVE SESSION / INVESTIGATION FOCUS */}
       <div className="p-4 bg-soc-panel border border-soc-border rounded-xl flex flex-wrap items-center justify-between gap-4 shadow-md">
-        <div className="flex items-center gap-4">
+        <div className="flex min-w-0 items-center gap-4">
           <div className="p-3 bg-soc-bg border border-soc-border rounded-xl">
             <User className="w-6 h-6 text-soc-primary" />
           </div>
-          <div>
-            <div className="flex items-center gap-2">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
               <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded bg-soc-bg border border-soc-border text-soc-muted">
                 ACTIVE FOCUS SESSION: {activeTxnPayload.user_id}
               </span>
-              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/40">
+              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-soc-danger/20 text-soc-danger border border-soc-danger/40">
                 CRITICAL IN REVIEW
               </span>
             </div>
@@ -270,7 +270,7 @@ export default function OperationsCenterPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-6 text-xs font-mono">
+        <div className="flex flex-wrap items-center justify-end gap-4 text-xs font-mono">
           <div className="flex flex-col text-right">
             <span className="text-[10px] text-soc-dim uppercase">Assigned SOC Analyst</span>
             <span className="font-bold text-soc-text">Analyst_04 (Tier-3)</span>
@@ -278,7 +278,7 @@ export default function OperationsCenterPage() {
 
           <div className="flex flex-col text-right border-l border-soc-border pl-6">
             <span className="text-[10px] text-soc-dim uppercase">Active Transfer Payload</span>
-            <span className="font-bold text-rose-400 text-sm">INR {activeTxnPayload.amount?.toLocaleString('en-IN')}</span>
+            <span className="font-bold text-soc-danger text-sm">INR {activeTxnPayload.amount?.toLocaleString('en-IN')}</span>
           </div>
         </div>
       </div>
@@ -317,9 +317,9 @@ export default function OperationsCenterPage() {
 
         {showSecondaryFeeds && (
           <div className="p-4 space-y-4 font-mono text-xs border-t border-soc-border">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+            <div className="grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-12">
               {/* TRANSACTION FEED */}
-              <div className="lg:col-span-6 bg-soc-panel border border-soc-border rounded-xl p-3.5">
+              <div className="min-w-0 lg:col-span-6 bg-soc-panel border border-soc-border rounded-xl p-3.5">
                 <div className="flex items-center justify-between border-b border-soc-border pb-2 mb-3">
                   <h3 className="text-xs font-bold text-soc-text uppercase flex items-center gap-2">
                     <Landmark className="w-4 h-4 text-soc-primary" />
@@ -330,31 +330,31 @@ export default function OperationsCenterPage() {
                 <div className="max-h-[220px] overflow-y-auto space-y-2 text-[11px]">
                   {displayCases.map((c) => (
                     <div key={c.id} onClick={() => setSelectedCase(c)} className="p-2 bg-soc-bg border border-soc-border rounded flex justify-between cursor-pointer">
-                      <span>{c.id} — {c.nameOrig} → {c.nameDest}</span>
-                      <span className="font-bold text-rose-400">INR {c.amount.toLocaleString('en-IN')}</span>
+                      <span>{c.id} â€” {c.nameOrig} â†’ {c.nameDest}</span>
+                      <span className="font-bold text-soc-danger">INR {c.amount.toLocaleString('en-IN')}</span>
                     </div>
                   ))}
                 </div>
               </div>
 
               {/* SIEM LOGS */}
-              <div className="lg:col-span-6 bg-soc-panel border border-soc-border rounded-xl p-3.5">
+              <div className="min-w-0 lg:col-span-6 bg-soc-panel border border-soc-border rounded-xl p-3.5">
                 <div className="flex items-center justify-between border-b border-soc-border pb-2 mb-3">
                   <h3 className="text-xs font-bold text-soc-text uppercase flex items-center gap-2">
-                    <Radio className="w-4 h-4 text-rose-400 animate-pulse" />
+                    <Radio className="w-4 h-4 text-soc-danger animate-pulse" />
                     <span>Synchronized SIEM Cyber Logs</span>
                   </h3>
                   <span className="text-[10px] text-soc-muted">{cyberEvents.length} Logs</span>
                 </div>
                 <div className="max-h-[220px] overflow-y-auto space-y-2 text-[11px]">
                   {cyberEvents.length === 0 ? (
-                    <div className="p-2 bg-rose-500/10 border border-rose-500/30 text-rose-300 rounded">
-                      [T-0:40s] Impossible Travel Login Detected (IP 185.15.2.22, Moscow ➔ Mumbai)
+                    <div className="p-2 bg-soc-danger/10 border border-soc-danger/30 text-soc-danger rounded">
+                      [T-0:40s] Impossible Travel Login Detected (IP 185.15.2.22, Moscow âž” Mumbai)
                     </div>
                   ) : (
                     cyberEvents.map((evt, idx) => (
                       <div key={idx} className="p-2 bg-soc-bg border border-soc-border rounded text-soc-muted">
-                        {evt.timestamp} • {evt.event_type} • User: {evt.user_id} • IP: {evt.ip}
+                        {evt.timestamp} â€¢ {evt.event_type} â€¢ User: {evt.user_id} â€¢ IP: {evt.ip}
                       </div>
                     ))
                   )}
@@ -380,4 +380,5 @@ export default function OperationsCenterPage() {
     </div>
   );
 }
+
 

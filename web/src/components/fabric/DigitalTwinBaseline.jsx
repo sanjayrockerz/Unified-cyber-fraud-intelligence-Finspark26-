@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { User, DollarSign, Clock, Smartphone, Globe, Layers, GitCommit, Sparkles, AlertTriangle, CheckCircle2, RefreshCw, Gauge } from 'lucide-react';
 
-const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8001' : 'https://fusion.example.invalid');
+const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8001' : '');
 
 export default function DigitalTwinBaseline({ userId = 'usr_abc' }) {
   const [twinData, setTwinData] = useState(null);
@@ -59,14 +59,14 @@ export default function DigitalTwinBaseline({ userId = 'usr_abc' }) {
           <div>
             <div className="flex items-center gap-2">
               <h3 className="font-bold text-soc-text text-xs uppercase tracking-wider">
-                Digital Twin Customer Intelligence — {identity.full_name} ({userId})
+                Digital Twin Customer Intelligence â€” {identity.full_name} ({userId})
               </h3>
-              <span className="text-[9px] font-bold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+              <span className="text-[9px] font-bold px-2 py-0.5 rounded bg-soc-success/10 text-soc-success border border-soc-success/30">
                 LIVE TWIN ACTIVE
               </span>
             </div>
             <span className="text-[10px] text-soc-muted">
-              KYC: {identity.kyc_status} • Segment: {identity.occupation} • Primary Acc: {identity.primary_account}
+              KYC: {identity.kyc_status} â€¢ Segment: {identity.occupation} â€¢ Primary Acc: {identity.primary_account}
             </span>
           </div>
         </div>
@@ -75,7 +75,7 @@ export default function DigitalTwinBaseline({ userId = 'usr_abc' }) {
           <div className="flex items-center gap-2 bg-soc-panel border border-soc-border px-3 py-1.5 rounded-lg">
             <Gauge className="w-4 h-4 text-soc-primary" />
             <span className="text-[10px] text-soc-dim uppercase">Overall Deviation Index:</span>
-            <span className={`font-black ${isHighDeviation ? 'text-rose-400' : 'text-emerald-400'}`}>
+            <span className={`font-black ${isHighDeviation ? 'text-soc-danger' : 'text-soc-success'}`}>
               {devIndex}% ({comparison?.verdict || 'CRITICAL_DEVIATION'})
             </span>
           </div>
@@ -108,14 +108,14 @@ export default function DigitalTwinBaseline({ userId = 'usr_abc' }) {
               onClick={() => setActiveTab(t.id)}
               className={`px-3 py-1.5 rounded-lg font-bold flex items-center gap-2 transition-all ${
                 isActive 
-                  ? 'bg-soc-primary text-white shadow' 
+                  ? 'bg-soc-primary text-soc-onPrimary shadow' 
                   : 'bg-soc-panel border border-soc-border text-soc-muted hover:text-soc-text hover:border-soc-dim'
               }`}
             >
               <Icon className="w-3.5 h-3.5" />
               <span>{t.label}</span>
               {t.badge && (
-                <span className={`text-[9px] px-1.5 py-0.2 rounded font-mono ${isActive ? 'bg-black/20 text-white' : 'bg-soc-bg text-soc-dim'}`}>
+                <span className={`text-[9px] px-1.5 py-0.2 rounded font-mono ${isActive ? 'bg-soc-overlay/20 text-soc-onPrimary' : 'bg-soc-bg text-soc-dim'}`}>
                   {t.badge}
                 </span>
               )}
@@ -133,12 +133,12 @@ export default function DigitalTwinBaseline({ userId = 'usr_abc' }) {
             {Object.entries(comparison?.comparison_diffs || {}).map(([key, val]) => {
               const isAlert = val.includes('UNTRUSTED') || val.includes('IMPOSSIBLE') || val.includes('ANOMALOUS') || val.includes('UNSEEN') || val.includes('BURST') || val.includes('OFF-HOURS');
               return (
-                <div key={key} className={`p-3 rounded-lg border space-y-1 ${isAlert ? 'bg-rose-500/10 border-rose-500/30' : 'bg-soc-panel border-soc-border'}`}>
+                <div key={key} className={`p-3 rounded-lg border space-y-1 ${isAlert ? 'bg-soc-danger/10 border-soc-danger/30' : 'bg-soc-panel border-soc-border'}`}>
                   <span className="text-[10px] text-soc-dim uppercase font-semibold flex items-center justify-between">
                     <span>{key.replace('_', ' ')}</span>
-                    {isAlert ? <AlertTriangle className="w-3 h-3 text-rose-400" /> : <CheckCircle2 className="w-3 h-3 text-emerald-400" />}
+                    {isAlert ? <AlertTriangle className="w-3 h-3 text-soc-danger" /> : <CheckCircle2 className="w-3 h-3 text-soc-success" />}
                   </span>
-                  <div className={`font-bold ${isAlert ? 'text-rose-300' : 'text-soc-text'}`}>{val}</div>
+                  <div className={`font-bold ${isAlert ? 'text-soc-danger' : 'text-soc-text'}`}>{val}</div>
                 </div>
               );
             })}
@@ -157,7 +157,7 @@ export default function DigitalTwinBaseline({ userId = 'usr_abc' }) {
                   </div>
                   <div className="w-full bg-soc-bg h-1.5 rounded-full overflow-hidden border border-soc-border">
                     <div 
-                      className={`h-full rounded-full ${score > 70 ? 'bg-rose-500' : (score > 40 ? 'bg-amber-400' : 'bg-emerald-400')}`}
+                      className={`h-full rounded-full ${score > 70 ? 'bg-soc-danger' : (score > 40 ? 'bg-soc-warning' : 'bg-soc-success')}`}
                       style={{ width: `${Math.min(100, score)}%` }}
                     />
                   </div>
@@ -185,7 +185,7 @@ export default function DigitalTwinBaseline({ userId = 'usr_abc' }) {
           </div>
           <div className="p-3 bg-soc-panel border border-soc-border rounded-lg space-y-1">
             <span className="text-[10px] text-soc-dim uppercase">Identity Trust Score</span>
-            <div className="text-emerald-400 font-bold text-sm">{identity.trust_level} / 100.0</div>
+            <div className="text-soc-success font-bold text-sm">{identity.trust_level} / 100.0</div>
           </div>
         </div>
       )}
@@ -203,9 +203,9 @@ export default function DigitalTwinBaseline({ userId = 'usr_abc' }) {
                 <div key={d.device_id} className="p-2 bg-soc-bg border border-soc-border rounded text-[11px] flex justify-between items-center">
                   <div>
                     <span className="font-bold text-soc-text">{d.name} ({d.device_id})</span>
-                    <div className="text-[10px] text-soc-muted">{d.os} • {d.browser} • Fingerprint: {d.fingerprint}</div>
+                    <div className="text-[10px] text-soc-muted">{d.os} â€¢ {d.browser} â€¢ Fingerprint: {d.fingerprint}</div>
                   </div>
-                  <span className="text-[10px] px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 rounded">
+                  <span className="text-[10px] px-1.5 py-0.5 bg-soc-success/10 text-soc-success border border-soc-success/30 rounded">
                     Trust: {d.trust_score * 100}%
                   </span>
                 </div>
@@ -214,15 +214,15 @@ export default function DigitalTwinBaseline({ userId = 'usr_abc' }) {
 
             <div className="p-3 bg-soc-panel border border-soc-border rounded-lg space-y-2">
               <span className="text-[10px] text-soc-dim uppercase font-bold flex items-center gap-1">
-                <Globe className="w-3.5 h-3.5 text-emerald-400" />
+                <Globe className="w-3.5 h-3.5 text-soc-success" />
                 <span>Geolocation Baseline & Velocity</span>
               </span>
               <div className="p-2 bg-soc-bg border border-soc-border rounded space-y-1">
                 <div className="text-soc-text font-bold">Home: {locations.home_location?.city}, {locations.home_location?.country} ({locations.home_location?.lat}, {locations.home_location?.lon})</div>
-                <div className="text-[10px] text-soc-muted">Geo-Velocity Baseline: {locations.geo_velocity_kmh} km/h • VPN Usage Count: {locations.vpn_usage_count}</div>
+                <div className="text-[10px] text-soc-muted">Geo-Velocity Baseline: {locations.geo_velocity_kmh} km/h â€¢ VPN Usage Count: {locations.vpn_usage_count}</div>
               </div>
               {locations.impossible_travel_events?.length > 0 && (
-                <div className="p-2 bg-rose-500/10 border border-rose-500/30 text-rose-300 rounded text-[10px]">
+                <div className="p-2 bg-soc-danger/10 border border-soc-danger/30 text-soc-danger rounded text-[10px]">
                   <strong>IMPOSSIBLE TRAVEL EVENT DETECTED:</strong> {locations.impossible_travel_events[0].location} ({locations.impossible_travel_events[0].km_from_home} km from home)
                 </div>
               )}
@@ -240,7 +240,7 @@ export default function DigitalTwinBaseline({ userId = 'usr_abc' }) {
           </div>
           <div className="p-3 bg-soc-panel border border-soc-border rounded-lg space-y-1">
             <span className="text-[10px] text-soc-dim uppercase">Distance to Known Mule Ring</span>
-            <div className={`font-bold text-sm ${graph.distance_to_known_mule_ring <= 1 ? 'text-rose-400 animate-pulse' : 'text-emerald-400'}`}>
+            <div className={`font-bold text-sm ${graph.distance_to_known_mule_ring <= 1 ? 'text-soc-danger animate-pulse' : 'text-soc-success'}`}>
               {graph.distance_to_known_mule_ring <= 1 ? '1 HOP (DIRECT RISK)' : `${graph.distance_to_known_mule_ring} HOPS (SAFE)`}
             </div>
           </div>
@@ -267,14 +267,14 @@ export default function DigitalTwinBaseline({ userId = 'usr_abc' }) {
           </div>
           <div className="p-3 bg-soc-panel border border-soc-border rounded-lg space-y-1">
             <span className="text-[10px] text-soc-dim uppercase font-bold flex items-center gap-1">
-              <DollarSign className="w-3.5 h-3.5 text-amber-400" />
+              <DollarSign className="w-3.5 h-3.5 text-soc-warning" />
               <span>Predicted Transaction Range</span>
             </span>
             <div className="text-soc-text font-bold">{predictions.predicted_next_amount_range}</div>
           </div>
           <div className="p-3 bg-soc-panel border border-soc-border rounded-lg space-y-1">
             <span className="text-[10px] text-soc-dim uppercase font-bold flex items-center gap-1">
-              <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+              <Sparkles className="w-3.5 h-3.5 text-soc-success" />
               <span>Likely Merchant Target</span>
             </span>
             <div className="text-soc-text font-bold">{predictions.likely_merchant}</div>
@@ -302,4 +302,5 @@ export default function DigitalTwinBaseline({ userId = 'usr_abc' }) {
     </div>
   );
 }
+
 

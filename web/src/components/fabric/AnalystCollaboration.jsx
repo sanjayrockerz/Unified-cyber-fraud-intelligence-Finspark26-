@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { MessageSquare, Users, Pin, Send, UserCheck, Clock } from 'lucide-react';
 
 export default function AnalystCollaboration({ caseId }) {
@@ -57,7 +57,7 @@ export default function AnalystCollaboration({ caseId }) {
         />
         <button
           onClick={handlePostComment}
-          className="px-3 py-1.5 bg-soc-primary hover:bg-blue-600 text-white rounded font-bold flex items-center gap-1 transition-colors shadow"
+          className="px-3 py-1.5 bg-soc-primary hover:bg-soc-primary text-soc-onPrimary rounded font-bold flex items-center gap-1 transition-colors shadow"
         >
           <Send className="w-3.5 h-3.5" />
           <span>Post</span>
@@ -66,3 +66,4 @@ export default function AnalystCollaboration({ caseId }) {
     </div>
   );
 }
+

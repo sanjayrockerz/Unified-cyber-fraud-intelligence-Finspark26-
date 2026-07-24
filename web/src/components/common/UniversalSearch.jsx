@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Search, User, Shield, Server, CreditCard, X, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -47,7 +47,7 @@ export default function UniversalSearch({ isOpen, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 bg-black/70 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 bg-soc-overlay/70 backdrop-blur-sm">
       <div className="w-full max-w-2xl bg-soc-surface border border-soc-border rounded-xl shadow-2xl overflow-hidden">
         {/* Search Input Bar */}
         <div className="flex items-center px-4 py-3 border-b border-soc-border bg-soc-panel">
@@ -87,7 +87,7 @@ export default function UniversalSearch({ isOpen, onClose }) {
                   className="flex items-center justify-between p-3 rounded-lg hover:bg-soc-panel cursor-pointer transition-colors border border-transparent hover:border-soc-border group"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-md bg-soc-bg border border-soc-border text-soc-primary group-hover:text-white group-hover:border-soc-primary transition-colors">
+                    <div className="p-2 rounded-md bg-soc-bg border border-soc-border text-soc-primary group-hover:text-soc-onPrimary group-hover:border-soc-primary transition-colors">
                       {item.type === 'user' && <User className="w-4 h-4" />}
                       {item.type === 'account' && <CreditCard className="w-4 h-4" />}
                       {item.type === 'ip' && <Server className="w-4 h-4" />}
@@ -113,11 +113,12 @@ export default function UniversalSearch({ isOpen, onClose }) {
 
         {/* Footer */}
         <div className="flex items-center justify-between px-4 py-2 bg-soc-panel/50 border-t border-soc-border text-[11px] text-soc-dim font-mono">
-          <span>Navigate with <kbd className="px-1 py-0.5 bg-soc-bg border border-soc-border rounded">↑</kbd> <kbd className="px-1 py-0.5 bg-soc-bg border border-soc-border rounded">↓</kbd></span>
-          <span>Open with <kbd className="px-1 py-0.5 bg-soc-bg border border-soc-border rounded">↵ Enter</kbd></span>
+          <span>Navigate with <kbd className="px-1 py-0.5 bg-soc-bg border border-soc-border rounded">â†‘</kbd> <kbd className="px-1 py-0.5 bg-soc-bg border border-soc-border rounded">â†“</kbd></span>
+          <span>Open with <kbd className="px-1 py-0.5 bg-soc-bg border border-soc-border rounded">â†µ Enter</kbd></span>
           <span>Close with <kbd className="px-1 py-0.5 bg-soc-bg border border-soc-border rounded">Esc</kbd></span>
         </div>
       </div>
     </div>
   );
 }
+

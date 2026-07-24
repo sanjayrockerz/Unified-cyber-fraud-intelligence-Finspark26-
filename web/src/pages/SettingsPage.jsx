@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { Sliders, Save, ShieldAlert, Cpu } from 'lucide-react';
 
 export default function SettingsPage() {
@@ -23,8 +23,8 @@ export default function SettingsPage() {
       <div className="bg-soc-surface border border-soc-border rounded-xl p-4 max-w-2xl space-y-4">
         <div>
           <label className="text-xs font-mono text-soc-muted flex justify-between mb-1">
-            <span>BLOCK Verdict Cutoff Threshold (Score ≥ N):</span>
-            <span className="text-rose-400 font-bold font-mono">{blockThreshold}/100</span>
+            <span>BLOCK Verdict Cutoff Threshold (Score â‰¥ N):</span>
+            <span className="text-soc-danger font-bold font-mono">{blockThreshold}/100</span>
           </label>
           <input
             type="range"
@@ -38,8 +38,8 @@ export default function SettingsPage() {
 
         <div>
           <label className="text-xs font-mono text-soc-muted flex justify-between mb-1">
-            <span>CHALLENGE Verdict Cutoff Threshold (Score ≥ N):</span>
-            <span className="text-amber-400 font-bold font-mono">{challengeThreshold}/100</span>
+            <span>CHALLENGE Verdict Cutoff Threshold (Score â‰¥ N):</span>
+            <span className="text-soc-warning font-bold font-mono">{challengeThreshold}/100</span>
           </label>
           <input
             type="range"
@@ -67,7 +67,7 @@ export default function SettingsPage() {
           />
         </div>
 
-        <button className="px-4 py-2 bg-soc-primary hover:bg-blue-600 text-white rounded text-xs font-mono font-bold flex items-center gap-2 transition-colors mt-4">
+        <button className="px-4 py-2 bg-soc-primary hover:bg-soc-primary text-soc-onPrimary rounded text-xs font-mono font-bold flex items-center gap-2 transition-colors mt-4">
           <Save className="w-4 h-4" />
           <span>Save Policy Configuration</span>
         </button>
@@ -75,3 +75,4 @@ export default function SettingsPage() {
     </div>
   );
 }
+

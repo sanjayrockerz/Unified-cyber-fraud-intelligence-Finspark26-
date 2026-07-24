@@ -1,7 +1,7 @@
-import React from 'react';
+﻿import React from 'react';
 import { FileCheck2, Download, ShieldAlert, FileText, CheckCircle2 } from 'lucide-react';
 
-const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8001' : 'https://fusion.example.invalid');
+const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8001' : '');
 
 export default function ReportsPage() {
   const handleDownload = async () => {
@@ -49,7 +49,7 @@ export default function ReportsPage() {
 
         <button
           onClick={handleDownload}
-          className="px-4 py-2 bg-soc-primary hover:bg-blue-600 text-white rounded-lg text-xs font-mono font-bold flex items-center gap-2 transition-colors shadow"
+          className="px-4 py-2 bg-soc-primary hover:bg-soc-primary text-soc-onPrimary rounded-lg text-xs font-mono font-bold flex items-center gap-2 transition-colors shadow"
         >
           <Download className="w-4 h-4" />
           <span>Export Sample CERT-In PDF</span>
@@ -64,7 +64,7 @@ export default function ReportsPage() {
         <div className="space-y-2 font-mono text-xs">
           <div className="p-3 bg-soc-bg border border-soc-border rounded-lg flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <FileText className="w-5 h-5 text-rose-400" />
+              <FileText className="w-5 h-5 text-soc-danger" />
               <div>
                 <div className="font-bold text-soc-text">CERT-In_Report_txn_demo_999.pdf</div>
                 <div className="text-soc-muted text-[11px]">User: usr_abc | Amount: INR 750,000.00 | Score: 94</div>
@@ -79,3 +79,4 @@ export default function ReportsPage() {
     </div>
   );
 }
+

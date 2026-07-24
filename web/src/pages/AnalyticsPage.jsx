@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { 
   BarChart3, 
   TrendingUp, 
@@ -37,7 +37,7 @@ export default function AnalyticsPage() {
   const [selectedConfig, setSelectedConfig] = useState('full_fusion');
 
   useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8001' : 'https://fusion.example.invalid')}/metrics/evaluate`)
+    fetch(`${import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8001' : '')}/metrics/evaluate`)
       .then(r => r.json())
       .then(data => {
         if (data.error) setEvalError(true);
@@ -47,7 +47,7 @@ export default function AnalyticsPage() {
   }, []);
 
   useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8001' : 'https://fusion.example.invalid')}/metrics/cost?fn_cost=${fnCost}&fp_cost=${fpCost}`)
+    fetch(`${import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8001' : '')}/metrics/cost?fn_cost=${fnCost}&fp_cost=${fpCost}`)
       .then(r => r.json())
       .then(data => {
         if (data.error) setSweepError(true);
@@ -101,22 +101,22 @@ export default function AnalyticsPage() {
   }
 
   const kpis = [
-    { title: 'Intercepted Attack Invocations', val: '14,892 Attacks', sub: '100% In-Flight Block Rate', color: 'text-emerald-400', icon: ShieldAlert },
+    { title: 'Intercepted Attack Invocations', val: '14,892 Attacks', sub: '100% In-Flight Block Rate', color: 'text-soc-success', icon: ShieldAlert },
     { 
       title: 'Fusion Model Recall Uplift', 
       val: headlineUplift, 
       sub: evalData ? `Recall (${(evalData.full_fusion.recall*100).toFixed(1)}% vs ${(evalData.transaction_only.recall*100).toFixed(1)}%)` : (evalError ? 'Metrics Unavailable' : 'Loading...'), 
       color: 'text-soc-primary', icon: TrendingUp 
     },
-    { title: 'Avg Threat Correlation Latency', val: '12 ms', sub: 'LightGBM + IsoForest + GraphSAGE', color: 'text-amber-400', icon: Activity },
-    { title: 'CERT-In Mandate Compliance', val: '100%', sub: 'Avg Incident Report: 14m < 6h Limit', color: 'text-emerald-400', icon: FileCheck2 }
+    { title: 'Avg Threat Correlation Latency', val: '12 ms', sub: 'LightGBM + IsoForest + GraphSAGE', color: 'text-soc-warning', icon: Activity },
+    { title: 'CERT-In Mandate Compliance', val: '100%', sub: 'Avg Incident Report: 14m < 6h Limit', color: 'text-soc-success', icon: FileCheck2 }
   ];
 
   const threatVectors = [
-    { type: 'Impossible Travel Login', pct: 42, count: 6254, severity: 'CRITICAL', color: 'bg-rose-500' },
-    { type: 'Credential Stuffing Botnet', pct: 28, count: 4170, severity: 'CRITICAL', color: 'bg-rose-500' },
-    { type: 'Mule Ring Layering Network', pct: 18, count: 2680, severity: 'HIGH', color: 'bg-amber-500' },
-    { type: 'SIM Swap Interception', pct: 8, count: 1191, severity: 'HIGH', color: 'bg-amber-500' },
+    { type: 'Impossible Travel Login', pct: 42, count: 6254, severity: 'CRITICAL', color: 'bg-soc-danger' },
+    { type: 'Credential Stuffing Botnet', pct: 28, count: 4170, severity: 'CRITICAL', color: 'bg-soc-danger' },
+    { type: 'Mule Ring Layering Network', pct: 18, count: 2680, severity: 'HIGH', color: 'bg-soc-warning' },
+    { type: 'SIM Swap Interception', pct: 8, count: 1191, severity: 'HIGH', color: 'bg-soc-warning' },
     { type: 'MFA Cookie Reuse', pct: 4, count: 597, severity: 'MEDIUM', color: 'bg-soc-primary' }
   ];
 
@@ -183,7 +183,7 @@ export default function AnalyticsPage() {
               <h1 className="text-base font-mono font-bold text-soc-text uppercase tracking-wider">
                 Cybersecurity Threat Analytics & AI Model Performance
               </h1>
-              <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-bold border border-emerald-500/30">
+              <span className="text-[10px] px-2 py-0.5 rounded bg-soc-success/20 text-soc-success font-bold border border-soc-success/30">
                 REAL-TIME SIEM TELEMETRY
               </span>
             </div>
@@ -198,7 +198,7 @@ export default function AnalyticsPage() {
                 key={tr}
                 onClick={() => setTimeRange(tr)}
                 className={`px-2.5 py-1 rounded font-bold uppercase transition-all ${
-                  timeRange === tr ? 'bg-soc-primary text-white shadow' : 'text-soc-muted hover:text-soc-text'
+                  timeRange === tr ? 'bg-soc-primary text-soc-onPrimary shadow' : 'text-soc-muted hover:text-soc-text'
                 }`}
               >
                 {tr}
@@ -208,7 +208,7 @@ export default function AnalyticsPage() {
 
           <button
             onClick={handleExportAnalyticsReport}
-            className="px-3.5 py-2 bg-soc-primary hover:bg-blue-600 text-white font-bold rounded-lg flex items-center gap-2 transition-all shadow"
+            className="px-3.5 py-2 bg-soc-primary hover:bg-soc-primary text-soc-onPrimary font-bold rounded-lg flex items-center gap-2 transition-all shadow"
           >
             <Download className="w-4 h-4" />
             <span>Export CERT-In Report</span>
@@ -247,7 +247,7 @@ export default function AnalyticsPage() {
         </div>
 
         {evalError ? (
-          <div className="p-4 text-rose-400 font-bold border border-rose-500/30 rounded bg-rose-500/10">
+          <div className="p-4 text-soc-danger font-bold border border-soc-danger/30 rounded bg-soc-danger/10">
             Metrics Unavailable. Cannot reach evaluation endpoint.
           </div>
         ) : !evalData ? (
@@ -270,7 +270,7 @@ export default function AnalyticsPage() {
                     <tr key={idx} className="hover:bg-soc-panel/60">
                       <td className="py-2.5 px-3 font-bold text-soc-text">{m.metric}</td>
                       <td className="py-2.5 px-3 text-soc-muted">{m.baseline}</td>
-                      <td className="py-2.5 px-3 font-bold text-emerald-400">{m.fusion}</td>
+                      <td className="py-2.5 px-3 font-bold text-soc-success">{m.fusion}</td>
                       <td className="py-2.5 px-3 text-right font-bold text-soc-primary">{m.uplift}</td>
                     </tr>
                   ))}
@@ -281,7 +281,7 @@ export default function AnalyticsPage() {
             {/* UPLIFT SUMMARY BADGE (4/12) */}
             <div className="lg:col-span-4 bg-soc-panel border border-soc-border rounded-xl p-4 space-y-2 text-center">
               <span className="text-[10px] text-soc-muted uppercase font-bold block">Headline Fusion Uplift</span>
-              <div className="text-3xl font-black text-emerald-400 font-mono">{headlineUplift}</div>
+              <div className="text-3xl font-black text-soc-success font-mono">{headlineUplift}</div>
               <p className="text-[11px] text-soc-muted">
                 {recallCompare} when using the Fusion overlay.
               </p>
@@ -302,7 +302,7 @@ export default function AnalyticsPage() {
         </div>
 
         {sweepError ? (
-          <div className="text-rose-400 font-bold p-4 border border-rose-500/30 rounded bg-rose-500/10">Metrics unavailable</div>
+          <div className="text-soc-danger font-bold p-4 border border-soc-danger/30 rounded bg-soc-danger/10">Metrics unavailable</div>
         ) : !sweepData ? (
           <div className="text-soc-muted p-4 animate-pulse">Loading sweep data...</div>
         ) : (
@@ -362,28 +362,28 @@ export default function AnalyticsPage() {
                 <div className="bg-soc-panel border border-soc-border p-3 rounded-lg space-y-2">
                   <div className="text-[10px] text-soc-muted font-bold uppercase border-b border-soc-border pb-1">Live Performance @ T={thresholdInt}</div>
                   <div className="flex justify-between text-xs pt-1">
-                    <span>Precision:</span> <span className="font-bold text-emerald-400">{(currentSweepPt.precision * 100).toFixed(1)}%</span>
+                    <span>Precision:</span> <span className="font-bold text-soc-success">{(currentSweepPt.precision * 100).toFixed(1)}%</span>
                   </div>
                   <div className="flex justify-between text-xs">
-                    <span>Recall:</span> <span className="font-bold text-emerald-400">{(currentSweepPt.recall * 100).toFixed(1)}%</span>
+                    <span>Recall:</span> <span className="font-bold text-soc-success">{(currentSweepPt.recall * 100).toFixed(1)}%</span>
                   </div>
                   <div className="flex justify-between text-xs">
-                    <span>FP Count:</span> <span className="font-bold text-rose-400">{currentSweepPt.FP}</span>
+                    <span>FP Count:</span> <span className="font-bold text-soc-danger">{currentSweepPt.FP}</span>
                   </div>
                   <div className="flex justify-between text-xs">
-                    <span>FN Count:</span> <span className="font-bold text-rose-400">{currentSweepPt.FN}</span>
+                    <span>FN Count:</span> <span className="font-bold text-soc-danger">{currentSweepPt.FN}</span>
                   </div>
                   <div className="flex justify-between text-xs border-t border-soc-border pt-1 mt-1">
-                    <span>Total Cost (INR):</span> <span className="font-bold text-amber-400">₹{currentSweepPt.total_cost.toLocaleString()}</span>
+                    <span>Total Cost (INR):</span> <span className="font-bold text-soc-warning">â‚¹{currentSweepPt.total_cost.toLocaleString()}</span>
                   </div>
                   
                   <div className="pt-2">
                     <div className="text-[10px] text-soc-muted font-bold uppercase mb-1">Confusion Matrix</div>
                     <div className="grid grid-cols-2 gap-1 text-[10px] text-center font-mono">
-                      <div className="bg-emerald-500/10 border border-emerald-500/20 p-1 rounded">TN: {totalNeg - currentSweepPt.FP}</div>
-                      <div className="bg-rose-500/10 border border-rose-500/20 p-1 rounded">FP: {currentSweepPt.FP}</div>
-                      <div className="bg-rose-500/10 border border-rose-500/20 p-1 rounded">FN: {currentSweepPt.FN}</div>
-                      <div className="bg-emerald-500/10 border border-emerald-500/20 p-1 rounded">TP: {totalPos - currentSweepPt.FN}</div>
+                      <div className="bg-soc-success/10 border border-soc-success/20 p-1 rounded">TN: {totalNeg - currentSweepPt.FP}</div>
+                      <div className="bg-soc-danger/10 border border-soc-danger/20 p-1 rounded">FP: {currentSweepPt.FP}</div>
+                      <div className="bg-soc-danger/10 border border-soc-danger/20 p-1 rounded">FN: {currentSweepPt.FN}</div>
+                      <div className="bg-soc-success/10 border border-soc-success/20 p-1 rounded">TP: {totalPos - currentSweepPt.FN}</div>
                     </div>
                   </div>
                 </div>
@@ -396,10 +396,10 @@ export default function AnalyticsPage() {
                 <LineChart data={chartData} margin={{ top: 20, right: 20, left: 20, bottom: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#2D3748" />
                   <XAxis dataKey="threshold" stroke="#A0AEC0" tick={{fontSize: 10}} label={{ value: 'Threshold (0-100)', position: 'insideBottom', offset: -10, fill: '#A0AEC0', fontSize: 10 }} />
-                  <YAxis stroke="#A0AEC0" tick={{fontSize: 10}} tickFormatter={(v) => '₹' + (v/1000).toFixed(0) + 'k'} width={60} />
+                  <YAxis stroke="#A0AEC0" tick={{fontSize: 10}} tickFormatter={(v) => 'â‚¹' + (v/1000).toFixed(0) + 'k'} width={60} />
                   <RechartsTooltip 
                     contentStyle={{ backgroundColor: '#1A202C', borderColor: '#2D3748', fontSize: '11px', fontFamily: 'monospace', borderRadius: '8px' }}
-                    formatter={(value, name) => ['₹' + value.toLocaleString(), name]}
+                    formatter={(value, name) => ['â‚¹' + value.toLocaleString(), name]}
                     labelFormatter={(label) => `Threshold: ${label}`}
                   />
                   <Legend verticalAlign="top" height={36} iconType="circle" wrapperStyle={{ fontSize: '11px', fontWeight: 'bold' }}/>
@@ -420,7 +420,7 @@ export default function AnalyticsPage() {
         <div className="lg:col-span-6 bg-soc-surface border border-soc-border rounded-xl p-4 shadow-lg space-y-3">
           <div className="flex items-center justify-between border-b border-soc-border pb-3">
             <h3 className="text-xs font-mono font-bold text-soc-text uppercase tracking-wider flex items-center gap-2">
-              <Radio className="w-4 h-4 text-rose-400 animate-pulse" />
+              <Radio className="w-4 h-4 text-soc-danger animate-pulse" />
               <span>SIEM Threat Vector Distribution</span>
             </h3>
             <span className="text-[10px] text-soc-muted">14,892 Events</span>
@@ -445,10 +445,10 @@ export default function AnalyticsPage() {
         <div className="lg:col-span-6 bg-soc-surface border border-soc-border rounded-xl p-4 shadow-lg space-y-3">
           <div className="flex items-center justify-between border-b border-soc-border pb-3">
             <h3 className="text-xs font-mono font-bold text-soc-text uppercase tracking-wider flex items-center gap-2">
-              <Clock className="w-4 h-4 text-amber-400" />
+              <Clock className="w-4 h-4 text-soc-warning" />
               <span>Hourly Attack Velocity Surge Timeline</span>
             </h3>
-            <span className="text-[10px] text-amber-400 font-bold">Peak: 04:00 IST</span>
+            <span className="text-[10px] text-soc-warning font-bold">Peak: 04:00 IST</span>
           </div>
 
           <div className="h-[180px] flex items-end gap-2 pt-4 px-2">
@@ -457,12 +457,12 @@ export default function AnalyticsPage() {
               const isPeak = h.attacks >= 1000;
               return (
                 <div key={idx} className="flex-1 flex flex-col items-center gap-1 group relative">
-                  <div className="opacity-0 group-hover:opacity-100 absolute -top-8 bg-slate-900 border border-soc-border text-soc-text text-[9px] px-1.5 py-0.5 rounded font-mono pointer-events-none transition-all z-10 whitespace-nowrap">
+                  <div className="opacity-0 group-hover:opacity-100 absolute -top-8 bg-soc-panel border border-soc-border text-soc-text text-[9px] px-1.5 py-0.5 rounded font-mono pointer-events-none transition-all z-10 whitespace-nowrap">
                     {h.hour}: {h.attacks} attacks
                   </div>
                   <div 
                     className={`w-full rounded-t transition-all ${
-                      isPeak ? 'bg-rose-500 hover:bg-rose-400' : 'bg-soc-primary hover:bg-blue-400'
+                      isPeak ? 'bg-soc-danger hover:bg-soc-danger' : 'bg-soc-primary hover:bg-soc-primary'
                     }`} 
                     style={{ height: `${heightPct}%` }}
                   />
@@ -483,7 +483,7 @@ export default function AnalyticsPage() {
               <Globe className="w-4 h-4 text-soc-primary" />
               <span>Malicious Origin Geo & Proxy Telemetry</span>
             </h3>
-            <span className="text-[10px] text-emerald-400 font-bold">84.2% Proxy/VPN Rate</span>
+            <span className="text-[10px] text-soc-success font-bold">84.2% Proxy/VPN Rate</span>
           </div>
 
           <div className="space-y-2">
@@ -491,7 +491,7 @@ export default function AnalyticsPage() {
               <div key={idx} className="p-2.5 rounded-lg border bg-soc-panel/60 border-soc-border flex items-center justify-between text-[11px]">
                 <div className="flex items-center gap-2">
                   <span className="font-bold text-soc-text">{g.country}</span>
-                  <span className="text-[9px] px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-400 font-bold border border-rose-500/30">
+                  <span className="text-[9px] px-1.5 py-0.2 rounded bg-soc-danger/20 text-soc-danger font-bold border border-soc-danger/30">
                     {g.risk}
                   </span>
                 </div>
@@ -508,7 +508,7 @@ export default function AnalyticsPage() {
         <div className="lg:col-span-6 bg-soc-surface border border-soc-border rounded-xl p-4 shadow-lg space-y-3">
           <div className="flex items-center justify-between border-b border-soc-border pb-3">
             <h3 className="text-xs font-mono font-bold text-soc-text uppercase tracking-wider flex items-center gap-2">
-              <Layers className="w-4 h-4 text-emerald-400" />
+              <Layers className="w-4 h-4 text-soc-success" />
               <span>Global SHAP Threat Drivers (TreeSHAP)</span>
             </h3>
             <span className="text-[10px] text-soc-muted">Top 5 Features</span>
@@ -521,7 +521,7 @@ export default function AnalyticsPage() {
                   <div className="font-bold text-soc-text">{sd.feature}</div>
                   <div className="text-[10px] text-soc-muted mt-0.5">{sd.desc}</div>
                 </div>
-                <span className="font-bold text-rose-400 text-xs px-2 py-0.5 rounded bg-rose-500/10 border border-rose-500/30">
+                <span className="font-bold text-soc-danger text-xs px-2 py-0.5 rounded bg-soc-danger/10 border border-soc-danger/30">
                   {sd.impact}
                 </span>
               </div>
@@ -532,3 +532,4 @@ export default function AnalyticsPage() {
     </div>
   );
 }
+

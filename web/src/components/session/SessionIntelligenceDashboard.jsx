@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+﻿import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { authenticatedWebSocketUrl } from '../../platformAuth';
 import { Clock3, RefreshCw, Search, ShieldCheck, Wifi, WifiOff } from 'lucide-react';
 import Card from '../common/Card';
@@ -6,7 +6,7 @@ import TrustComponentHeatmap from './TrustComponentHeatmap';
 import TrustPassportCard from './TrustPassportCard';
 import TrustTimelineChart from './TrustTimelineChart';
 
-const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8001' : 'https://fusion.example.invalid');
+const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8001' : '');
 const WS_BASE = (import.meta.env.VITE_WS_BASE || API_BASE).replace(/^http/, 'ws');
 
 export default function SessionIntelligenceDashboard() {
@@ -138,12 +138,12 @@ export default function SessionIntelligenceDashboard() {
     <div className="space-y-4">
       <div className="grid gap-3 sm:grid-cols-3">
         <Metric label="Live sessions" value={activeCount} icon={ShieldCheck} />
-        <Metric label="Backend latency" value={latency === null ? '—' : `${latency} ms`} icon={Clock3} />
+        <Metric label="Backend latency" value={latency === null ? 'â€”' : `${latency} ms`} icon={Clock3} />
         <Metric label="Trust stream" value={connectionState} icon={connectionState === 'LIVE' ? Wifi : WifiOff} />
       </div>
 
       {error && (
-        <div className="rounded-lg border border-rose-500/40 bg-rose-500/10 px-4 py-3 text-xs text-rose-200">
+        <div className="rounded-lg border border-soc-danger/40 bg-soc-danger/10 px-4 py-3 text-xs text-soc-danger">
           {error}
         </div>
       )}
@@ -258,15 +258,15 @@ function EventList({ title, rows, empty, recovery = false }) {
           <div key={row.delta_id} className="rounded-lg border border-soc-border bg-soc-bg p-3">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-bold uppercase text-soc-text">{row.component}</span>
-              <span className={`font-mono text-xs font-black ${row.difference > 0 ? 'text-emerald-300' : 'text-rose-300'}`}>
+              <span className={`font-mono text-xs font-black ${row.difference > 0 ? 'text-soc-success' : 'text-soc-danger'}`}>
                 {row.difference > 0 ? '+' : ''}{Number(row.difference).toFixed(1)}
               </span>
             </div>
             <div className="mt-1 text-[10px] text-soc-muted">
-              {Number(row.previous_trust).toFixed(1)} → {Number(row.current_trust).toFixed(1)}
+              {Number(row.previous_trust).toFixed(1)} â†’ {Number(row.current_trust).toFixed(1)}
             </div>
             <div className="mt-1 text-[10px] text-soc-muted">{row.reason}</div>
-            {recovery && <span className="mt-2 inline-block rounded bg-emerald-500/10 px-1.5 py-0.5 text-[9px] text-emerald-300">RECOVERED</span>}
+            {recovery && <span className="mt-2 inline-block rounded bg-soc-success/10 px-1.5 py-0.5 text-[9px] text-soc-success">RECOVERED</span>}
           </div>
         ))}
       </div>
@@ -291,7 +291,7 @@ function HistoryTable({ snapshots }) {
                   <td className="py-2">{new Date(snapshot.timestamp).toLocaleTimeString()}</td>
                   <td>{snapshot.event_type}</td>
                   <td>{Number(snapshot.current_trust).toFixed(1)}</td>
-                  <td className={snapshot.delta >= 0 ? 'text-emerald-300' : 'text-rose-300'}>
+                  <td className={snapshot.delta >= 0 ? 'text-soc-success' : 'text-soc-danger'}>
                     {snapshot.delta > 0 ? '+' : ''}{Number(snapshot.delta).toFixed(1)}
                   </td>
                 </tr>
@@ -303,3 +303,4 @@ function HistoryTable({ snapshots }) {
     </Card>
   );
 }
+

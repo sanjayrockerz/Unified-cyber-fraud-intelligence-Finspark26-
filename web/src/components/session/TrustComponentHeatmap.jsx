@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import Card from '../common/Card';
 
 const order = ['identity', 'device', 'runtime', 'behaviour', 'network', 'geo', 'threat', 'graph', 'transaction'];
@@ -25,8 +25,8 @@ export default function TrustComponentHeatmap({ components = {} }) {
             >
               <div className="text-[10px] uppercase tracking-wider text-soc-muted">{name}</div>
               <div className="mt-2 flex items-end justify-between">
-                <span className="text-xl font-black text-soc-text">{component ? value.toFixed(0) : '—'}</span>
-                <span className={`text-[10px] font-bold ${difference > 0 ? 'text-emerald-300' : difference < 0 ? 'text-rose-300' : 'text-soc-muted'}`}>
+                <span className="text-xl font-black text-soc-text">{component ? value.toFixed(0) : 'â€”'}</span>
+                <span className={`text-[10px] font-bold ${difference > 0 ? 'text-soc-success' : difference < 0 ? 'text-soc-danger' : 'text-soc-muted'}`}>
                   {component ? `${difference > 0 ? '+' : ''}${difference.toFixed(1)}` : ''}
                 </span>
               </div>
@@ -44,3 +44,4 @@ export default function TrustComponentHeatmap({ components = {} }) {
     </Card>
   );
 }
+

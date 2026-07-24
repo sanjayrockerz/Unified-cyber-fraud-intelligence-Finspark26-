@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { authenticatedWebSocketUrl } from '../../platformAuth';
 import { 
   ShieldAlert, 
@@ -49,7 +49,7 @@ import InvestigationIntelligencePanel from './InvestigationIntelligencePanel';
 import QuantumTrustPanel from '../quantum/QuantumTrustPanel';
 
 
-const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8001' : 'https://fusion.example.invalid');
+const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8001' : '');
 
 
 const WS_BASE = API_BASE.replace(/^http/, 'ws');
@@ -188,29 +188,29 @@ export default function InvestigationWorkbench({ caseId = 'CASE-2026-8942' }) {
   };
 
   return (
-    <div className="flex flex-col gap-4 max-w-[1850px] mx-auto select-none font-sans text-soc-text">
+    <div className="flex w-full min-w-0 flex-col gap-4 max-w-[1850px] mx-auto select-none font-sans text-soc-text">
       
       {/* 1. TOP METADATA & REPLAY CONTROL STRIP */}
       <div className="bg-soc-surface border border-soc-border rounded-xl p-4 flex flex-wrap items-center justify-between gap-4 shadow-xl">
-        <div className="flex items-center gap-4">
-          <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl">
-            <ShieldAlert className="w-6 h-6 text-rose-400 animate-pulse" />
+        <div className="flex min-w-0 items-center gap-4">
+          <div className="p-3 bg-soc-danger/10 border border-soc-danger/30 rounded-xl">
+            <ShieldAlert className="w-6 h-6 text-soc-danger animate-pulse" />
           </div>
-          <div>
-            <div className="flex items-center gap-2">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
               <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded bg-soc-bg border border-soc-border text-soc-muted">
                 FUSION INVESTIGATION WORKBENCH #{caseId}
               </span>
               <span className="text-xs font-mono text-soc-dim">Incident SLA: 03m 22s Remaining</span>
             </div>
-            <h1 className="text-lg font-mono font-black text-soc-text tracking-wide mt-0.5 flex items-center gap-3">
+            <h1 className="mt-0.5 flex flex-wrap items-center gap-3 text-lg font-mono font-black tracking-wide text-soc-text">
               ACCOUNT TAKEOVER & INR 7.5L UPI FRAUD TRANSFER
               <EnterpriseBadge action={activeEvalPayload.action} score={activeEvalPayload.score} size="sm" />
             </h1>
           </div>
         </div>
 
-        <div className="flex items-center gap-6 font-mono text-xs">
+        <div className="flex flex-wrap items-center justify-end gap-4 font-mono text-xs">
           <div className="hidden xl:flex flex-col border-r border-soc-border pr-6">
             <span className="text-[10px] text-soc-dim uppercase">Target Customer</span>
             <span className="font-bold text-soc-text">usr_abc (ACC_ABC_123)</span>
@@ -222,16 +222,16 @@ export default function InvestigationWorkbench({ caseId = 'CASE-2026-8942' }) {
           </div>
 
           <div className="flex items-center gap-2 bg-soc-bg border border-soc-border px-3 py-1.5 rounded-lg shadow-inner">
-            <button onClick={startSynchronizedReplay} className="p-1 text-soc-primary hover:text-blue-400 transition-colors" title="Restart Replay">
+            <button onClick={startSynchronizedReplay} className="p-1 text-soc-primary hover:text-soc-primary transition-colors" title="Restart Replay">
               <RotateCcw className="w-4 h-4" />
             </button>
-            <button onClick={() => setIsPlaying(!isPlaying)} className="p-1 text-soc-text hover:text-white transition-colors">
-              {isPlaying ? <Pause className="w-4 h-4 text-amber-400" /> : <Play className="w-4 h-4 text-emerald-400" />}
+            <button onClick={() => setIsPlaying(!isPlaying)} className="p-1 text-soc-text hover:text-soc-onPrimary transition-colors">
+              {isPlaying ? <Pause className="w-4 h-4 text-soc-warning" /> : <Play className="w-4 h-4 text-soc-success" />}
             </button>
             <span className="text-[11px] text-soc-muted">Replay: <strong className="text-soc-text">10:00:40 IST</strong></span>
           </div>
 
-          <button onClick={handleDownloadCertInReport} className="px-3.5 py-2 bg-soc-primary hover:bg-blue-600 text-white rounded-lg font-bold flex items-center gap-2 transition-colors shadow">
+          <button onClick={handleDownloadCertInReport} className="px-3.5 py-2 bg-soc-primary hover:bg-soc-primary text-soc-onPrimary rounded-lg font-bold flex items-center gap-2 transition-colors shadow">
             <Download className="w-4 h-4" />
             <span>CERT-In PDF</span>
           </button>
@@ -257,16 +257,16 @@ export default function InvestigationWorkbench({ caseId = 'CASE-2026-8942' }) {
       {/* 4. MAIN THREE-PANE OPERATIONAL WORKSPACE */}
 
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+      <div className="grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-12">
         
         {/* LEFT PANEL: CYBER SIEM TELEMETRY (3/12) */}
-        <div className="lg:col-span-3 bg-soc-surface border border-soc-border rounded-xl p-3 flex flex-col h-[520px] shadow-lg">
+        <div className="min-w-0 lg:col-span-3 bg-soc-surface border border-soc-border rounded-xl p-3 flex flex-col h-[520px] shadow-lg">
           <div className="flex items-center justify-between border-b border-soc-border pb-2 mb-3">
             <span className="text-xs font-mono font-bold text-soc-text uppercase tracking-wider flex items-center gap-2">
-              <Radio className="w-4 h-4 text-rose-400" />
+              <Radio className="w-4 h-4 text-soc-danger" />
               <span>1. SIEM Cyber Telemetry</span>
             </span>
-            <span className="text-[10px] font-mono text-rose-400 bg-rose-500/10 px-1.5 py-0.5 rounded border border-rose-500/30">
+            <span className="text-[10px] font-mono text-soc-danger bg-soc-danger/10 px-1.5 py-0.5 rounded border border-soc-danger/30">
               {cyberEvents.length} Alerts
             </span>
           </div>
@@ -279,14 +279,14 @@ export default function InvestigationWorkbench({ caseId = 'CASE-2026-8942' }) {
         </div>
 
         {/* CENTER PANEL: CUSTOMER 360 & NEO4J THREAT GRAPH STUDIO (6/12) */}
-        <div className="lg:col-span-6 flex flex-col gap-4 h-[520px]">
+        <div className="min-w-0 lg:col-span-6 flex flex-col gap-4 h-[520px]">
           <div className="flex-1 bg-soc-surface border border-soc-border rounded-xl overflow-hidden shadow-lg">
             <Neo4jGraphStudio graphData={graphData} />
           </div>
         </div>
 
         {/* RIGHT PANEL: CORE BANKING LEDGER (3/12) */}
-        <div className="lg:col-span-3 bg-soc-surface border border-soc-border rounded-xl p-3 flex flex-col h-[520px] shadow-lg">
+        <div className="min-w-0 lg:col-span-3 bg-soc-surface border border-soc-border rounded-xl p-3 flex flex-col h-[520px] shadow-lg">
           <div className="flex items-center justify-between border-b border-soc-border pb-2 mb-3">
             <span className="text-xs font-mono font-bold text-soc-text uppercase tracking-wider flex items-center gap-2">
               <Landmark className="w-4 h-4 text-soc-primary" />
@@ -347,3 +347,4 @@ export default function InvestigationWorkbench({ caseId = 'CASE-2026-8942' }) {
     </div>
   );
 }
+

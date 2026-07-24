@@ -6,8 +6,8 @@
 
 body {
   margin: 0;
-  background-color: var(--soc-bg-primary);
-  color: var(--soc-text-primary);
+  background-color: rgb(var(--soc-bg-primary));
+  color: rgb(var(--soc-text-primary));
   font-family: var(--soc-font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -20,18 +20,27 @@ body {
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--soc-bg-primary);
+  background: rgb(var(--soc-bg-primary));
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--soc-border-default);
+  background: rgb(var(--soc-border-default));
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--soc-brand-primary);
+  background: rgb(var(--soc-brand-primary));
 }
 
 /* Monospace Utilities */
 .font-mono-code {
   font-family: var(--soc-font-mono);
   letter-spacing: -0.02em;
+}
+
+@keyframes verdict-arrival {
+  0%, 100% { box-shadow: 0 0 0 0 rgb(var(--soc-selection-bg) / 0); }
+  45% { box-shadow: 0 0 0 5px rgb(var(--soc-selection-bg) / 0.16); }
+}
+
+.decision-pulse {
+  animation: verdict-arrival 260ms ease-out;
 }

@@ -223,10 +223,12 @@ class BankingAuthService:
         username = request.username.strip().lower()
         if get(USER_COLLECTION, username):
             raise HTTPException(status_code=409, detail="Username is already registered")
+        default_tenant = os.getenv("FUSION_DEFAULT_TENANT_ID", "TENANT_FUSB_001")
+        default_app = os.getenv("FUSION_DEFAULT_APP_ID", "com.fusionbank.mobileapp")
         user = {
             "username": username, "user_id": f"USR_{uuid.uuid4().hex[:12].upper()}",
             "display_name": request.display_name, "email": request.email, "phone": request.phone,
-            "tenant_id": "TENANT_FUSB_001", "app_id": "com.fusionbank.mobileapp",
+            "tenant_id": default_tenant, "app_id": default_app,
             "password_hash": _password_hash(request.password), "disabled": False,
             "registered_devices": [], "active_sessions": [], "transaction_history": [],
             "known_locations": [], "known_networks": [], "known_beneficiaries": [],

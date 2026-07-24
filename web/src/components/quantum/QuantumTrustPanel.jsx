@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { 
   ShieldCheck, 
   Cpu, 
@@ -19,7 +19,7 @@ import {
   Info
 } from 'lucide-react';
 
-const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8001' : 'https://fusion.example.invalid');
+const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8001' : '');
 
 export default function QuantumTrustPanel() {
   const [readiness, setReadiness] = useState(null);
@@ -90,7 +90,7 @@ export default function QuantumTrustPanel() {
 
   const handleExportReport = (format) => {
     const reportData = {
-      title: "Fusion Quantum Trust Layer — Readiness & PQC Migration Report",
+      title: "Fusion Quantum Trust Layer â€” Readiness & PQC Migration Report",
       generated_at: new Date().toISOString(),
       quantum_readiness: readiness,
       cryptographic_assessment: assessment,
@@ -111,7 +111,7 @@ export default function QuantumTrustPanel() {
   if (loading || !readiness) {
     return (
       <div className="bg-soc-surface border border-soc-border rounded-xl p-4 shadow-lg font-mono text-xs text-soc-dim flex items-center gap-2">
-        <RefreshCw className="w-4 h-4 animate-spin text-cyan-400" />
+        <RefreshCw className="w-4 h-4 animate-spin text-soc-info" />
         <span>Evaluating Enterprise Post-Quantum Cryptographic Posture...</span>
       </div>
     );
@@ -129,7 +129,7 @@ export default function QuantumTrustPanel() {
       {/* 1. QUANTUM TRUST LAYER HEADER STRIP */}
       <div className="p-4 bg-soc-panel border border-soc-border rounded-xl flex flex-wrap items-center justify-between gap-4 shadow-md">
         <div className="flex items-center gap-3">
-          <div className="p-3 bg-cyan-500/10 border border-cyan-500/30 rounded-xl text-cyan-400">
+          <div className="p-3 bg-soc-info/10 border border-soc-info/30 rounded-xl text-soc-info">
             <Cpu className="w-6 h-6 animate-pulse" />
           </div>
           <div>
@@ -137,13 +137,13 @@ export default function QuantumTrustPanel() {
               <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded bg-soc-bg border border-soc-border text-soc-muted">
                 FUSION QUANTUM TRUST LAYER (QTL)
               </span>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-soc-info/20 text-soc-info border border-soc-info/40">
                 NIST PQC ALIGNED
               </span>
             </div>
             <h2 className="text-base font-black text-soc-text tracking-wide mt-1 flex items-center gap-3">
-              QUANTUM READINESS SCORE: <span className="text-cyan-400">{readiness.readiness_score}%</span>
-              <span className="text-xs px-2.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold">
+              QUANTUM READINESS SCORE: <span className="text-soc-info">{readiness.readiness_score}%</span>
+              <span className="text-xs px-2.5 py-0.5 rounded bg-soc-success/20 text-soc-success border border-soc-success/30 font-bold">
                 {readiness.readiness_level}
               </span>
             </h2>
@@ -153,17 +153,17 @@ export default function QuantumTrustPanel() {
         <div className="flex items-center gap-6 text-xs font-mono">
           <div className="flex flex-col border-r border-soc-border pr-6">
             <span className="text-[10px] text-soc-dim uppercase">Crypto Agility</span>
-            <span className="font-bold text-emerald-400 text-[11px]">{readiness.crypto_agility_status}</span>
+            <span className="font-bold text-soc-success text-[11px]">{readiness.crypto_agility_status}</span>
           </div>
 
           <div className="flex flex-col border-r border-soc-border pr-6">
             <span className="text-[10px] text-soc-dim uppercase">PQC Adoption</span>
-            <span className="font-bold text-cyan-400 text-[11px]">{readiness.pqc_adoption_percent}% Active</span>
+            <span className="font-bold text-soc-info text-[11px]">{readiness.pqc_adoption_percent}% Active</span>
           </div>
 
           <button 
             onClick={() => handleExportReport('json')}
-            className="px-3.5 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg font-bold flex items-center gap-2 transition-colors shadow"
+            className="px-3.5 py-2 bg-soc-info hover:bg-soc-info text-soc-onPrimary rounded-lg font-bold flex items-center gap-2 transition-colors shadow"
           >
             <Download className="w-4 h-4" />
             <span>PQC Audit Export</span>
@@ -191,14 +191,14 @@ export default function QuantumTrustPanel() {
               onClick={() => setActiveTab(t.id)}
               className={`px-3 py-1.5 rounded-lg font-bold flex items-center gap-2 transition-all ${
                 isActive 
-                  ? 'bg-cyan-600 text-white shadow' 
+                  ? 'bg-soc-info text-soc-onPrimary shadow' 
                   : 'bg-soc-panel border border-soc-border text-soc-muted hover:text-soc-text hover:border-soc-dim'
               }`}
             >
               <Icon className="w-3.5 h-3.5" />
               <span>{t.label}</span>
               {t.badge !== undefined && (
-                <span className={`text-[9px] px-1.5 py-0.2 rounded font-mono ${isActive ? 'bg-black/20 text-white' : 'bg-soc-bg text-soc-dim'}`}>
+                <span className={`text-[9px] px-1.5 py-0.2 rounded font-mono ${isActive ? 'bg-soc-overlay/20 text-soc-onPrimary' : 'bg-soc-bg text-soc-dim'}`}>
                   {t.badge}
                 </span>
               )}
@@ -219,15 +219,15 @@ export default function QuantumTrustPanel() {
             </div>
             <div className="p-3 bg-soc-panel border border-soc-border rounded-lg space-y-1">
               <span className="text-[10px] text-soc-dim uppercase">Quantum Resistant Assets</span>
-              <div className="text-lg font-bold text-emerald-400">{readiness.quantum_resistant_assets} (ML-KEM / ML-DSA)</div>
+              <div className="text-lg font-bold text-soc-success">{readiness.quantum_resistant_assets} (ML-KEM / ML-DSA)</div>
             </div>
             <div className="p-3 bg-soc-panel border border-soc-border rounded-lg space-y-1">
               <span className="text-[10px] text-soc-dim uppercase">High Quantum Risk Assets</span>
-              <div className="text-lg font-bold text-amber-400">{readiness.high_risk_assets} (RSA-2048 / ECDSA)</div>
+              <div className="text-lg font-bold text-soc-warning">{readiness.high_risk_assets} (RSA-2048 / ECDSA)</div>
             </div>
             <div className="p-3 bg-soc-panel border border-soc-border rounded-lg space-y-1">
               <span className="text-[10px] text-soc-dim uppercase">Certificates Expiring &lt;90d</span>
-              <div className="text-lg font-bold text-rose-400">{readiness.certificates_expiring_90d} Certificates</div>
+              <div className="text-lg font-bold text-soc-danger">{readiness.certificates_expiring_90d} Certificates</div>
             </div>
           </div>
 
@@ -236,7 +236,7 @@ export default function QuantumTrustPanel() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-[11px]">
               <div className="p-2 bg-soc-bg border border-soc-border rounded flex justify-between">
                 <span className="text-soc-muted">Active TLS Version:</span>
-                <span className="text-cyan-300 font-bold">{assessment?.cryptographic_profile?.active_tls_version}</span>
+                <span className="text-soc-info font-bold">{assessment?.cryptographic_profile?.active_tls_version}</span>
               </div>
               <div className="p-2 bg-soc-bg border border-soc-border rounded flex justify-between">
                 <span className="text-soc-muted">Default Key Exchange:</span>
@@ -244,7 +244,7 @@ export default function QuantumTrustPanel() {
               </div>
               <div className="p-2 bg-soc-bg border border-soc-border rounded flex justify-between">
                 <span className="text-soc-muted">Symmetric Encryption:</span>
-                <span className="text-emerald-400 font-bold">{assessment?.cryptographic_profile?.symmetric_encryption}</span>
+                <span className="text-soc-success font-bold">{assessment?.cryptographic_profile?.symmetric_encryption}</span>
               </div>
               <div className="p-2 bg-soc-bg border border-soc-border rounded flex justify-between">
                 <span className="text-soc-muted">PQC Provider Library:</span>
@@ -292,13 +292,13 @@ export default function QuantumTrustPanel() {
                     <span className="font-bold text-soc-text text-[11px]">{item.name}</span>
                     <span className="text-[9px] px-1.5 py-0.2 rounded bg-soc-bg border border-soc-border text-soc-dim">{item.id}</span>
                   </div>
-                  <div className="text-[10px] text-soc-muted">{item.type} • {item.crypto_library} • Expiry: {item.cert_expiry_days} days</div>
+                  <div className="text-[10px] text-soc-muted">{item.type} â€¢ {item.crypto_library} â€¢ Expiry: {item.cert_expiry_days} days</div>
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <span className="text-cyan-300 font-bold text-[11px]">{item.public_key_algo}</span>
+                  <span className="text-soc-info font-bold text-[11px]">{item.public_key_algo}</span>
                   <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
-                    item.pqc_status === 'QUANTUM_RESISTANT' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' : 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                    item.pqc_status === 'QUANTUM_RESISTANT' ? 'bg-soc-success/20 text-soc-success border-soc-success/40' : 'bg-soc-warning/20 text-soc-warning border-soc-warning/40'
                   }`}>
                     {item.pqc_status}
                   </span>
@@ -318,13 +318,13 @@ export default function QuantumTrustPanel() {
               <div key={rec.id} className="p-3 bg-soc-panel border border-soc-border rounded-lg space-y-1.5">
                 <div className="flex justify-between items-center">
                   <span className="font-bold text-soc-text text-[11px]">{rec.title}</span>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/40">{rec.priority}</span>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-soc-danger/20 text-soc-danger border border-soc-danger/40">{rec.priority}</span>
                 </div>
                 <div className="text-[10px] text-soc-muted">{rec.action}</div>
                 <div className="flex items-center gap-4 text-[10px] text-soc-dim">
                   <span>Target: <strong>{rec.target_system}</strong></span>
                   <span>Est Time: <strong>{rec.estimated_time_days} Days</strong></span>
-                  <span>Benefit: <strong className="text-emerald-400">{rec.security_benefit}</strong></span>
+                  <span>Benefit: <strong className="text-soc-success">{rec.security_benefit}</strong></span>
                 </div>
               </div>
             ))}
@@ -335,7 +335,7 @@ export default function QuantumTrustPanel() {
       {/* TAB 7: SIMULATOR */}
       {activeTab === 'simulation' && (
         <div className="p-4 bg-soc-panel border border-soc-border rounded-lg space-y-4 font-mono text-xs">
-          <div className="flex items-center gap-2 text-cyan-400 font-bold border-b border-soc-border pb-2">
+          <div className="flex items-center gap-2 text-soc-info font-bold border-b border-soc-border pb-2">
             <Play className="w-4 h-4" />
             <span>Educational Post-Quantum Impact Simulator (CRQC Threat Scenario)</span>
           </div>
@@ -369,7 +369,7 @@ export default function QuantumTrustPanel() {
               <button
                 onClick={handleRunSimulation}
                 disabled={isSimulating}
-                className="w-full py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded font-bold flex items-center justify-center gap-2 transition-colors shadow"
+                className="w-full py-2 bg-soc-info hover:bg-soc-info text-soc-onPrimary rounded font-bold flex items-center justify-center gap-2 transition-colors shadow"
               >
                 {isSimulating ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4 fill-current" />}
                 <span>RUN SIMULATION</span>
@@ -380,17 +380,17 @@ export default function QuantumTrustPanel() {
           {simResult && (
             <div className="p-3 bg-soc-bg border border-soc-border rounded-lg space-y-2">
               <div className="flex justify-between items-center font-bold">
-                <span className="text-cyan-400">Simulation Result #{simResult.simulation_id} ({simResult.simulated_year})</span>
+                <span className="text-soc-info">Simulation Result #{simResult.simulation_id} ({simResult.simulated_year})</span>
                 <span className="text-soc-text">{simResult.target_asset}</span>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-[11px]">
                 <div className="p-2 bg-soc-panel border border-soc-border rounded">
                   <span className="text-soc-dim block text-[10px]">Shor's Algorithm Factoring Time:</span>
-                  <span className="font-bold text-rose-400">{simResult.quantum_threat_result.shor_factoring_time_minutes}</span>
+                  <span className="font-bold text-soc-danger">{simResult.quantum_threat_result.shor_factoring_time_minutes}</span>
                 </div>
                 <div className="p-2 bg-soc-panel border border-soc-border rounded">
                   <span className="text-soc-dim block text-[10px]">Payload Compromise Risk:</span>
-                  <span className="font-bold text-amber-400">{simResult.quantum_threat_result.payload_compromise_risk}</span>
+                  <span className="font-bold text-soc-warning">{simResult.quantum_threat_result.payload_compromise_risk}</span>
                 </div>
               </div>
               <div className="text-[10px] text-soc-muted italic">{simResult.disclaimer}</div>
@@ -406,7 +406,7 @@ export default function QuantumTrustPanel() {
           <div className="flex items-center gap-3">
             <button
               onClick={() => handleExportReport('json')}
-              className="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded font-bold flex items-center gap-2 transition-colors shadow"
+              className="px-4 py-2 bg-soc-info hover:bg-soc-info text-soc-onPrimary rounded font-bold flex items-center gap-2 transition-colors shadow"
             >
               <Download className="w-4 h-4" />
               <span>Export Quantum Readiness JSON Bundle</span>
@@ -416,7 +416,7 @@ export default function QuantumTrustPanel() {
               onClick={() => handleExportReport('pdf')}
               className="px-4 py-2 bg-soc-bg hover:bg-soc-surface border border-soc-border text-soc-text rounded font-bold flex items-center gap-2 transition-colors"
             >
-              <FileText className="w-4 h-4 text-cyan-400" />
+              <FileText className="w-4 h-4 text-soc-info" />
               <span>Export PQC Migration Executive PDF</span>
             </button>
           </div>
@@ -426,3 +426,4 @@ export default function QuantumTrustPanel() {
     </div>
   );
 }
+

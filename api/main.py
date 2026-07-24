@@ -1,5 +1,7 @@
 import asyncio
 import json
+import math
+import os
 import sys
 import io
 import datetime
@@ -21,6 +23,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from api.scenario_engine import get_all_scenarios_list, generate_scenario
+from api import store
 from api.synthetic_universe.fraud_scenario_engine import generate_bank_universe
 from api.synthetic_universe.graph_generator import generate_graph_topology
 from api.synthetic_universe.exporter import export_dataset_csv, export_dataset_json, export_dataset_replay, export_dataset_parquet_bytes
@@ -343,6 +346,80 @@ scenario_execution_state = {
 
 cached_universe = None
 
+
+def _case_from_transaction(transaction: dict, index: int) -> dict:
+    is_critical = bool(transaction.get("cyber_compromise_in_window"))
+    score = 96 if is_critical else 72
+    return {
+        "case_id": f"CASE-SYN-{index:05d}",
+        "transaction_id": transaction.get("txn_id"),
+        "customer_id": transaction.get("user_id"),
+        "status": "OPEN" if is_critical else "TRIAGE",
+        "severity": "CRITICAL" if is_critical else "HIGH",
+        "score": score,
+        "amount": transaction.get("amount", 0),
+        "created_at": transaction.get("timestamp"),
+        "reason": (
+            "Cyber compromise and mule-network evidence require analyst review."
+            if is_critical
+            else "Elevated transaction risk requires analyst review."
+        ),
+    }
+
+
+def _persist_universe_collections(universe: dict) -> None:
+    """Make explicitly generated synthetic data available to list endpoints."""
+    for customer in universe.get("customers", []):
+        store.put("customers", customer["customer_id"], customer)
+
+    transactions = universe.get("transactions", [])
+    for transaction in transactions:
+        store.put("transactions", transaction["txn_id"], transaction)
+
+    case_index = 0
+    for transaction in transactions:
+        if transaction.get("cyber_compromise_in_window") or transaction.get("amount", 0) >= 250000:
+            case_index += 1
+            case = _case_from_transaction(transaction, case_index)
+            store.put("cases", case["case_id"], case)
+
+
+def _paginated_collection(
+    collection: str,
+    page: int,
+    page_size: int,
+    sort: str,
+    q: str,
+    status: str | None = None,
+    severity: str | None = None,
+) -> dict:
+    sort_desc = sort.startswith("-")
+    sort_key = sort.lstrip("-") or None
+    normalized_query = q.casefold().strip()
+
+    def matches(item: dict) -> bool:
+        if status and str(item.get("status", "")).casefold() != status.casefold():
+            return False
+        if severity and str(item.get("severity", "")).casefold() != severity.casefold():
+            return False
+        return not normalized_query or normalized_query in json.dumps(item, default=str).casefold()
+
+    items, total = store.list_paginated(
+        collection,
+        page=page,
+        page_size=page_size,
+        sort_key=sort_key,
+        sort_desc=sort_desc,
+        filter_fn=matches,
+    )
+    return {
+        "items": items,
+        "page": page,
+        "page_size": page_size,
+        "total": total,
+        "total_pages": math.ceil(total / page_size) if total else 0,
+    }
+
 class CreateBankRequest(BaseModel):
     bank_name: str = "Fusion National Bank"
     bank_code: str = "FUSB"
@@ -374,7 +451,48 @@ async def generate_synthetic_bank_universe(req: UniverseGenerateRequest):
     graph_topology = generate_graph_topology(universe)
     universe["graph_topology"] = graph_topology
     cached_universe = universe
+    _persist_universe_collections(universe)
     return universe
+
+
+@app.get("/transactions")
+async def list_transactions(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=100),
+    sort: str = "-timestamp",
+    q: str = "",
+):
+    return _paginated_collection("transactions", page, page_size, sort, q)
+
+
+@app.get("/cases")
+async def list_cases(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=100),
+    sort: str = "-created_at",
+    q: str = "",
+    status: str | None = None,
+    severity: str | None = None,
+):
+    return _paginated_collection("cases", page, page_size, sort, q, status, severity)
+
+
+@app.get("/customers")
+async def list_customers(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=100),
+    sort: str = "customer_id",
+    q: str = "",
+):
+    return _paginated_collection("customers", page, page_size, sort, q)
+
+
+@app.on_event("startup")
+async def seed_demo_scale_data_when_requested():
+    if os.environ.get("SEED_DEMO_SCALE") != "1":
+        return
+    universe = generate_bank_universe(num_customers=500, num_txns=5000, seed=42)
+    _persist_universe_collections(universe)
 
 @app.get("/synthetic/universe/preview")
 async def preview_universe(sample_size: int = 10):

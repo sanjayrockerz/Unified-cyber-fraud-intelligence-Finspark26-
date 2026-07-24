@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { ShieldCheck, Database, Lock } from 'lucide-react';
 
 export default function TrustFabricLedgerBadge({ ledgerRecord }) {
@@ -7,7 +7,7 @@ export default function TrustFabricLedgerBadge({ ledgerRecord }) {
   return (
     <div className="bg-soc-panel border border-soc-border rounded-xl p-3 flex flex-col gap-2 font-mono text-xs text-soc-text">
       <div className="flex items-center gap-2 border-b border-soc-border pb-2">
-        <ShieldCheck className="w-4 h-4 text-emerald-400" />
+        <ShieldCheck className="w-4 h-4 text-soc-success" />
         <span className="font-bold text-soc-muted uppercase tracking-wider">Trust Fabric Ledger</span>
       </div>
       <div className="flex flex-col gap-1">
@@ -21,7 +21,7 @@ export default function TrustFabricLedgerBadge({ ledgerRecord }) {
         </div>
         <div className="flex justify-between items-center text-[10px]">
           <span className="text-soc-muted">Status:</span>
-          <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-400 rounded-full font-bold">
+          <span className="px-2 py-0.5 bg-soc-success/20 text-soc-success rounded-full font-bold">
             {ledgerRecord.status || 'VERIFIED'}
           </span>
         </div>
@@ -29,3 +29,4 @@ export default function TrustFabricLedgerBadge({ ledgerRecord }) {
     </div>
   );
 }
+

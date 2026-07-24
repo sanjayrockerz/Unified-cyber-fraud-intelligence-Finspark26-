@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { Upload, FileText, Check, ArrowRight, X, Sliders } from 'lucide-react';
 
 export default function CSVSchemaMapperModal({ isOpen, onClose, onIngest }) {
@@ -34,7 +34,7 @@ export default function CSVSchemaMapperModal({ isOpen, onClose, onIngest }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn font-mono">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-soc-overlay/80 backdrop-blur-sm animate-fadeIn font-mono">
       <div className="w-full max-w-2xl bg-soc-surface border border-soc-border rounded-xl shadow-2xl overflow-hidden flex flex-col select-none">
         
         {/* Header */}
@@ -109,7 +109,7 @@ export default function CSVSchemaMapperModal({ isOpen, onClose, onIngest }) {
           <span className="text-[11px] text-soc-muted">Automatic normalization into Fusion Runtime</span>
           <button
             onClick={handleCompleteIngest}
-            className="px-4 py-2 bg-soc-primary hover:bg-blue-600 text-white rounded font-mono font-bold text-xs flex items-center gap-2 shadow"
+            className="px-4 py-2 bg-soc-primary hover:bg-soc-primary text-soc-onPrimary rounded font-mono font-bold text-xs flex items-center gap-2 shadow"
           >
             <Check className="w-4 h-4" />
             <span>Ingest into Pipeline</span>
@@ -119,3 +119,4 @@ export default function CSVSchemaMapperModal({ isOpen, onClose, onIngest }) {
     </div>
   );
 }
+

@@ -1,18 +1,18 @@
-import React from 'react';
+﻿import React from 'react';
 import { Activity, ShieldCheck, Wifi } from 'lucide-react';
 
 export default function StatusBar() {
   return (
-    <div className="h-6 bg-soc-surface border-t border-soc-border px-4 flex items-center justify-between text-[10px] font-mono text-soc-dim select-none z-30">
-      <div className="flex items-center gap-4">
-        <span className="flex items-center gap-1 text-emerald-400">
+    <div className="flex h-6 items-center justify-between overflow-hidden border-t border-soc-border bg-soc-surface px-3 text-[10px] font-mono text-soc-dim select-none sm:px-4">
+      <div className="flex min-w-0 items-center gap-2 sm:gap-4">
+        <span className="flex items-center gap-1 text-soc-success">
           <Wifi className="w-3 h-3" />
-          <span>WebSocket Stream Connected (port 8001)</span>
+          <span className="truncate">WebSocket stream connected<span className="hidden sm:inline"> (port 8001)</span></span>
         </span>
-        <span>SLA Target: &lt;50ms</span>
+        <span className="hidden sm:inline">SLA Target: &lt;50ms</span>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="hidden items-center gap-4 lg:flex">
         <span>FPR Budget: 0.48% / 0.50%</span>
         <span>Graph Engine: NetworkX / Neo4j Aura</span>
         <span className="text-soc-muted">Fusion Risk OS Enterprise v2.6</span>
@@ -20,3 +20,4 @@ export default function StatusBar() {
     </div>
   );
 }
+

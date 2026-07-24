@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { Sparkles, ArrowRight, ShieldAlert, CheckCircle2 } from 'lucide-react';
 
 export default function NarrativeAIStoryteller({ activeTxn, evaluation }) {
@@ -19,7 +19,7 @@ export default function NarrativeAIStoryteller({ activeTxn, evaluation }) {
         <div className="flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-soc-primary" />
           <h3 className="text-xs font-mono font-bold text-soc-text uppercase tracking-wider">
-            Narrative AI Storyteller — Step-by-Step Investigation Story
+            Narrative AI Storyteller â€” Step-by-Step Investigation Story
           </h3>
         </div>
         <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-soc-surface text-soc-muted border border-soc-border">
@@ -33,9 +33,9 @@ export default function NarrativeAIStoryteller({ activeTxn, evaluation }) {
           <React.Fragment key={idx}>
             <div className={`p-3 rounded-lg border flex-1 min-w-[140px] text-xs ${
               step.status === 'danger'
-                ? 'bg-rose-500/10 border-rose-500/40 text-rose-400 font-bold'
+                ? 'bg-soc-danger/10 border-soc-danger/40 text-soc-danger font-bold'
                 : step.status === 'warning'
-                ? 'bg-amber-500/10 border-amber-500/40 text-amber-400 font-bold'
+                ? 'bg-soc-warning/10 border-soc-warning/40 text-soc-warning font-bold'
                 : 'bg-soc-surface border-soc-border text-soc-text'
             }`}>
               <div className="text-[10px] text-soc-dim uppercase font-semibold mb-0.5">{step.label}</div>
@@ -51,3 +51,4 @@ export default function NarrativeAIStoryteller({ activeTxn, evaluation }) {
     </div>
   );
 }
+

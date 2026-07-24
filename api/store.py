@@ -52,6 +52,33 @@ def list_all(collection: str) -> list:
         cur.execute("SELECT value FROM store WHERE collection = ?", (collection,))
         return [json.loads(row[0]) for row in cur.fetchall()]
 
+def list_paginated(
+    collection: str,
+    page: int,
+    page_size: int,
+    sort_key: str | None = None,
+    sort_desc: bool = True,
+    filter_fn=None,
+) -> tuple[list[dict], int]:
+    """Return one bounded, optionally filtered page from a collection snapshot."""
+    normalized_page = max(1, int(page))
+    normalized_page_size = min(max(1, int(page_size)), 100)
+    items = list_all(collection)
+
+    if filter_fn is not None:
+        items = [item for item in items if filter_fn(item)]
+
+    if sort_key:
+        items.sort(
+            key=lambda item: str(item.get(sort_key, "")).casefold(),
+            reverse=sort_desc,
+        )
+
+    total = len(items)
+    start = (normalized_page - 1) * normalized_page_size
+    end = start + normalized_page_size
+    return items[start:end], total
+
 def put_raw(collection: str, key: str, value: str):
     with _lock:
         conn = get_conn()

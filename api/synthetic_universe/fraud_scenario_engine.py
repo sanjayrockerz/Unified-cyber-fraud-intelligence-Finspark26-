@@ -164,10 +164,10 @@ def generate_bank_universe(
             "atm_count": bank_meta["atm_terminals_count"],
             "employees_count": bank_meta["employees_count"]
         },
-        "customers": customers[:50], # Sample preview
-        "accounts": accounts[:50],
-        "devices": devices[:50],
-        "locations": locations[:50],
+        "customers": customers,
+        "accounts": accounts,
+        "devices": devices,
+        "locations": locations,
         "transactions": transactions,
         "cyber_events": cyber_events,
         "scenarios_available": SCENARIO_CATALOG

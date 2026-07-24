@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { 
   ShieldCheck, 
   Activity, 
@@ -86,7 +86,7 @@ export default function InvestigationTrustPanel({ trustData, action = 'BLOCK' })
           <div>
             <h2 className="text-xs font-mono font-bold text-soc-text uppercase tracking-wider flex items-center gap-2">
               <span>Investigation Trust Index (ITI)</span>
-              <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-bold border border-emerald-500/30">
+              <span className="text-[10px] px-2 py-0.5 rounded bg-soc-success/20 text-soc-success font-bold border border-soc-success/30">
                 REGULATOR READY
               </span>
             </h2>
@@ -100,7 +100,7 @@ export default function InvestigationTrustPanel({ trustData, action = 'BLOCK' })
         <div className="flex items-center gap-3 bg-soc-bg px-4 py-2 rounded-xl border border-soc-border">
           <div className="text-right">
             <div className="text-[9px] text-soc-muted uppercase font-bold">Investigation Trust</div>
-            <div className="text-lg font-black font-mono text-emerald-400">
+            <div className="text-lg font-black font-mono text-soc-success">
               {iti} <span className="text-xs text-soc-muted font-normal">/ 100</span>
             </div>
           </div>
@@ -123,7 +123,7 @@ export default function InvestigationTrustPanel({ trustData, action = 'BLOCK' })
             <FileText className="w-4 h-4 text-soc-primary" />
           </div>
           <div className="my-1.5 flex items-baseline justify-between">
-            <span className={`text-xl font-bold font-mono ${isEqsComplete ? 'text-emerald-400' : 'text-amber-400'}`}>
+            <span className={`text-xl font-bold font-mono ${isEqsComplete ? 'text-soc-success' : 'text-soc-warning'}`}>
               {eqs.score}%
             </span>
             <span className="text-[10px] text-soc-muted">
@@ -131,7 +131,7 @@ export default function InvestigationTrustPanel({ trustData, action = 'BLOCK' })
             </span>
           </div>
           <div className="w-full bg-soc-bg rounded-full h-1.5 overflow-hidden">
-            <div className="bg-emerald-500 h-full transition-all" style={{ width: `${eqs.score}%` }} />
+            <div className="bg-soc-success h-full transition-all" style={{ width: `${eqs.score}%` }} />
           </div>
         </div>
 
@@ -145,7 +145,7 @@ export default function InvestigationTrustPanel({ trustData, action = 'BLOCK' })
             <span className="text-xl font-bold font-mono text-soc-text">
               {gri.overall_score}%
             </span>
-            <span className="text-[10px] text-emerald-400 font-bold">
+            <span className="text-[10px] text-soc-success font-bold">
               Mule Ring {gri.known_mule_ring_confidence}%
             </span>
           </div>
@@ -158,16 +158,16 @@ export default function InvestigationTrustPanel({ trustData, action = 'BLOCK' })
         <div className="bg-soc-panel border border-soc-border rounded-xl p-3 flex flex-col justify-between">
           <div className="flex justify-between items-start">
             <span className="text-[10px] text-soc-muted font-bold uppercase">Data Quality (SDQS)</span>
-            <Database className="w-4 h-4 text-emerald-400" />
+            <Database className="w-4 h-4 text-soc-success" />
           </div>
           <div className="my-1.5 flex items-baseline justify-between">
-            <span className="text-xl font-bold font-mono text-emerald-400">
+            <span className="text-xl font-bold font-mono text-soc-success">
               95.4 / 100
             </span>
             <span className="text-[10px] text-soc-muted">10 Dimensions</span>
           </div>
           <div className="w-full bg-soc-bg rounded-full h-1.5 overflow-hidden">
-            <div className="bg-emerald-400 h-full transition-all" style={{ width: `95.4%` }} />
+            <div className="bg-soc-success h-full transition-all" style={{ width: `95.4%` }} />
           </div>
         </div>
 
@@ -175,18 +175,18 @@ export default function InvestigationTrustPanel({ trustData, action = 'BLOCK' })
         <div className="bg-soc-panel border border-soc-border rounded-xl p-3 flex flex-col justify-between">
           <div className="flex justify-between items-start">
             <span className="text-[10px] text-soc-muted font-bold uppercase">Primary Threat Vector</span>
-            <Radio className="w-4 h-4 text-rose-400 animate-pulse" />
+            <Radio className="w-4 h-4 text-soc-danger animate-pulse" />
           </div>
           <div className="my-1.5 flex items-baseline justify-between">
-            <span className="text-sm font-bold font-mono text-rose-400 truncate">
+            <span className="text-sm font-bold font-mono text-soc-danger truncate">
               Account Takeover
             </span>
-            <span className="text-sm font-bold text-rose-400">
+            <span className="text-sm font-bold text-soc-danger">
               96%
             </span>
           </div>
           <div className="w-full bg-soc-bg rounded-full h-1.5 overflow-hidden">
-            <div className="bg-rose-500 h-full transition-all" style={{ width: `96%` }} />
+            <div className="bg-soc-danger h-full transition-all" style={{ width: `96%` }} />
           </div>
         </div>
 
@@ -199,7 +199,7 @@ export default function InvestigationTrustPanel({ trustData, action = 'BLOCK' })
         <div className="lg:col-span-6 bg-soc-panel border border-soc-border rounded-xl p-3.5 space-y-2.5">
           <div className="text-[10px] font-bold text-soc-muted uppercase tracking-wider flex items-center justify-between border-b border-soc-border pb-2">
             <span className="flex items-center gap-1.5">
-              <Radio className="w-3.5 h-3.5 text-rose-400" />
+              <Radio className="w-3.5 h-3.5 text-soc-danger" />
               <span>Multi-Class Threat Attribution Probability Distribution</span>
             </span>
             <span className="text-soc-primary font-bold">Competing Hypotheses</span>
@@ -210,14 +210,14 @@ export default function InvestigationTrustPanel({ trustData, action = 'BLOCK' })
               <div key={threat} className="space-y-1">
                 <div className="flex justify-between text-[11px]">
                   <span className="font-bold text-soc-text">{threat}</span>
-                  <span className={`font-bold ${prob >= 80 ? 'text-rose-400' : prob >= 40 ? 'text-amber-400' : 'text-soc-muted'}`}>
+                  <span className={`font-bold ${prob >= 80 ? 'text-soc-danger' : prob >= 40 ? 'text-soc-warning' : 'text-soc-muted'}`}>
                     {prob}%
                   </span>
                 </div>
                 <div className="w-full bg-soc-bg rounded-full h-2 overflow-hidden border border-soc-border/40">
                   <div 
                     className={`h-full transition-all ${
-                      prob >= 80 ? 'bg-rose-500' : prob >= 40 ? 'bg-amber-500' : 'bg-soc-dim/60'
+                      prob >= 80 ? 'bg-soc-danger' : prob >= 40 ? 'bg-soc-warning' : 'bg-soc-dim/60'
                     }`} 
                     style={{ width: `${prob}%` }} 
                   />
@@ -231,16 +231,16 @@ export default function InvestigationTrustPanel({ trustData, action = 'BLOCK' })
         <div className="lg:col-span-6 bg-soc-panel border border-soc-border rounded-xl p-3.5 space-y-2.5">
           <div className="text-[10px] font-bold text-soc-muted uppercase tracking-wider flex items-center justify-between border-b border-soc-border pb-2">
             <span className="flex items-center gap-1.5">
-              <FileText className="w-3.5 h-3.5 text-emerald-400" />
+              <FileText className="w-3.5 h-3.5 text-soc-success" />
               <span>Evidence Package Integrity (EQS)</span>
             </span>
-            <span className={`font-bold ${isEqsComplete ? 'text-emerald-400' : 'text-amber-400'}`}>
+            <span className={`font-bold ${isEqsComplete ? 'text-soc-success' : 'text-soc-warning'}`}>
               {isEqsComplete ? '100% COMPLETE' : 'MISSING ARTIFACTS'}
             </span>
           </div>
 
           {!isEqsComplete && (
-            <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[11px] font-mono flex items-center gap-2">
+            <div className="p-2.5 rounded-lg bg-soc-warning/10 border border-soc-warning/30 text-soc-warning text-[11px] font-mono flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 shrink-0" />
               <span>Missing Artifacts: <strong>{eqs.missing_items.join(', ')}</strong></span>
             </div>
@@ -251,14 +251,14 @@ export default function InvestigationTrustPanel({ trustData, action = 'BLOCK' })
               <div 
                 key={idx} 
                 className={`p-2 rounded-lg border flex items-center justify-between ${
-                  item.present ? 'bg-soc-surface border-soc-border text-soc-text' : 'bg-rose-500/10 border-rose-500/30 text-rose-400'
+                  item.present ? 'bg-soc-surface border-soc-border text-soc-text' : 'bg-soc-danger/10 border-soc-danger/30 text-soc-danger'
                 }`}
               >
                 <span className="font-bold truncate">{item.name}</span>
                 {item.present ? (
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                  <CheckCircle2 className="w-3.5 h-3.5 text-soc-success shrink-0" />
                 ) : (
-                  <XCircle className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+                  <XCircle className="w-3.5 h-3.5 text-soc-danger shrink-0" />
                 )}
               </div>
             ))}
@@ -270,3 +270,4 @@ export default function InvestigationTrustPanel({ trustData, action = 'BLOCK' })
     </div>
   );
 }
+

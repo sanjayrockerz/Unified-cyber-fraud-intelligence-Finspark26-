@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 
 export default function IconButton({ 
   icon: Icon, 
@@ -14,7 +14,7 @@ export default function IconButton({
   const variants = {
     ghost: 'text-soc-muted hover:text-soc-text hover:bg-soc-panel',
     bordered: 'bg-soc-bg border border-soc-border hover:border-soc-primary text-soc-muted hover:text-soc-text',
-    primary: 'bg-soc-primary hover:bg-blue-600 text-white'
+    primary: 'bg-soc-primary hover:bg-soc-primary text-soc-onPrimary'
   };
 
   const sizes = {
@@ -34,3 +34,4 @@ export default function IconButton({
     </button>
   );
 }
+

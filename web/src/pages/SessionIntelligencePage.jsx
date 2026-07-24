@@ -4,7 +4,7 @@ import SessionIntelligenceDashboard from '../components/session/SessionIntellige
 
 export default function SessionIntelligencePage() {
   return (
-    <PageContainer title="Enterprise Session Intelligence">
+    <PageContainer>
       <SessionIntelligenceDashboard />
     </PageContainer>
   );

@@ -2,6 +2,8 @@ import hashlib
 import hmac
 import json
 
+import pytest
+
 from fastapi.testclient import TestClient
 
 from api.main import app
@@ -36,7 +38,19 @@ def test_roles_are_enforced():
     assert response.status_code == 403
 
 
-def test_authoritative_sdk_pipeline_reports_explicit_model_and_graph_state():
+def test_authoritative_sdk_pipeline_reports_explicit_model_and_graph_state(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path,
+):
+    # Force ModelRuntime to see an empty directory so the policy-fallback path
+    # is always exercised regardless of whether ml/models/ has been trained.
+    from api.platform import model_runtime as mr_module
+    from api.platform.model_runtime import ModelRuntime
+    empty_runtime = ModelRuntime(tmp_path)
+    monkeypatch.setattr(mr_module, "model_runtime", empty_runtime)
+    from api.platform import pipeline as pipe_module
+    monkeypatch.setattr(pipe_module.platform_pipeline, "model_runtime", empty_runtime)
+
     sdk_token = token("fusion-android-dev", "fusion-android-local-only")
     headers = {"Authorization": f"Bearer {sdk_token}"}
     device_id = "device-platform-test"

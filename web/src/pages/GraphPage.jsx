@@ -3,7 +3,7 @@ import { Share2 } from 'lucide-react';
 import Neo4jGraphStudio from '../components/graph/Neo4jGraphStudio';
 
 const API_BASE = import.meta.env.VITE_API_BASE
-  || (import.meta.env.DEV ? 'http://localhost:8001' : 'https://fusion.example.invalid');
+  || (import.meta.env.DEV ? 'http://localhost:8001' : '');
 
 export default function GraphPage() {
   const [runtime, setRuntime] = useState({

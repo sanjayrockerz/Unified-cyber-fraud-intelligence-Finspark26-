@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { authenticatedWebSocketUrl } from '../../platformAuth';
 import {
   Code2, Terminal, Zap, Globe, Shield, Radio, Play, Download,
@@ -7,20 +7,20 @@ import {
   Copy, ExternalLink, Server, Lock, Layers
 } from 'lucide-react';
 
-const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8001' : 'https://fusion.example.invalid');
+const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8001' : '');
 const WS_BASE = (import.meta.env.VITE_WS_BASE || API_BASE).replace(/^http/, 'ws');
 
-// ─── Syntax-highlight JSON for the API Explorer ───
+// â”€â”€â”€ Syntax-highlight JSON for the API Explorer â”€â”€â”€
 function JsonBlock({ data }) {
   const str = JSON.stringify(data, null, 2);
   return (
-    <pre className="bg-soc-bg border border-soc-border rounded-lg p-3 text-[11px] font-mono text-emerald-300 overflow-x-auto max-h-60">
+    <pre className="bg-soc-bg border border-soc-border rounded-lg p-3 text-[11px] font-mono text-soc-success overflow-x-auto max-h-60">
       {str}
     </pre>
   );
 }
 
-// ─── Code snippet block with copy ───
+// â”€â”€â”€ Code snippet block with copy â”€â”€â”€
 function CodeSnippet({ code, lang = 'kotlin' }) {
   const [copied, setCopied] = useState(false);
   const copy = () => {
@@ -30,12 +30,12 @@ function CodeSnippet({ code, lang = 'kotlin' }) {
   };
   return (
     <div className="relative">
-      <pre className="bg-[#0d1117] border border-soc-border rounded-lg p-3 text-[11px] font-mono text-cyan-200 overflow-x-auto leading-relaxed">
+      <pre className="bg-[#0d1117] border border-soc-border rounded-lg p-3 text-[11px] font-mono text-soc-info overflow-x-auto leading-relaxed">
         {code}
       </pre>
       <button
         onClick={copy}
-        className="absolute top-2 right-2 px-2 py-1 text-[10px] bg-soc-panel border border-soc-border rounded text-soc-muted hover:text-white transition-colors flex items-center gap-1"
+        className="absolute top-2 right-2 px-2 py-1 text-[10px] bg-soc-panel border border-soc-border rounded text-soc-muted hover:text-soc-onPrimary transition-colors flex items-center gap-1"
       >
         <Copy className="w-3 h-3" />
         {copied ? 'Copied!' : 'Copy'}
@@ -44,7 +44,7 @@ function CodeSnippet({ code, lang = 'kotlin' }) {
   );
 }
 
-const KOTLIN_INIT = `// Fusion Adaptive Trust SDK — Kotlin Integration
+const KOTLIN_INIT = `// Fusion Adaptive Trust SDK â€” Kotlin Integration
 import com.fusion.sdk.Fusion
 import com.fusion.sdk.FusionConfig
 
@@ -244,7 +244,7 @@ export default function FATSDKDeveloperPortal() {
   if (loading) {
     return (
       <div className="bg-soc-surface border border-soc-border rounded-xl p-4 shadow-lg font-mono text-xs text-soc-dim flex items-center gap-2">
-        <RefreshCw className="w-4 h-4 animate-spin text-cyan-400" />
+        <RefreshCw className="w-4 h-4 animate-spin text-soc-info" />
         <span>Loading Fusion Adaptive Trust SDK Developer Platform...</span>
       </div>
     );
@@ -265,37 +265,37 @@ export default function FATSDKDeveloperPortal() {
     <div className="bg-soc-surface border border-soc-border rounded-xl p-4 shadow-xl select-none font-mono text-xs text-soc-text space-y-4">
 
       {/* HEADER */}
-      <div className="p-4 bg-gradient-to-r from-cyan-950/60 to-soc-panel border border-cyan-500/20 rounded-xl flex flex-wrap items-center justify-between gap-4 shadow-md">
+      <div className="p-4 bg-gradient-to-r from-cyan-950/60 to-soc-panel border border-soc-info/20 rounded-xl flex flex-wrap items-center justify-between gap-4 shadow-md">
         <div className="flex items-center gap-3">
-          <div className="p-3 bg-cyan-500/20 border border-cyan-500/40 rounded-xl">
-            <Code2 className="w-6 h-6 text-cyan-400" />
+          <div className="p-3 bg-soc-info/20 border border-soc-info/40 rounded-xl">
+            <Code2 className="w-6 h-6 text-soc-info" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/30">
-                FUSION ADAPTIVE TRUST SDK — DEVELOPER PLATFORM
+              <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-soc-info/10 text-soc-info border border-soc-info/30">
+                FUSION ADAPTIVE TRUST SDK â€” DEVELOPER PLATFORM
               </span>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-soc-success/20 text-soc-success border border-soc-success/30">
                 FAT-SDK v2.4.1
               </span>
             </div>
             <h2 className="text-base font-black text-soc-text tracking-wide mt-1">
-              ENTERPRISE BANKING SECURITY SDK — STRIPE-CLASS DEVELOPER EXPERIENCE
+              ENTERPRISE BANKING SECURITY SDK â€” STRIPE-CLASS DEVELOPER EXPERIENCE
             </h2>
           </div>
         </div>
         <div className="flex items-center gap-6 text-xs">
           <div className="flex flex-col border-r border-soc-border pr-6">
             <span className="text-[10px] text-soc-dim uppercase">SDK Health</span>
-            <span className="font-bold text-emerald-400">{health?.sdk_health}</span>
+            <span className="font-bold text-soc-success">{health?.sdk_health}</span>
           </div>
           <div className="flex flex-col border-r border-soc-border pr-6">
             <span className="text-[10px] text-soc-dim uppercase">Connected Apps</span>
-            <span className="font-bold text-cyan-400">{health?.connected_apps}</span>
+            <span className="font-bold text-soc-info">{health?.connected_apps}</span>
           </div>
           <div className="flex flex-col">
             <span className="text-[10px] text-soc-dim uppercase">Avg Latency</span>
-            <span className="font-bold text-amber-400">{health?.average_latency_ms} ms</span>
+            <span className="font-bold text-soc-warning">{health?.average_latency_ms} ms</span>
           </div>
         </div>
       </div>
@@ -308,7 +308,7 @@ export default function FATSDKDeveloperPortal() {
           return (
             <button key={t.id} onClick={() => setActiveTab(t.id)}
               className={`px-3 py-1.5 rounded-lg font-bold flex items-center gap-2 transition-all ${
-                isActive ? 'bg-cyan-600 text-white shadow' : 'bg-soc-panel border border-soc-border text-soc-muted hover:text-soc-text'
+                isActive ? 'bg-soc-info text-soc-onPrimary shadow' : 'bg-soc-panel border border-soc-border text-soc-muted hover:text-soc-text'
               }`}
             >
               <Icon className="w-3.5 h-3.5" />
@@ -318,15 +318,15 @@ export default function FATSDKDeveloperPortal() {
         })}
       </div>
 
-      {/* ── OVERVIEW ── */}
+      {/* â”€â”€ OVERVIEW â”€â”€ */}
       {activeTab === 'overview' && (
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
             {[
-              { label: 'Active Sessions', value: health?.active_sessions, color: 'text-cyan-400', sub: 'Concurrent SDK sessions' },
-              { label: 'Events Processed', value: health?.total_events_processed, color: 'text-emerald-400', sub: 'Total ingested events' },
-              { label: 'Queued Events', value: health?.queued_events, color: 'text-amber-400', sub: 'Pending delivery' },
-              { label: 'Trust Sync Status', value: health?.trust_sync_status, color: 'text-purple-400', sub: 'Passport synchronization' },
+              { label: 'Active Sessions', value: health?.active_sessions, color: 'text-soc-info', sub: 'Concurrent SDK sessions' },
+              { label: 'Events Processed', value: health?.total_events_processed, color: 'text-soc-success', sub: 'Total ingested events' },
+              { label: 'Queued Events', value: health?.queued_events, color: 'text-soc-warning', sub: 'Pending delivery' },
+              { label: 'Trust Sync Status', value: health?.trust_sync_status, color: 'text-soc-quantum', sub: 'Passport synchronization' },
             ].map((m, i) => (
               <div key={i} className="p-3 bg-soc-panel border border-soc-border rounded-lg">
                 <span className="text-[10px] text-soc-dim uppercase">{m.label}</span>
@@ -342,7 +342,7 @@ export default function FATSDKDeveloperPortal() {
             <div className="flex flex-wrap items-center gap-2 text-[11px] font-bold">
               {['Bank Mobile App', 'FAT-SDK', 'Fusion Event Stream', 'Fusion Risk OS', 'Trust Passport', 'Decision API', 'Bank Backend', 'Core Banking'].map((step, i, arr) => (
                 <React.Fragment key={step}>
-                  <span className="px-2.5 py-1.5 bg-soc-bg border border-cyan-500/30 text-cyan-300 rounded-lg">{step}</span>
+                  <span className="px-2.5 py-1.5 bg-soc-bg border border-soc-info/30 text-soc-info rounded-lg">{step}</span>
                   {i < arr.length - 1 && <ChevronRight className="w-3 h-3 text-soc-dim" />}
                 </React.Fragment>
               ))}
@@ -351,10 +351,10 @@ export default function FATSDKDeveloperPortal() {
 
           {/* Privacy guarantees */}
           <div className="p-4 bg-soc-panel border border-soc-border rounded-lg">
-            <span className="text-[10px] text-soc-dim uppercase font-bold block mb-2">Privacy Guarantees — What the SDK NEVER Collects</span>
+            <span className="text-[10px] text-soc-dim uppercase font-bold block mb-2">Privacy Guarantees â€” What the SDK NEVER Collects</span>
             <div className="flex flex-wrap gap-2">
               {['Passwords', 'OTPs', 'Account Numbers', 'Card Numbers', 'Screen Content', 'User Input Text', 'PAN / Aadhaar'].map(item => (
-                <span key={item} className="px-2 py-1 text-[10px] bg-rose-500/10 text-rose-300 border border-rose-500/30 rounded font-bold flex items-center gap-1">
+                <span key={item} className="px-2 py-1 text-[10px] bg-soc-danger/10 text-soc-danger border border-soc-danger/30 rounded font-bold flex items-center gap-1">
                   <AlertTriangle className="w-3 h-3" /> NEVER: {item}
                 </span>
               ))}
@@ -363,7 +363,7 @@ export default function FATSDKDeveloperPortal() {
         </div>
       )}
 
-      {/* ── QUICK START ── */}
+      {/* â”€â”€ QUICK START â”€â”€ */}
       {activeTab === 'quickstart' && (
         <div className="space-y-4">
           <div className="p-3 bg-soc-panel border border-soc-border rounded-lg">
@@ -387,7 +387,7 @@ export default function FATSDKDeveloperPortal() {
         </div>
       )}
 
-      {/* ── ANDROID SDK ── */}
+      {/* â”€â”€ ANDROID SDK â”€â”€ */}
       {activeTab === 'sdk' && (
         <div className="space-y-3">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -401,13 +401,13 @@ export default function FATSDKDeveloperPortal() {
               return (
                 <div key={i} className="p-3 bg-soc-panel border border-soc-border rounded-lg space-y-1">
                   <div className="flex items-center gap-2 font-bold text-soc-text text-[11px] border-b border-soc-border pb-2 mb-2">
-                    <Icon className="w-4 h-4 text-cyan-400" />
+                    <Icon className="w-4 h-4 text-soc-info" />
                     <span>{mod.title}</span>
                   </div>
                   <ul className="space-y-0.5">
                     {mod.items.map(item => (
                       <li key={item} className="text-[10px] text-soc-muted flex items-center gap-1.5">
-                        <CheckCircle2 className="w-3 h-3 text-emerald-400 shrink-0" />
+                        <CheckCircle2 className="w-3 h-3 text-soc-success shrink-0" />
                         {item}
                       </li>
                     ))}
@@ -420,14 +420,14 @@ export default function FATSDKDeveloperPortal() {
             <span className="text-[10px] text-soc-dim uppercase font-bold block mb-2">Module 7: Supported Event Types ({KOTLIN_EVENTS_LIST.length} Events)</span>
             <div className="flex flex-wrap gap-1.5">
               {KOTLIN_EVENTS_LIST.map(evt => (
-                <span key={evt} className="px-2 py-1 text-[10px] bg-soc-bg border border-soc-border text-cyan-300 rounded font-mono">{evt}</span>
+                <span key={evt} className="px-2 py-1 text-[10px] bg-soc-bg border border-soc-border text-soc-info rounded font-mono">{evt}</span>
               ))}
             </div>
           </div>
         </div>
       )}
 
-      {/* ── API EXPLORER ── */}
+      {/* â”€â”€ API EXPLORER â”€â”€ */}
       {activeTab === 'explorer' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div className="space-y-3">
@@ -438,10 +438,10 @@ export default function FATSDKDeveloperPortal() {
                   key={i}
                   onClick={() => setExplorerEndpoint(ep)}
                   className={`w-full p-2 flex items-center gap-3 rounded-lg text-left transition-colors ${
-                    explorerEndpoint.path === ep.path ? 'bg-cyan-600/20 border border-cyan-500/40' : 'bg-soc-panel border border-soc-border hover:border-soc-dim'
+                    explorerEndpoint.path === ep.path ? 'bg-soc-info/20 border border-soc-info/40' : 'bg-soc-panel border border-soc-border hover:border-soc-dim'
                   }`}
                 >
-                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${ep.method === 'POST' ? 'bg-amber-500/20 text-amber-300' : 'bg-emerald-500/20 text-emerald-300'}`}>
+                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${ep.method === 'POST' ? 'bg-soc-warning/20 text-soc-warning' : 'bg-soc-success/20 text-soc-success'}`}>
                     {ep.method}
                   </span>
                   <span className="text-[11px] font-mono text-soc-text">{ep.path}</span>
@@ -455,7 +455,7 @@ export default function FATSDKDeveloperPortal() {
                 <textarea
                   value={explorerPayload}
                   onChange={e => setExplorerPayload(e.target.value)}
-                  className="w-full h-32 bg-soc-bg border border-soc-border rounded-lg p-2 text-[11px] font-mono text-cyan-200 outline-none resize-none"
+                  className="w-full h-32 bg-soc-bg border border-soc-border rounded-lg p-2 text-[11px] font-mono text-soc-info outline-none resize-none"
                 />
               </div>
             )}
@@ -463,7 +463,7 @@ export default function FATSDKDeveloperPortal() {
             <button
               onClick={runExplorer}
               disabled={explorerLoading}
-              className="w-full py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded font-bold flex items-center justify-center gap-2 transition-colors"
+              className="w-full py-2 bg-soc-info hover:bg-soc-info text-soc-onPrimary rounded font-bold flex items-center justify-center gap-2 transition-colors"
             >
               {explorerLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4 fill-current" />}
               <span>SEND REQUEST</span>
@@ -481,13 +481,13 @@ export default function FATSDKDeveloperPortal() {
         </div>
       )}
 
-      {/* ── SDK SHOWCASE SIMULATOR ── */}
+      {/* â”€â”€ SDK SHOWCASE SIMULATOR â”€â”€ */}
       {activeTab === 'simulator' && (
         <div className="space-y-4">
           <div className="p-4 bg-soc-panel border border-soc-border rounded-lg space-y-4">
-            <div className="flex items-center gap-2 text-cyan-400 font-bold border-b border-soc-border pb-2">
+            <div className="flex items-center gap-2 text-soc-info font-bold border-b border-soc-border pb-2">
               <Play className="w-4 h-4" />
-              <span>SDK Showcase — Device & Trust Scenario Simulator</span>
+              <span>SDK Showcase â€” Device & Trust Scenario Simulator</span>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -522,7 +522,7 @@ export default function FATSDKDeveloperPortal() {
                 <button
                   onClick={runSimulator}
                   disabled={simLoading}
-                  className="w-full py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded font-bold flex items-center justify-center gap-2"
+                  className="w-full py-2 bg-soc-info hover:bg-soc-info text-soc-onPrimary rounded font-bold flex items-center justify-center gap-2"
                 >
                   {simLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
                   <span>RUN SHOWCASE</span>
@@ -533,21 +533,21 @@ export default function FATSDKDeveloperPortal() {
             {simResult && (
               <div className="p-3 bg-soc-bg border border-soc-border rounded-lg space-y-2">
                 <div className="flex justify-between items-center">
-                  <span className="font-bold text-cyan-400">Decision #{simResult.decision_id}</span>
+                  <span className="font-bold text-soc-info">Decision #{simResult.decision_id}</span>
                   <span className={`text-[11px] font-bold px-2 py-0.5 rounded border ${
                     simResult.decision === 'ALLOW'
-                      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-                      : 'bg-rose-500/20 text-rose-300 border-rose-500/40'
+                      ? 'bg-soc-success/20 text-soc-success border-soc-success/40'
+                      : 'bg-soc-danger/20 text-soc-danger border-soc-danger/40'
                   }`}>
                     {simResult.decision}
                   </span>
                 </div>
                 <div className="text-[11px] space-y-1">
                   <div className="flex justify-between"><span className="text-soc-dim">Confidence:</span><span className="font-bold text-soc-text">{simResult.confidence}%</span></div>
-                  <div className="flex justify-between"><span className="text-soc-dim">Latency:</span><span className="font-bold text-amber-400">{simResult.decision_latency_ms} ms</span></div>
+                  <div className="flex justify-between"><span className="text-soc-dim">Latency:</span><span className="font-bold text-soc-warning">{simResult.decision_latency_ms} ms</span></div>
                   <div className="flex flex-wrap gap-1 mt-1">
                     {simResult.reason_codes?.map(rc => (
-                      <span key={rc} className="px-1.5 py-0.5 text-[10px] bg-soc-panel border border-soc-border text-rose-300 rounded font-mono">{rc}</span>
+                      <span key={rc} className="px-1.5 py-0.5 text-[10px] bg-soc-panel border border-soc-border text-soc-danger rounded font-mono">{rc}</span>
                     ))}
                   </div>
                 </div>
@@ -557,7 +557,7 @@ export default function FATSDKDeveloperPortal() {
         </div>
       )}
 
-      {/* ── POLICY ENGINE ── */}
+      {/* â”€â”€ POLICY ENGINE â”€â”€ */}
       {activeTab === 'policy' && (
         <div className="space-y-2">
           <span className="text-[10px] text-soc-dim uppercase font-bold block">Active Adaptive Security Policies</span>
@@ -565,32 +565,32 @@ export default function FATSDKDeveloperPortal() {
             <div key={pol.id} className="p-3 bg-soc-panel border border-soc-border rounded-lg flex items-center justify-between">
               <div>
                 <div className="flex items-center gap-2 font-bold text-soc-text text-[11px]">
-                  <Settings className="w-3.5 h-3.5 text-cyan-400" />
+                  <Settings className="w-3.5 h-3.5 text-soc-info" />
                   <span>{pol.name}</span>
                   <span className="text-[9px] font-mono text-soc-dim">{pol.id} v{pol.version}</span>
                 </div>
-                <div className="text-[10px] text-soc-muted">Trigger: <code className="text-amber-300">{pol.trigger}</code></div>
-                <div className="text-[10px] text-soc-muted">Action: <span className="text-rose-300 font-bold">{pol.action}</span></div>
+                <div className="text-[10px] text-soc-muted">Trigger: <code className="text-soc-warning">{pol.trigger}</code></div>
+                <div className="text-[10px] text-soc-muted">Action: <span className="text-soc-danger font-bold">{pol.action}</span></div>
               </div>
               <div className="flex items-center gap-2">
-                <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${pol.priority === 'CRITICAL' ? 'bg-rose-500/20 text-rose-300 border-rose-500/40' : pol.priority === 'HIGH' ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' : 'bg-soc-bg text-soc-muted border-soc-border'}`}>
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${pol.priority === 'CRITICAL' ? 'bg-soc-danger/20 text-soc-danger border-soc-danger/40' : pol.priority === 'HIGH' ? 'bg-soc-warning/20 text-soc-warning border-soc-warning/40' : 'bg-soc-bg text-soc-muted border-soc-border'}`}>
                   {pol.priority}
                 </span>
-                <span className={`w-2 h-2 rounded-full ${pol.active ? 'bg-emerald-400' : 'bg-soc-border'}`} />
+                <span className={`w-2 h-2 rounded-full ${pol.active ? 'bg-soc-success' : 'bg-soc-border'}`} />
               </div>
             </div>
           ))}
         </div>
       )}
 
-      {/* ── INTEGRATION MONITOR ── */}
+      {/* â”€â”€ INTEGRATION MONITOR â”€â”€ */}
       {activeTab === 'monitor' && (
         <div className="space-y-3">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {[
-              { label: 'Active Sessions', value: health?.active_sessions, color: 'text-cyan-400' },
-              { label: 'Avg Latency', value: `${health?.average_latency_ms} ms`, color: 'text-amber-400' },
-              { label: 'Dropped Events', value: health?.dropped_events, color: 'text-emerald-400' },
+              { label: 'Active Sessions', value: health?.active_sessions, color: 'text-soc-info' },
+              { label: 'Avg Latency', value: `${health?.average_latency_ms} ms`, color: 'text-soc-warning' },
+              { label: 'Dropped Events', value: health?.dropped_events, color: 'text-soc-success' },
             ].map((m, i) => (
               <div key={i} className="p-3 bg-soc-panel border border-soc-border rounded-lg">
                 <span className="text-[10px] text-soc-dim uppercase">{m.label}</span>
@@ -601,8 +601,8 @@ export default function FATSDKDeveloperPortal() {
           <div className="rounded-lg border border-soc-border bg-soc-panel p-3">
             <div className="mb-2 flex items-center justify-between">
               <span className="text-[10px] font-bold uppercase text-soc-dim">Live Trust Passport Stream</span>
-              <span className={`flex items-center gap-1 text-[10px] font-bold ${trustStreamState === 'LIVE' ? 'text-emerald-400' : 'text-amber-400'}`}>
-                <span className={`h-2 w-2 rounded-full ${trustStreamState === 'LIVE' ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
+              <span className={`flex items-center gap-1 text-[10px] font-bold ${trustStreamState === 'LIVE' ? 'text-soc-success' : 'text-soc-warning'}`}>
+                <span className={`h-2 w-2 rounded-full ${trustStreamState === 'LIVE' ? 'bg-soc-success animate-pulse' : 'bg-soc-warning'}`} />
                 {trustStreamState}
               </span>
             </div>
@@ -615,8 +615,8 @@ export default function FATSDKDeveloperPortal() {
                 <div key={`${update.session_id}-${update.passport?.updated_time}-${index}`} className="rounded border border-soc-border bg-soc-bg p-2">
                   <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0">
-                      <div className="truncate text-[10px] font-bold text-cyan-300">{update.session_id}</div>
-                      <div className="text-[9px] text-soc-muted">{update.event_type} • {update.passport?.current_status}</div>
+                      <div className="truncate text-[10px] font-bold text-soc-info">{update.session_id}</div>
+                      <div className="text-[9px] text-soc-muted">{update.event_type} â€¢ {update.passport?.current_status}</div>
                     </div>
                     <div className="text-right">
                       <div className="text-base font-black text-soc-text">{Number(update.passport?.overall_trust ?? 0).toFixed(1)}</div>
@@ -625,7 +625,7 @@ export default function FATSDKDeveloperPortal() {
                   </div>
                   {update.deltas?.length > 0 && (
                     <div className="mt-1 truncate text-[9px] text-soc-muted">
-                      {update.deltas.map((delta) => `${delta.component} ${delta.difference > 0 ? '+' : ''}${Number(delta.difference).toFixed(1)}`).join(' • ')}
+                      {update.deltas.map((delta) => `${delta.component} ${delta.difference > 0 ? '+' : ''}${Number(delta.difference).toFixed(1)}`).join(' â€¢ ')}
                     </div>
                   )}
                 </div>
@@ -637,7 +637,7 @@ export default function FATSDKDeveloperPortal() {
             {liveEvents.length > 0 ? liveEvents.map(evt => (
               <div key={evt.event_id} className="p-2 bg-soc-panel border border-soc-border rounded text-[11px] flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 font-mono text-[10px]">{evt.event_type}</span>
+                  <span className="px-1.5 py-0.5 rounded bg-soc-info/10 text-soc-info border border-soc-info/20 font-mono text-[10px]">{evt.event_type}</span>
                   <span className="text-soc-dim">{evt.session_id}</span>
                 </div>
                 <div className="flex items-center gap-3">
@@ -647,14 +647,14 @@ export default function FATSDKDeveloperPortal() {
               </div>
             )) : (
               <div className="p-4 bg-soc-panel border border-soc-border rounded text-soc-dim text-[11px] text-center">
-                No events yet — run the SDK Showcase to generate events.
+                No events yet â€” run the SDK Showcase to generate events.
               </div>
             )}
           </div>
         </div>
       )}
 
-      {/* ── CONNECTED APPS ── */}
+      {/* â”€â”€ CONNECTED APPS â”€â”€ */}
       {activeTab === 'apps' && (
         <div className="space-y-2">
           <span className="text-[10px] text-soc-dim uppercase font-bold block">Connected Application Registry</span>
@@ -662,23 +662,23 @@ export default function FATSDKDeveloperPortal() {
             <div key={app.app_id} className="p-3 bg-soc-panel border border-soc-border rounded-lg flex flex-wrap items-center justify-between gap-2">
               <div>
                 <div className="font-bold text-soc-text text-[11px] flex items-center gap-2">
-                  <Smartphone className="w-3.5 h-3.5 text-cyan-400" />
+                  <Smartphone className="w-3.5 h-3.5 text-soc-info" />
                   <span>{app.name}</span>
                 </div>
-                <div className="text-[10px] text-soc-muted">{app.app_id} • {app.platform} • {app.sdk_version}</div>
+                <div className="text-[10px] text-soc-muted">{app.app_id} â€¢ {app.platform} â€¢ {app.sdk_version}</div>
                 <div className="text-[10px] text-soc-dim">Last heartbeat: {app.last_heartbeat}</div>
               </div>
               <div className="flex items-center gap-4 text-[11px]">
                 <div className="text-right">
                   <div className="text-soc-muted text-[10px]">Events Today</div>
-                  <div className="font-bold text-cyan-400">{app.events_today.toLocaleString()}</div>
+                  <div className="font-bold text-soc-info">{app.events_today.toLocaleString()}</div>
                 </div>
                 <div className="text-right">
                   <div className="text-soc-muted text-[10px]">Trust Sessions</div>
-                  <div className="font-bold text-emerald-400">{app.trust_sessions}</div>
+                  <div className="font-bold text-soc-success">{app.trust_sessions}</div>
                 </div>
                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
-                  app.status === 'CONNECTED' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' : 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                  app.status === 'CONNECTED' ? 'bg-soc-success/20 text-soc-success border-soc-success/40' : 'bg-soc-warning/20 text-soc-warning border-soc-warning/40'
                 }`}>
                   {app.status}
                 </span>
@@ -691,3 +691,4 @@ export default function FATSDKDeveloperPortal() {
     </div>
   );
 }
+

@@ -24,9 +24,20 @@ class SessionTrustRepository:
     def __init__(self, db_path: str | Path | None = None):
         self.db_path = str(db_path or os.environ.get("DB_PATH", "./finspark.db"))
         self._lock = threading.RLock()
+        # For :memory: databases every new connect() call creates a fresh
+        # empty database, losing all schema and data.  We keep a single
+        # persistent shared connection in that case.
+        self._shared_conn: sqlite3.Connection | None = None
+        if self.db_path == ":memory:":
+            self._shared_conn = sqlite3.connect(
+                ":memory:", check_same_thread=False
+            )
+            self._shared_conn.row_factory = sqlite3.Row
         self._initialize()
 
     def _connect(self) -> sqlite3.Connection:
+        if self._shared_conn is not None:
+            return self._shared_conn
         conn = sqlite3.connect(self.db_path, timeout=30, check_same_thread=False)
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA journal_mode=WAL")

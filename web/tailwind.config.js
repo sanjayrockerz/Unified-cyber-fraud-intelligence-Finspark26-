@@ -8,19 +8,27 @@ export default {
     extend: {
       colors: {
         soc: {
-          bg: '#070A10',
-          surface: '#0F1420',
-          panel: '#151C2C',
-          border: '#1E293B',
-          borderHover: '#334155',
-          text: '#F3F4F6',
-          muted: '#9CA3AF',
-          dim: '#6B7280',
-          primary: '#3B82F6',
-          success: '#10B981',
-          warning: '#F59E0B',
-          danger: '#EF4444',
-          quantum: '#8B5CF6'
+          bg: 'rgb(var(--soc-bg-primary) / <alpha-value>)',
+          surface: 'rgb(var(--soc-bg-surface) / <alpha-value>)',
+          panel: 'rgb(var(--soc-bg-panel) / <alpha-value>)',
+          elevated: 'rgb(var(--soc-bg-elevated) / <alpha-value>)',
+          border: 'rgb(var(--soc-border-subtle) / <alpha-value>)',
+          borderStrong: 'rgb(var(--soc-border-default) / <alpha-value>)',
+          borderHover: 'rgb(var(--soc-border-hover) / <alpha-value>)',
+          text: 'rgb(var(--soc-text-primary) / <alpha-value>)',
+          muted: 'rgb(var(--soc-text-secondary) / <alpha-value>)',
+          dim: 'rgb(var(--soc-text-muted) / <alpha-value>)',
+          inverse: 'rgb(var(--soc-text-inverse) / <alpha-value>)',
+          onPrimary: 'rgb(var(--soc-text-on-primary) / <alpha-value>)',
+          onWarning: 'rgb(var(--soc-text-on-warning) / <alpha-value>)',
+          primary: 'rgb(var(--soc-brand-primary) / <alpha-value>)',
+          primaryHover: 'rgb(var(--soc-brand-hover) / <alpha-value>)',
+          success: 'rgb(var(--soc-status-success) / <alpha-value>)',
+          warning: 'rgb(var(--soc-status-warning) / <alpha-value>)',
+          danger: 'rgb(var(--soc-status-danger) / <alpha-value>)',
+          info: 'rgb(var(--soc-status-info) / <alpha-value>)',
+          quantum: 'rgb(var(--soc-status-quantum) / <alpha-value>)',
+          overlay: 'rgb(var(--soc-overlay) / <alpha-value>)'
         }
       }
     },

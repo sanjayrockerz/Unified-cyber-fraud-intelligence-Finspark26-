@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import DecisionTrustReport from '../trust/DecisionTrustReport';
 import InvestigationTrustPanel from '../trust/InvestigationTrustPanel';
 import DecisionStabilityInspector from '../trust/DecisionStabilityInspector';
@@ -136,7 +136,7 @@ export default function RealTimeProcessingPipeline({ activeTxn, evaluation, webs
       status: 'COMPLETED',
       execTimeMs: '0.02 ms',
       confidence: '98.0%',
-      summary: 'KYC Verified Tier-3 Biometric • Account Age > 3 Years',
+      summary: 'KYC Verified Tier-3 Biometric â€¢ Account Age > 3 Years',
       details: {
         kyc_status: 'VERIFIED TIER-3 (BIOMETRIC)',
         risk_tier: 'HIGH (Corporate)',
@@ -151,7 +151,7 @@ export default function RealTimeProcessingPipeline({ activeTxn, evaluation, webs
       status: isCyberTxn ? 'FLAGGED' : 'COMPLETED',
       execTimeMs: '0.01 ms',
       confidence: '94.0%',
-      summary: isCyberTxn ? 'Unregistered Fingerprint dev_9999 • SIM Swap Check Flagged' : 'Registered Device iPhone 15 Pro',
+      summary: isCyberTxn ? 'Unregistered Fingerprint dev_9999 â€¢ SIM Swap Check Flagged' : 'Registered Device iPhone 15 Pro',
       details: {
         device_id: selectedTxn.device_id,
         fingerprint: 'FP_a1b2c3d4e5',
@@ -167,10 +167,10 @@ export default function RealTimeProcessingPipeline({ activeTxn, evaluation, webs
       status: isCyberTxn ? 'FLAGGED' : 'COMPLETED',
       execTimeMs: '0.02 ms',
       confidence: '96.0%',
-      summary: isCyberTxn ? 'Anomalous Transfer Amount (INR 7.5L) • Deviation Index 82.5%' : 'Normal Spending Envelope',
+      summary: isCyberTxn ? 'Anomalous Transfer Amount (INR 7.5L) â€¢ Deviation Index 82.5%' : 'Normal Spending Envelope',
       details: {
         login_hour: '10:00 IST (Preferred)',
-        normal_range: 'INR 500 – INR 50,000',
+        normal_range: 'INR 500 â€“ INR 50,000',
         behavior_drift: isCyberTxn ? 0.82 : 0.04
       }
     },
@@ -181,7 +181,7 @@ export default function RealTimeProcessingPipeline({ activeTxn, evaluation, webs
       status: isCyberTxn ? 'CRITICAL_THREAT' : 'COMPLETED',
       execTimeMs: '0.01 ms',
       confidence: '98.0%',
-      summary: isCyberTxn ? 'Impossible Travel (Moscow ➔ Mumbai) • Malicious ASN AS49505' : 'Clean IP Reputation',
+      summary: isCyberTxn ? 'Impossible Travel (Moscow âž” Mumbai) â€¢ Malicious ASN AS49505' : 'Clean IP Reputation',
       details: {
         mitre_mapped: isCyberTxn ? ['T1078.004 Valid Accounts', 'T1539 Cookie Theft'] : [],
         asn_reputation: isCyberTxn ? 'AS49505 OOO Baxet (Proxy Pool)' : 'Jio Fiber Clean',
@@ -210,7 +210,7 @@ export default function RealTimeProcessingPipeline({ activeTxn, evaluation, webs
       status: isCleanTxn ? 'ISSUED_ALLOW' : 'ISSUED_BLOCK',
       execTimeMs: '0.02 ms',
       confidence: '97.0%',
-      summary: `Overall Session Trust: ${isCleanTxn ? '94.0%' : '29.0%'} • Verdict: ${verdictAction}`,
+      summary: `Overall Session Trust: ${isCleanTxn ? '94.0%' : '29.0%'} â€¢ Verdict: ${verdictAction}`,
       details: {
         session_passport_id: 'SESS_9921_CRITICAL',
         verdict: verdictAction,
@@ -225,7 +225,7 @@ export default function RealTimeProcessingPipeline({ activeTxn, evaluation, webs
       status: 'COMPLETED',
       execTimeMs: '0.02 ms',
       confidence: '98.0%',
-      summary: `LightGBM (0.82) + IsoForest (0.94) + GraphSAGE (0.045) ➔ ${verdictAction}`,
+      summary: `LightGBM (0.82) + IsoForest (0.94) + GraphSAGE (0.045) âž” ${verdictAction}`,
       details: {
         model_agreement: '98.0% Agreement',
         composite_risk: compositeRiskScore,
@@ -299,7 +299,7 @@ export default function RealTimeProcessingPipeline({ activeTxn, evaluation, webs
           <div>
             <h2 className="text-xs font-mono font-bold text-soc-text uppercase tracking-wider flex items-center gap-2">
               <span>Multi-Checkpoint Pre-Transaction Workflow</span>
-              <span className={`text-[10px] px-2 py-0.5 rounded font-bold border ${hasLiveStages ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-amber-500/20 text-amber-400 border-amber-500/30'}`}>
+              <span className={`text-[10px] px-2 py-0.5 rounded font-bold border ${hasLiveStages ? 'bg-soc-success/20 text-soc-success border-soc-success/30' : 'bg-soc-warning/20 text-soc-warning border-soc-warning/30'}`}>
                 {hasLiveStages ? `${stagesToRender.length} LIVE STAGES` : 'AWAITING LIVE STREAM'}
               </span>
             </h2>
@@ -320,13 +320,13 @@ export default function RealTimeProcessingPipeline({ activeTxn, evaluation, webs
           >
             {SAMPLE_TRANSACTIONS.map(t => (
               <option key={t.txn_id} value={t.txn_id}>
-                Payload: {t.txn_id} — INR {t.amount.toLocaleString('en-IN')}
+                Payload: {t.txn_id} â€” INR {t.amount.toLocaleString('en-IN')}
               </option>
             ))}
           </select>
 
           <span className="text-[10px] font-mono px-2.5 py-1 bg-soc-panel border border-soc-border text-soc-muted rounded font-bold">
-            Total Pipeline Latency: <strong className="text-amber-400">{totalLatency}</strong>
+            Total Pipeline Latency: <strong className="text-soc-warning">{totalLatency}</strong>
           </span>
         </div>
       </div>
@@ -345,7 +345,7 @@ export default function RealTimeProcessingPipeline({ activeTxn, evaluation, webs
                 className="w-full p-3 flex items-center justify-between bg-soc-surface/60 hover:bg-soc-surface text-left transition-colors"
               >
                 <div className="flex items-center gap-3">
-                  <div className={`p-1.5 rounded ${isFlagged ? 'bg-rose-500/20 text-rose-400' : 'bg-soc-bg text-soc-primary'}`}>
+                  <div className={`p-1.5 rounded ${isFlagged ? 'bg-soc-danger/20 text-soc-danger' : 'bg-soc-bg text-soc-primary'}`}>
                     <Icon className="w-4 h-4" />
                   </div>
                   <div>
@@ -356,10 +356,10 @@ export default function RealTimeProcessingPipeline({ activeTxn, evaluation, webs
 
                 <div className="flex items-center gap-4">
                   <div className="text-right">
-                    <span className={`font-mono font-bold text-xs ${isFlagged ? 'text-rose-400' : 'text-emerald-400'}`}>
+                    <span className={`font-mono font-bold text-xs ${isFlagged ? 'text-soc-danger' : 'text-soc-success'}`}>
                       {stg.status}
                     </span>
-                    <div className="text-[10px] text-soc-dim">{stg.execTimeMs} • Conf: {stg.confidence}</div>
+                    <div className="text-[10px] text-soc-dim">{stg.execTimeMs} â€¢ Conf: {stg.confidence}</div>
                   </div>
                   {isExpanded ? <ChevronUp className="w-4 h-4 text-soc-dim" /> : <ChevronDown className="w-4 h-4 text-soc-dim" />}
                 </div>
@@ -369,7 +369,7 @@ export default function RealTimeProcessingPipeline({ activeTxn, evaluation, webs
               {isExpanded && (
                 <div className="p-3 border-t border-soc-border bg-soc-bg/90 space-y-2 font-mono text-xs">
                   <span className="text-[10px] text-soc-dim uppercase font-bold tracking-wider block">Inspected Stage Evidence & Parameters</span>
-                  <pre className="p-3 bg-slate-950 border border-soc-border rounded-lg text-emerald-400 text-[11px] overflow-x-auto font-mono leading-relaxed">
+                  <pre className="p-3 bg-soc-panel border border-soc-border rounded-lg text-soc-success text-[11px] overflow-x-auto font-mono leading-relaxed">
                     {JSON.stringify(stg.details, null, 2)}
                   </pre>
                 </div>
@@ -387,4 +387,5 @@ export default function RealTimeProcessingPipeline({ activeTxn, evaluation, webs
     </div>
   );
 }
+
 

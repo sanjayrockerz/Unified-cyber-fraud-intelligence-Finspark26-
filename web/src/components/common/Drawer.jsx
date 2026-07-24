@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+﻿import React, { useEffect } from 'react';
 import { X } from 'lucide-react';
 
 export default function Drawer({ isOpen, onClose, title, children, width = 'w-96' }) {
@@ -13,7 +13,7 @@ export default function Drawer({ isOpen, onClose, title, children, width = 'w-96
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-sm animate-fadeIn">
+    <div className="fixed inset-0 z-50 flex justify-end bg-soc-overlay/60 backdrop-blur-sm animate-fadeIn">
       <div className={`${width} h-full bg-soc-surface border-l border-soc-border shadow-2xl flex flex-col`}>
         <div className="flex items-center justify-between px-4 py-3.5 border-b border-soc-border bg-soc-panel">
           <h3 className="text-sm font-mono font-bold text-soc-text uppercase tracking-wider">{title}</h3>
@@ -26,3 +26,4 @@ export default function Drawer({ isOpen, onClose, title, children, width = 'w-96
     </div>
   );
 }
+

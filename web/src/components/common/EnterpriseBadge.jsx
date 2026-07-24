@@ -1,17 +1,17 @@
-import React from 'react';
+﻿import React from 'react';
 import { ShieldAlert, ShieldCheck, AlertTriangle } from 'lucide-react';
 
 export default function EnterpriseBadge({ action, score, size = 'md' }) {
-  let bg = 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400';
+  let bg = 'bg-soc-success/10 border-soc-success/30 text-soc-success';
   let Icon = ShieldCheck;
   let label = 'ALLOW';
 
   if (action === 'BLOCK' || (score && score >= 75)) {
-    bg = 'bg-rose-500/15 border-rose-500/40 text-rose-400 animate-pulse';
+    bg = 'bg-soc-danger/15 border-soc-danger/40 text-soc-danger animate-pulse';
     Icon = ShieldAlert;
     label = 'BLOCK';
   } else if (action === 'CHALLENGE' || (score && score >= 50)) {
-    bg = 'bg-amber-500/15 border-amber-500/40 text-amber-400';
+    bg = 'bg-soc-warning/15 border-soc-warning/40 text-soc-warning';
     Icon = AlertTriangle;
     label = 'CHALLENGE';
   }
@@ -32,3 +32,4 @@ export default function EnterpriseBadge({ action, score, size = 'md' }) {
     </span>
   );
 }
+

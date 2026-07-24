@@ -1,11 +1,13 @@
-import React, { useRef, useState, useEffect } from 'react';
+﻿import React, { useRef, useState, useEffect } from 'react';
 import ForceGraph2D from 'react-force-graph-2d';
 import { ZoomIn, ZoomOut, RefreshCw, Layers, ShieldAlert, Info } from 'lucide-react';
 
 export default function Neo4jGraphStudio({ graphData, onNodeClick }) {
   const fgRef = useRef();
+  const graphContainerRef = useRef(null);
   const [selectedNode, setSelectedNode] = useState(null);
   const [highlightMule, setHighlightMule] = useState(true);
+  const [graphDimensions, setGraphDimensions] = useState({ width: 0, height: 0 });
 
   const activeData = (graphData && graphData.nodes && graphData.nodes.length > 0)
     ? graphData
@@ -26,11 +28,27 @@ export default function Neo4jGraphStudio({ graphData, onNodeClick }) {
     }
   };
 
+  useEffect(() => {
+    const container = graphContainerRef.current;
+    if (!container) return undefined;
+
+    const updateDimensions = () => {
+      const { width, height } = container.getBoundingClientRect();
+      setGraphDimensions({ width: Math.floor(width), height: Math.floor(height) });
+    };
+
+    updateDimensions();
+    const observer = new ResizeObserver(updateDimensions);
+    observer.observe(container);
+
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <div className="relative w-full h-full min-h-[380px] bg-soc-bg border border-soc-border rounded-xl overflow-hidden flex flex-col">
       {/* Graph Toolbar Header */}
-      <div className="flex items-center justify-between px-4 py-2.5 bg-soc-panel border-b border-soc-border z-10">
-        <div className="flex items-center gap-2">
+      <div className="z-10 flex flex-wrap items-center justify-between gap-2 border-b border-soc-border bg-soc-panel px-4 py-2.5">
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
           <Layers className="w-4 h-4 text-soc-primary" />
           <span className="text-xs font-mono font-bold text-soc-text uppercase tracking-wider">
             Neo4j Threat Graph Visualizer
@@ -40,12 +58,12 @@ export default function Neo4jGraphStudio({ graphData, onNodeClick }) {
           </span>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => setHighlightMule(!highlightMule)}
             className={`px-2.5 py-1 text-xs font-mono rounded border flex items-center gap-1.5 transition-colors ${
               highlightMule 
-                ? 'bg-rose-500/20 border-rose-500/50 text-rose-400' 
+                ? 'bg-soc-danger/20 border-soc-danger/50 text-soc-danger' 
                 : 'bg-soc-bg border-soc-border text-soc-muted'
             }`}
           >
@@ -80,9 +98,11 @@ export default function Neo4jGraphStudio({ graphData, onNodeClick }) {
       </div>
 
       {/* Force Graph Canvas Area */}
-      <div className="relative flex-1 bg-soc-bg">
-        <ForceGraph2D
+      <div ref={graphContainerRef} className="relative min-w-0 flex-1 overflow-hidden bg-soc-bg">
+        {graphDimensions.width > 0 && graphDimensions.height > 0 && <ForceGraph2D
           ref={fgRef}
+          width={graphDimensions.width}
+          height={graphDimensions.height}
           graphData={activeData}
           nodeAutoColorBy="group"
           nodeRelSize={7}
@@ -123,7 +143,7 @@ export default function Neo4jGraphStudio({ graphData, onNodeClick }) {
           }}
           onNodeClick={handleNodeClick}
           cooldownTicks={100}
-        />
+        />}
 
         {/* Selected Node Details Card Overlay */}
         {selectedNode && (
@@ -137,7 +157,7 @@ export default function Neo4jGraphStudio({ graphData, onNodeClick }) {
                 onClick={() => setSelectedNode(null)} 
                 className="text-soc-dim hover:text-soc-text text-xs"
               >
-                ✕
+                âœ•
               </button>
             </div>
             <div className="space-y-1.5 text-xs font-mono">
@@ -166,23 +186,23 @@ export default function Neo4jGraphStudio({ graphData, onNodeClick }) {
         {/* Graph Legend Overlay */}
         <div className="absolute bottom-3 left-3 bg-soc-panel/90 border border-soc-border px-3 py-2 rounded-md backdrop-blur-sm z-10 flex gap-4 text-[11px] font-mono">
           <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block"></span>
+            <span className="w-2.5 h-2.5 rounded-full bg-soc-primary inline-block"></span>
             <span className="text-soc-muted">User</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-cyan-500 inline-block"></span>
+            <span className="w-2.5 h-2.5 rounded-full bg-soc-info inline-block"></span>
             <span className="text-soc-muted">Account</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block"></span>
+            <span className="w-2.5 h-2.5 rounded-full bg-soc-warning inline-block"></span>
             <span className="text-soc-muted">IP</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-purple-500 inline-block"></span>
+            <span className="w-2.5 h-2.5 rounded-full bg-soc-quantum inline-block"></span>
             <span className="text-soc-muted">Device</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block animate-pulse"></span>
+            <span className="w-2.5 h-2.5 rounded-full bg-soc-danger inline-block animate-pulse"></span>
             <span className="text-soc-danger font-bold">Mule Cluster</span>
           </div>
         </div>
@@ -190,3 +210,4 @@ export default function Neo4jGraphStudio({ graphData, onNodeClick }) {
     </div>
   );
 }
+

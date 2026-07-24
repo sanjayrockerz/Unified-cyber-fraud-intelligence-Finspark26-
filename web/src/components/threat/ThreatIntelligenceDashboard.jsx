@@ -1,417 +1,151 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Activity, AlertTriangle, RefreshCw, ShieldAlert, Sparkles, TimerReset } from 'lucide-react';
 import { authenticatedWebSocketUrl } from '../../platformAuth';
-import { 
-  ShieldAlert, 
-  Search, 
-  Filter, 
-  Activity, 
-  CheckCircle2, 
-  Clock, 
-  AlertTriangle, 
-  FileText, 
-  ChevronRight, 
-  Layers, 
-  Zap, 
-  RefreshCw, 
-  X,
-  Server,
-  Lock,
-  Smartphone,
-  Globe,
-  UserCheck,
-  CreditCard,
-  Share2
-} from 'lucide-react';
+import DataTable from '../common/DataTable';
+import Drawer from '../common/Drawer';
+import LiveFeed from '../common/LiveFeed';
+import PageHeader from '../common/PageHeader';
+import StatStrip from '../common/StatStrip';
+import VerdictHero from '../common/VerdictHero';
 
-const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8001' : 'https://fusion.example.invalid');
+const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8001' : '');
 const WS_BASE = API_BASE.replace(/^http/, 'ws');
+const severityWeight = { CRITICAL: 4, HIGH: 3, MEDIUM: 2, LOW: 1 };
+const severityTone = { CRITICAL: 'text-soc-danger', HIGH: 'text-soc-danger', MEDIUM: 'text-soc-warning', LOW: 'text-soc-info' };
+
+const currency = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 });
+
+function decisionForThreat(threat) {
+  const action = String(threat?.recommended_action || threat?.action || 'ALLOW').toUpperCase();
+  if (action.includes('BLOCK')) return 'BLOCK';
+  if (action.includes('CHALLENGE') || action.includes('REVIEW')) return 'CHALLENGE';
+  return 'ALLOW';
+}
+
+function TransactionDetail({ transaction }) {
+  if (!transaction) return null;
+  const fields = [
+    ['Transaction ID', transaction.txn_id], ['Timestamp', transaction.timestamp], ['Customer', transaction.user_id],
+    ['Origin account', transaction.nameOrig], ['Destination account', transaction.nameDest], ['Amount', currency.format(Number(transaction.amount || 0))],
+    ['Channel', transaction.channel], ['Type', transaction.type], ['Cyber correlation', transaction.cyber_compromise_in_window ? 'Present' : 'Not present'],
+  ];
+  return <dl className="grid gap-x-5 gap-y-4 sm:grid-cols-2">{fields.map(([label, value]) => <div key={label} className="border-b border-soc-border pb-3"><dt className="text-[11px] font-medium uppercase tracking-[0.12em] text-soc-muted">{label}</dt><dd className="mt-1 break-words font-mono text-xs text-soc-text">{value ?? '—'}</dd></div>)}</dl>;
+}
 
 export default function ThreatIntelligenceDashboard() {
   const [threats, setThreats] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedSeverity, setSelectedSeverity] = useState('ALL');
-  const [selectedCategory, setSelectedCategory] = useState('ALL');
-  const [selectedStatus, setSelectedStatus] = useState('ALL');
-  const [activeThreatDetail, setActiveThreatDetail] = useState(null);
   const [streamConnected, setStreamConnected] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [tableQuery, setTableQuery] = useState('');
+  const [selectedTransaction, setSelectedTransaction] = useState(null);
 
-  const fetchThreats = async () => {
+  async function fetchThreats() {
+    setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/threats`);
-      if (res.ok) {
-        const data = await res.json();
+      const response = await fetch(`${API_BASE}/threats`);
+      if (response.ok) {
+        const data = await response.json();
         setThreats(data.threats || []);
       }
-    } catch (err) {
-      console.error("Failed to fetch cyber threats:", err);
+    } catch {
+      setThreats([]);
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   useEffect(() => {
     fetchThreats();
     let socket;
     let reconnectTimer;
     let closed = false;
-    const connect = () => {
+
+    function connect() {
       try {
         socket = new WebSocket(authenticatedWebSocketUrl(`${WS_BASE}/ws/stream`));
         socket.onopen = () => setStreamConnected(true);
         socket.onmessage = (event) => {
           const message = JSON.parse(event.data);
-          if (message.msg_type === 'pipeline_decision') fetchThreats();
+          if (message.msg_type === 'pipeline_decision' || message.msg_type === 'cyber_event') fetchThreats();
         };
         socket.onclose = () => {
           setStreamConnected(false);
-          if (!closed) reconnectTimer = setTimeout(connect, 2000);
+          if (!closed) reconnectTimer = window.setTimeout(connect, 2000);
         };
         socket.onerror = () => socket.close();
       } catch {
         setStreamConnected(false);
-        if (!closed) reconnectTimer = setTimeout(connect, 2000);
       }
-    };
+    }
+
     connect();
     return () => {
       closed = true;
-      clearTimeout(reconnectTimer);
+      window.clearTimeout(reconnectTimer);
       socket?.close();
     };
   }, []);
 
-  // Filter & Search Logic
-  const filteredThreats = threats.filter(t => {
-    const matchesSearch = 
-      t.threat_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      t.session_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      t.device_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      t.evidence.some(e => e.toLowerCase().includes(searchTerm.toLowerCase()));
+  const overview = useMemo(() => {
+    const currentThreat = [...threats].sort((left, right) => (severityWeight[right.severity] || 0) - (severityWeight[left.severity] || 0))[0];
+    const activeCount = threats.filter((threat) => threat.status === 'ACTIVE').length;
+    const criticalCount = threats.filter((threat) => ['CRITICAL', 'HIGH'].includes(threat.severity)).length;
+    const latencies = threats.map((threat) => Number(threat.detection_latency_ms)).filter(Number.isFinite);
+    const confidences = threats.map((threat) => Number(threat.confidence)).filter(Number.isFinite);
+    return {
+      currentThreat,
+      activeCount,
+      criticalCount,
+      averageLatency: latencies.length ? `${Math.round(latencies.reduce((sum, value) => sum + value, 0) / latencies.length)} ms` : '—',
+      averageConfidence: confidences.length ? `${(confidences.reduce((sum, value) => sum + value, 0) / confidences.length).toFixed(1)}%` : '—',
+    };
+  }, [threats]);
 
-    const matchesSeverity = selectedSeverity === 'ALL' || t.severity === selectedSeverity;
-    const matchesCategory = selectedCategory === 'ALL' || t.threat_category === selectedCategory;
-    const matchesStatus = selectedStatus === 'ALL' || t.status === selectedStatus;
-
-    return matchesSearch && matchesSeverity && matchesCategory && matchesStatus;
-  });
-
-  const activeCount = threats.filter(t => t.status === 'ACTIVE').length;
-  const criticalCount = threats.filter(t => t.severity === 'CRITICAL').length;
-  const highCount = threats.filter(t => t.severity === 'HIGH').length;
-  const measuredLatencies = threats.map(t => Number(t.detection_latency_ms)).filter(Number.isFinite);
-  const averageLatency = measuredLatencies.length
-    ? measuredLatencies.reduce((sum, value) => sum + value, 0) / measuredLatencies.length
-    : null;
-  const measuredConfidences = threats
-    .map(t => t.confidence)
-    .filter(value => value != null)
-    .map(Number)
-    .filter(Number.isFinite);
-  const averageConfidence = measuredConfidences.length
-    ? measuredConfidences.reduce((sum, value) => sum + value, 0) / measuredConfidences.length
-    : null;
-
-  const categories = [
-    'ALL',
-    'Device Threats',
-    'Runtime Threats',
-    'Overlay Attacks',
-    'Network Threats',
-    'Session Threats',
-    'Behaviour Threats',
-    'Identity Threats',
-    'Transaction Threats',
-    'Graph Threats',
-    'Campaign Correlation'
+  const transactionColumns = [
+    { key: 'timestamp', label: 'Time' },
+    { key: 'user_id', label: 'Customer' },
+    { key: 'amount', label: 'Amount', render: (value) => currency.format(Number(value || 0)) },
+    { key: 'type', label: 'Type' },
+    { key: 'cyber_compromise_in_window', label: 'Verdict', sortable: false, render: (value) => <span className={value ? 'inline-flex items-center gap-1 font-semibold text-soc-danger' : 'inline-flex items-center gap-1 font-semibold text-soc-success'}>{value ? <><ShieldAlert className="h-3.5 w-3.5" />BLOCK</> : <><Activity className="h-3.5 w-3.5" />ALLOW</>}</span> },
   ];
 
+  const latestDecision = overview.currentThreat;
   return (
-    <div className="space-y-6 font-mono text-xs">
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-soc-surface p-4 rounded-xl border border-soc-border shadow-lg">
-        <div>
-          <div className="flex items-center gap-2">
-            <ShieldAlert className="w-5 h-5 text-rose-500 animate-pulse" />
-            <h1 className="text-base font-bold text-soc-text tracking-wide uppercase">
-              Enterprise Cyber Threat Intelligence Engine
-            </h1>
-            <span className="px-2 py-0.5 rounded text-[10px] bg-rose-500/20 text-rose-400 font-bold border border-rose-500/30">
-              {streamConnected ? 'LIVE' : 'RECONNECTING'}
-            </span>
-          </div>
-          <p className="text-soc-muted text-[11px] mt-1">
-            Authenticated pipeline decisions • Evidence-backed detections • Measured runtime telemetry
-          </p>
-        </div>
+    <div className="mx-auto flex max-w-[1800px] flex-col gap-6 pb-8">
+      <PageHeader
+        title="Cyber Threat Intelligence"
+        description="Fuse cyber evidence with transaction risk before money leaves the bank."
+        action={<button type="button" onClick={fetchThreats} className="inline-flex items-center gap-2 border border-soc-border bg-soc-panel px-3 py-2 text-xs font-medium text-soc-text transition-colors hover:border-soc-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-soc-primary"><RefreshCw aria-hidden="true" className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />Refresh</button>}
+      />
 
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={fetchThreats}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-soc-panel hover:bg-soc-border text-soc-text rounded-lg border border-soc-border transition-all"
-          >
-            <RefreshCw className="w-3.5 h-3.5" />
-            <span>Refresh</span>
-          </button>
-        </div>
+      <VerdictHero
+        verdict={decisionForThreat(latestDecision)}
+        score={latestDecision?.confidence}
+        reason={latestDecision?.evidence?.[0] || latestDecision?.confidence_explanation || 'Awaiting the next evaluated decision from the authenticated pipeline.'}
+        timestamp={latestDecision?.timestamp}
+        transactionId={latestDecision?.threat_id}
+      />
+
+      <StatStrip items={[
+        { label: 'Active threats', value: overview.activeCount, detail: 'Open detections in the current stream', tone: 'danger', icon: ShieldAlert },
+        { label: 'Critical and high', value: overview.criticalCount, detail: 'Decisions needing analyst attention', tone: 'warning', icon: AlertTriangle },
+        { label: 'Detection latency', value: overview.averageLatency, detail: 'Measured event-to-decision time', tone: 'success', icon: TimerReset },
+        { label: 'Engine confidence', value: overview.averageConfidence, detail: 'Average across current detections', tone: 'info', icon: Sparkles },
+      ]} />
+
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,.85fr)_minmax(0,1.15fr)]">
+        <section>
+          <div className="mb-3 flex items-center justify-between"><div><h2 className="text-base font-semibold text-soc-text">Live SIEM feed</h2><p className="mt-1 text-xs text-soc-muted">Bounded to the latest 500 events.</p></div><span className={`inline-flex items-center gap-2 text-xs ${streamConnected ? 'text-soc-success' : 'text-soc-warning'}`}><span className={`h-2 w-2 rounded-full ${streamConnected ? 'bg-soc-success' : 'bg-soc-warning'}`} />{streamConnected ? 'Live' : 'Reconnecting'}</span></div>
+          <LiveFeed items={threats} title="SIEM events" renderItem={(threat) => <article className="grid gap-2 px-4 py-3 sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-center"><span className={`text-xs font-semibold ${severityTone[threat.severity] || 'text-soc-info'}`}>{threat.severity || 'INFO'}</span><div className="min-w-0"><p className="truncate text-sm font-medium text-soc-text">{threat.threat_name || 'Pipeline event'}</p><p className="mt-1 truncate text-xs text-soc-muted">{threat.evidence?.[0] || threat.detection_source || 'Evidence pending'}</p></div><time className="font-mono text-[11px] text-soc-muted">{threat.timestamp || '—'}</time></article>} />
+        </section>
+
+        <section>
+          <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><div><h2 className="text-base font-semibold text-soc-text">Transaction ledger</h2><p className="mt-1 text-xs text-soc-muted">Server-paginated decisions with inspectable evidence.</p></div><label className="relative block"><span className="sr-only">Search transactions</span><input value={tableQuery} onChange={(event) => setTableQuery(event.target.value)} placeholder="Search ledger" className="h-9 border border-soc-border bg-soc-bg px-3 text-xs text-soc-text placeholder:text-soc-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-soc-primary" /></label></div>
+          <DataTable endpoint="/transactions" columns={transactionColumns} query={tableQuery} onRowClick={setSelectedTransaction} emptyLabel="No transactions are available. Generate a synthetic universe or enable the explicit demo-scale seed." />
+        </section>
       </div>
 
-      {/* Summary Metrics Bar */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="bg-soc-surface border border-soc-border p-3.5 rounded-xl">
-          <div className="text-soc-dim text-[10px] uppercase font-bold">Active Threats</div>
-          <div className="text-2xl font-bold text-rose-400 mt-1 flex items-center gap-2">
-            {activeCount}
-            <span className="text-[10px] text-rose-500 font-normal">CRITICAL/HIGH</span>
-          </div>
-        </div>
-
-        <div className="bg-soc-surface border border-soc-border p-3.5 rounded-xl">
-          <div className="text-soc-dim text-[10px] uppercase font-bold">Critical Severity</div>
-          <div className="text-2xl font-bold text-rose-500 mt-1">{criticalCount}</div>
-        </div>
-
-        <div className="bg-soc-surface border border-soc-border p-3.5 rounded-xl">
-          <div className="text-soc-dim text-[10px] uppercase font-bold">Avg Detection Latency</div>
-          <div className="text-2xl font-bold text-emerald-400 mt-1 flex items-center gap-1.5">
-            {averageLatency == null ? 'N/A' : `${averageLatency.toFixed(2)} ms`}
-            <span className="text-[10px] text-emerald-500 font-normal">&lt;100ms Target</span>
-          </div>
-        </div>
-
-        <div className="bg-soc-surface border border-soc-border p-3.5 rounded-xl">
-          <div className="text-soc-dim text-[10px] uppercase font-bold">Engine Confidence</div>
-          <div className="text-2xl font-bold text-sky-400 mt-1">
-            {averageConfidence == null ? 'NOT CALIBRATED' : `${averageConfidence.toFixed(1)}%`}
-          </div>
-        </div>
-      </div>
-
-      {/* Filter & Search Toolbar */}
-      <div className="bg-soc-surface border border-soc-border p-3.5 rounded-xl space-y-3">
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1">
-            <Search className="w-4 h-4 absolute left-3 top-2.5 text-soc-dim" />
-            <input
-              type="text"
-              placeholder="Search threat name, session, device, or evidence details..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-soc-bg border border-soc-border rounded-lg pl-9 pr-3 py-2 text-soc-text focus:outline-none focus:border-soc-primary font-mono text-xs"
-            />
-          </div>
-
-          <div className="flex items-center gap-2 overflow-x-auto">
-            <select
-              value={selectedSeverity}
-              onChange={(e) => setSelectedSeverity(e.target.value)}
-              className="bg-soc-bg border border-soc-border rounded-lg px-3 py-2 text-soc-text text-xs font-mono"
-            >
-              <option value="ALL">Severity: All</option>
-              <option value="CRITICAL">Critical</option>
-              <option value="HIGH">High</option>
-              <option value="MEDIUM">Medium</option>
-              <option value="LOW">Low</option>
-            </select>
-
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="bg-soc-bg border border-soc-border rounded-lg px-3 py-2 text-soc-text text-xs font-mono"
-            >
-              {categories.map(cat => (
-                <option key={cat} value={cat}>Category: {cat}</option>
-              ))}
-            </select>
-
-            <select
-              value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
-              className="bg-soc-bg border border-soc-border rounded-lg px-3 py-2 text-soc-text text-xs font-mono"
-            >
-              <option value="ALL">Status: All</option>
-              <option value="ACTIVE">Active</option>
-              <option value="RESOLVED">Resolved</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Grid: Active Threats Table + Live Threat Stream */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left 2 Cols: Threats Table */}
-        <div className="lg:col-span-2 bg-soc-surface border border-soc-border rounded-xl p-4 space-y-3">
-          <div className="flex items-center justify-between border-b border-soc-border pb-3">
-            <div className="flex items-center gap-2">
-              <Layers className="w-4 h-4 text-soc-primary" />
-              <span className="font-bold text-soc-text uppercase">Detected Cyber Threats ({filteredThreats.length})</span>
-            </div>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left font-mono">
-              <thead>
-                <tr className="border-b border-soc-border text-soc-dim text-[10px] uppercase">
-                  <th className="py-2.5 px-3">Threat & Category</th>
-                  <th className="py-2.5 px-3">Severity</th>
-                  <th className="py-2.5 px-3">Confidence</th>
-                  <th className="py-2.5 px-3">Evidence</th>
-                  <th className="py-2.5 px-3">Action</th>
-                  <th className="py-2.5 px-3 text-right">Details</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-soc-border/50 text-xs">
-                {filteredThreats.map((threat) => {
-                  const isCritical = threat.severity === 'CRITICAL';
-                  const isHigh = threat.severity === 'HIGH';
-                  const isMed = threat.severity === 'MEDIUM';
-
-                  return (
-                    <tr key={threat.threat_id} className="hover:bg-soc-panel/50 transition-colors">
-                      <td className="py-3 px-3">
-                        <div className="font-bold text-soc-text">{threat.threat_name}</div>
-                        <div className="text-[10px] text-soc-dim">{threat.threat_category} • {threat.threat_id}</div>
-                      </td>
-
-                      <td className="py-3 px-3">
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                          isCritical ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' :
-                          isHigh ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' :
-                          'bg-sky-500/20 text-sky-300 border border-sky-500/30'
-                        }`}>
-                          {threat.severity}
-                        </span>
-                      </td>
-
-                      <td className="py-3 px-3 font-bold text-emerald-400">
-                        {threat.confidence == null ? 'N/A' : `${threat.confidence}%`}
-                      </td>
-
-                      <td className="py-3 px-3">
-                        <span className="text-soc-muted">{threat.evidence?.length || 0} proof items</span>
-                      </td>
-
-                      <td className="py-3 px-3 font-mono text-[10px] text-amber-400">
-                        {threat.recommended_action}
-                      </td>
-
-                      <td className="py-3 px-3 text-right">
-                        <button
-                          onClick={() => setActiveThreatDetail(threat)}
-                          className="px-2.5 py-1 bg-soc-panel hover:bg-soc-primary text-soc-text rounded border border-soc-border text-[10px] transition-colors"
-                        >
-                          Inspect
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Right Col: Realtime Threat Stream Timeline */}
-        <div className="bg-soc-surface border border-soc-border rounded-xl p-4 space-y-3">
-          <div className="flex items-center justify-between border-b border-soc-border pb-3">
-            <div className="flex items-center gap-2">
-              <Activity className="w-4 h-4 text-emerald-400" />
-              <span className="font-bold text-soc-text uppercase">Realtime Threat Stream</span>
-            </div>
-            <span className="flex h-2 w-2 relative">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-            </span>
-          </div>
-
-          <div className="space-y-3 overflow-y-auto max-h-[500px] pr-1">
-            {threats.slice(0, 10).map((t, idx) => (
-              <div key={t.threat_id + idx} className="p-3 bg-soc-bg border border-soc-border rounded-lg space-y-1.5">
-                <div className="flex items-center justify-between text-[10px]">
-                  <span className="text-soc-dim">{t.timestamp}</span>
-                  <span className="text-rose-400 font-bold">{t.severity}</span>
-                </div>
-                <div className="font-bold text-soc-text text-xs">{t.threat_name}</div>
-                <div className="text-[10px] text-soc-muted">
-                  Evidence: {t.evidence?.[0] || 'SDK anomalous event'}
-                </div>
-                <div className="flex justify-between items-center text-[10px] pt-1">
-                  <span className="text-sky-400">Source: {t.detection_source}</span>
-                  <span className="text-emerald-400 font-mono">
-                    {t.detection_latency_ms == null ? 'N/A' : `${t.detection_latency_ms}ms`}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Threat Inspection Modal */}
-      {activeThreatDetail && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-soc-surface border border-soc-border rounded-xl max-w-2xl w-full p-6 space-y-4 font-mono">
-            <div className="flex items-center justify-between border-b border-soc-border pb-3">
-              <div className="flex items-center gap-2">
-                <ShieldAlert className="w-5 h-5 text-rose-500" />
-                <span className="font-bold text-soc-text text-sm">THREAT INSPECTOR: {activeThreatDetail.threat_id}</span>
-              </div>
-              <button onClick={() => setActiveThreatDetail(null)} className="text-soc-dim hover:text-soc-text">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="space-y-3">
-              <div>
-                <h3 className="text-base font-bold text-soc-text">{activeThreatDetail.threat_name}</h3>
-                <p className="text-soc-muted text-xs mt-1">{activeThreatDetail.confidence_explanation}</p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3 text-xs bg-soc-bg p-3 rounded-lg border border-soc-border">
-                <div>
-                  <span className="text-soc-dim block">Category:</span>
-                  <span className="text-soc-text font-bold">{activeThreatDetail.threat_category}</span>
-                </div>
-                <div>
-                  <span className="text-soc-dim block">Confidence Score:</span>
-                  <span className="text-emerald-400 font-bold">
-                    {activeThreatDetail.confidence == null ? 'N/A' : `${activeThreatDetail.confidence}%`}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-soc-dim block">Session ID:</span>
-                  <span className="text-sky-400">{activeThreatDetail.session_id}</span>
-                </div>
-                <div>
-                  <span className="text-soc-dim block">Recommended Action:</span>
-                  <span className="text-amber-400 font-bold">{activeThreatDetail.recommended_action}</span>
-                </div>
-              </div>
-
-              <div>
-                <h4 className="font-bold text-soc-text text-xs uppercase mb-2">Granular Evidence Array ({activeThreatDetail.evidence?.length || 0})</h4>
-                <div className="bg-soc-bg p-3 rounded-lg border border-soc-border space-y-1.5">
-                  {activeThreatDetail.evidence?.map((ev, i) => (
-                    <div key={i} className="flex items-start gap-2 text-xs text-soc-muted">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-rose-400 shrink-0 mt-0.5" />
-                      <span>{ev}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="flex justify-end pt-2 border-t border-soc-border">
-              <button
-                onClick={() => setActiveThreatDetail(null)}
-                className="px-4 py-2 bg-soc-primary text-white rounded-lg hover:bg-blue-600 font-bold transition-colors"
-              >
-                Close Inspector
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <Drawer isOpen={Boolean(selectedTransaction)} onClose={() => setSelectedTransaction(null)} title="Transaction evidence"><TransactionDetail transaction={selectedTransaction} /></Drawer>
     </div>
   );
 }

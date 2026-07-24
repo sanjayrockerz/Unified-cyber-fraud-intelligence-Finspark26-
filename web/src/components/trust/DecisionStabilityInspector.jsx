@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { Sliders, ShieldCheck, AlertTriangle, CheckCircle2, RefreshCw, ArrowRight, Zap } from 'lucide-react';
 
 export default function DecisionStabilityInspector({ trustData, action = 'BLOCK' }) {
@@ -20,7 +20,7 @@ export default function DecisionStabilityInspector({ trustData, action = 'BLOCK'
             <h3 className="text-xs font-mono font-bold text-soc-text uppercase tracking-wider flex items-center gap-2">
               <span>Decision Stability Index (DSI)</span>
               <span className={`text-[10px] px-2 py-0.5 rounded font-bold border ${
-                isStable ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-amber-500/20 text-amber-400 border-amber-500/30'
+                isStable ? 'bg-soc-success/20 text-soc-success border-soc-success/30' : 'bg-soc-warning/20 text-soc-warning border-soc-warning/30'
               }`}>
                 {dsi.tier} ({dsi.stability_score}%)
               </span>
@@ -33,14 +33,14 @@ export default function DecisionStabilityInspector({ trustData, action = 'BLOCK'
 
         <div className="text-right">
           <div className="text-[9px] text-soc-muted uppercase">Robustness Score</div>
-          <span className="text-base font-bold text-emerald-400">{dsi.stability_score}%</span>
+          <span className="text-base font-bold text-soc-success">{dsi.stability_score}%</span>
         </div>
       </div>
 
       {/* FEATURE PERTURBATION TABLE */}
       <div className="space-y-2">
         <div className="text-[10px] font-bold text-soc-muted uppercase tracking-wider flex items-center gap-1.5">
-          <Zap className="w-3.5 h-3.5 text-amber-400" />
+          <Zap className="w-3.5 h-3.5 text-soc-warning" />
           <span>Feature Sensitivity Simulations</span>
         </div>
 
@@ -50,7 +50,7 @@ export default function DecisionStabilityInspector({ trustData, action = 'BLOCK'
               key={idx}
               className={`p-3 rounded-xl border flex flex-col md:flex-row md:items-center justify-between gap-2 transition-all ${
                 sim.decision_changed
-                  ? 'bg-amber-500/10 border-amber-500/40 text-amber-400'
+                  ? 'bg-soc-warning/10 border-soc-warning/40 text-soc-warning'
                   : 'bg-soc-panel border-soc-border text-soc-text'
               }`}
             >
@@ -59,7 +59,7 @@ export default function DecisionStabilityInspector({ trustData, action = 'BLOCK'
                   <span>{sim.parameter}</span>
                   <span className="text-[10px] text-soc-muted font-normal">({sim.variation})</span>
                 </div>
-                {sim.note && <div className="text-[11px] text-amber-400/90 font-bold">{sim.note}</div>}
+                {sim.note && <div className="text-[11px] text-soc-warning/90 font-bold">{sim.note}</div>}
               </div>
 
               <div className="flex items-center gap-3 shrink-0">
@@ -68,14 +68,14 @@ export default function DecisionStabilityInspector({ trustData, action = 'BLOCK'
                   <span>Risk {sim.resulting_score}</span>
                   <ArrowRight className="w-3 h-3 text-soc-dim" />
                   <span className={`px-2 py-0.5 rounded border ${
-                    sim.resulting_action === 'BLOCK' ? 'bg-rose-500/20 text-rose-400 border-rose-500/40' : 'bg-amber-500/20 text-amber-400 border-amber-500/40'
+                    sim.resulting_action === 'BLOCK' ? 'bg-soc-danger/20 text-soc-danger border-soc-danger/40' : 'bg-soc-warning/20 text-soc-warning border-soc-warning/40'
                   }`}>
                     {sim.resulting_action}
                   </span>
                 </div>
 
                 <span className={`px-2 py-0.5 text-[10px] font-bold rounded border ${
-                  sim.decision_changed ? 'bg-amber-500/20 text-amber-400 border-amber-500/40' : 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40'
+                  sim.decision_changed ? 'bg-soc-warning/20 text-soc-warning border-soc-warning/40' : 'bg-soc-success/20 text-soc-success border-soc-success/40'
                 }`}>
                   {sim.status}
                 </span>
@@ -88,3 +88,4 @@ export default function DecisionStabilityInspector({ trustData, action = 'BLOCK'
     </div>
   );
 }
+

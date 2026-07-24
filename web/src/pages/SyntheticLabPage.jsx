@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { FlaskConical, Play, Database, Loader2, FileCode, FileSpreadsheet } from 'lucide-react';
 
-const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8001' : 'https://fusion.example.invalid');
+const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8001' : '');
 
 export default function SyntheticLabPage() {
   const [numCustomers, setNumCustomers] = useState(100);
@@ -53,7 +53,7 @@ export default function SyntheticLabPage() {
               <h1 className="text-base font-mono font-bold text-soc-text uppercase tracking-wider">
                 Fusion Synthetic Banking Universe Generator (Phase 1)
               </h1>
-              <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-bold border border-emerald-500/30">
+              <span className="text-[10px] px-2 py-0.5 rounded bg-soc-success/20 text-soc-success font-bold border border-soc-success/30">
                 FUSION NATIONAL BANK ENGINE
               </span>
             </div>
@@ -68,7 +68,7 @@ export default function SyntheticLabPage() {
             onClick={() => handleDownloadExport('csv')}
             className="px-3.5 py-2 bg-soc-panel hover:bg-soc-border border border-soc-border text-soc-text rounded-lg font-bold flex items-center gap-1.5 transition-colors shadow"
           >
-            <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+            <FileSpreadsheet className="w-4 h-4 text-soc-success" />
             <span>Export CSV</span>
           </button>
           <button
@@ -140,11 +140,11 @@ export default function SyntheticLabPage() {
               </div>
               <div className="flex justify-between text-soc-muted">
                 <span>Graph Engine Topology:</span>
-                <span className="text-emerald-400 font-bold">Neo4j Active</span>
+                <span className="text-soc-success font-bold">Neo4j Active</span>
               </div>
               <div className="flex justify-between text-soc-muted">
                 <span>Fraud Injections:</span>
-                <span className="text-rose-400 font-bold">Ground Truth Labeled</span>
+                <span className="text-soc-danger font-bold">Ground Truth Labeled</span>
               </div>
             </div>
           </div>
@@ -155,7 +155,7 @@ export default function SyntheticLabPage() {
             className={`w-full py-2.5 rounded-xl font-mono font-bold text-xs flex items-center justify-center gap-2 transition-all shadow ${
               isGenerating
                 ? 'bg-soc-panel text-soc-muted cursor-not-allowed'
-                : 'bg-soc-primary hover:bg-blue-600 text-white'
+                : 'bg-soc-primary hover:bg-soc-primary text-soc-onPrimary'
             }`}
           >
             {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4 fill-current" />}
@@ -167,7 +167,7 @@ export default function SyntheticLabPage() {
         <div className="lg:col-span-7 bg-soc-surface border border-soc-border rounded-xl p-4 space-y-4 shadow-lg">
           <div className="flex items-center justify-between border-b border-soc-border pb-2">
             <h3 className="text-xs font-mono font-bold text-soc-text uppercase tracking-wider flex items-center gap-2">
-              <Database className="w-4 h-4 text-emerald-400" />
+              <Database className="w-4 h-4 text-soc-success" />
               <span>Virtual Bank Ecosystem Telemetry</span>
             </h3>
             <span className="text-[10px] text-soc-muted">
@@ -186,11 +186,11 @@ export default function SyntheticLabPage() {
                 </div>
                 <div className="p-3 bg-soc-panel rounded-xl border border-soc-border text-center">
                   <div className="text-[10px] text-soc-muted uppercase">Accounts</div>
-                  <div className="text-lg font-bold text-emerald-400">{universeData.stats.accounts_count}</div>
+                  <div className="text-lg font-bold text-soc-success">{universeData.stats.accounts_count}</div>
                 </div>
                 <div className="p-3 bg-soc-panel rounded-xl border border-soc-border text-center">
                   <div className="text-[10px] text-soc-muted uppercase">Transactions</div>
-                  <div className="text-lg font-bold text-amber-400">{universeData.stats.transactions_count}</div>
+                  <div className="text-lg font-bold text-soc-warning">{universeData.stats.transactions_count}</div>
                 </div>
               </div>
 
@@ -199,7 +199,7 @@ export default function SyntheticLabPage() {
                 <div className="p-3 bg-soc-bg border border-soc-border rounded-xl space-y-1.5 text-[11px]">
                   <div className="font-bold text-soc-text flex justify-between">
                     <span>Neo4j Graph Relationship Topology</span>
-                    <span className="text-emerald-400">Modularity: {universeData.graph_topology.graph_properties.louvain_modularity}</span>
+                    <span className="text-soc-success">Modularity: {universeData.graph_topology.graph_properties.louvain_modularity}</span>
                   </div>
                   <div className="flex justify-between text-soc-muted">
                     <span>Nodes: <strong>{universeData.graph_topology.nodes_count}</strong></span>
@@ -229,8 +229,8 @@ export default function SyntheticLabPage() {
                           <td className="py-1.5 px-2 font-bold text-soc-primary">{c.customer_id}</td>
                           <td className="py-1.5 px-2 text-soc-text">{c.full_name}</td>
                           <td className="py-1.5 px-2 text-soc-dim">{c.city}</td>
-                          <td className="py-1.5 px-2 text-emerald-400 font-bold">₹{c.annual_salary.toLocaleString('en-IN')}</td>
-                          <td className="py-1.5 px-2 text-rose-400 font-bold">{c.risk_tier}</td>
+                          <td className="py-1.5 px-2 text-soc-success font-bold">â‚¹{c.annual_salary.toLocaleString('en-IN')}</td>
+                          <td className="py-1.5 px-2 text-soc-danger font-bold">{c.risk_tier}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -255,3 +255,4 @@ export default function SyntheticLabPage() {
     </div>
   );
 }
+

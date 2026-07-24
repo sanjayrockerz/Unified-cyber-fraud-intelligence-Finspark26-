@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 
 export default function Badge({ children, variant = 'default', size = 'sm', className = '' }) {
   const variants = {
@@ -7,7 +7,7 @@ export default function Badge({ children, variant = 'default', size = 'sm', clas
     success: 'bg-soc-success/20 text-soc-success border-soc-success/40',
     warning: 'bg-soc-warning/20 text-soc-warning border-soc-warning/40',
     danger: 'bg-soc-danger/20 text-soc-danger border-soc-danger/40',
-    quantum: 'bg-purple-500/20 text-purple-400 border-purple-500/40'
+    quantum: 'bg-soc-quantum/20 text-soc-quantum border-soc-quantum/40'
   };
 
   const sizes = {
@@ -22,3 +22,4 @@ export default function Badge({ children, variant = 'default', size = 'sm', clas
     </span>
   );
 }
+

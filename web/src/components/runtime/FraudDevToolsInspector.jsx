@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { Terminal, Shield, Cpu, Activity, Share2, FileText, Code, CheckCircle2, Lock } from 'lucide-react';
 
 export default function FraudDevToolsInspector({ activeTxn, evaluation }) {
@@ -30,7 +30,7 @@ export default function FraudDevToolsInspector({ activeTxn, evaluation }) {
         <div className="flex items-center gap-2">
           <Terminal className="w-4 h-4 text-soc-primary" />
           <span className="font-bold text-soc-text text-xs uppercase tracking-wider">
-            Chrome DevTools for Fraud — Transaction Inspector
+            Chrome DevTools for Fraud â€” Transaction Inspector
           </span>
         </div>
 
@@ -41,7 +41,7 @@ export default function FraudDevToolsInspector({ activeTxn, evaluation }) {
               onClick={() => setActiveTab(t.id)}
               className={`px-2 py-0.5 rounded text-[11px] font-bold transition-colors ${
                 activeTab === t.id
-                  ? 'bg-soc-primary text-white'
+                  ? 'bg-soc-primary text-soc-onPrimary'
                   : 'text-soc-muted hover:text-soc-text hover:bg-soc-panel'
               }`}
             >
@@ -57,7 +57,7 @@ export default function FraudDevToolsInspector({ activeTxn, evaluation }) {
         {activeTab === 'txn' && (
           <div className="space-y-2">
             <span className="text-[10px] text-soc-dim uppercase font-semibold">Incoming Transaction Protocol & Payload</span>
-            <pre className="bg-soc-surface border border-soc-border p-3 rounded-lg text-emerald-400 overflow-x-auto text-[11px]">
+            <pre className="bg-soc-surface border border-soc-border p-3 rounded-lg text-soc-success overflow-x-auto text-[11px]">
               {JSON.stringify(activeTxn, null, 2)}
             </pre>
           </div>
@@ -68,7 +68,7 @@ export default function FraudDevToolsInspector({ activeTxn, evaluation }) {
           <div className="space-y-2">
             <span className="text-[10px] text-soc-dim uppercase font-semibold">Event Precursor Timeline</span>
             <div className="space-y-2">
-              <div className="p-2.5 bg-rose-500/10 border border-rose-500/30 rounded-lg text-rose-400">
+              <div className="p-2.5 bg-soc-danger/10 border border-soc-danger/30 rounded-lg text-soc-danger">
                 <div className="font-bold">[T-0:40s] Impossible Travel Login Detected</div>
                 <div className="text-[11px] text-soc-muted">IP: 185.15.2.22 (RU) | User: {activeTxn.user_id} | 4,500 km Anomaly</div>
               </div>
@@ -86,7 +86,7 @@ export default function FraudDevToolsInspector({ activeTxn, evaluation }) {
             <span className="text-[10px] text-soc-dim uppercase font-semibold">Engineered Feature Vector (ml/features.py)</span>
             <div className="grid grid-cols-2 gap-2 text-[11px]">
               <div className="p-2 bg-soc-surface border border-soc-border rounded"><span className="text-soc-dim">log_amount:</span> <strong className="text-soc-primary">{(Math.log1p(activeTxn.amount || 750000)).toFixed(4)}</strong></div>
-              <div className="p-2 bg-soc-surface border border-soc-border rounded"><span className="text-soc-dim">cyber_flag:</span> <strong className="text-rose-400">{activeTxn.cyber_compromise_in_window ? '1 (TRUE)' : '0 (FALSE)'}</strong></div>
+              <div className="p-2 bg-soc-surface border border-soc-border rounded"><span className="text-soc-dim">cyber_flag:</span> <strong className="text-soc-danger">{activeTxn.cyber_compromise_in_window ? '1 (TRUE)' : '0 (FALSE)'}</strong></div>
               <div className="p-2 bg-soc-surface border border-soc-border rounded"><span className="text-soc-dim">velocity_1h:</span> <strong>3 txns</strong></div>
               <div className="p-2 bg-soc-surface border border-soc-border rounded"><span className="text-soc-dim">zero_dest_before:</span> <strong>1 (TRUE)</strong></div>
             </div>
@@ -100,7 +100,7 @@ export default function FraudDevToolsInspector({ activeTxn, evaluation }) {
             <div className="p-3 bg-soc-surface border border-soc-border rounded-lg space-y-1">
               <div>PageRank Score: <strong className="text-soc-primary">0.0450 (High Node Centrality)</strong></div>
               <div>Betweenness Centrality: <strong className="text-soc-primary">0.1200</strong></div>
-              <div>Mule Cluster Flag: <strong className="text-rose-400 font-bold">{activeTxn.dest_mule_cluster_id ? 'MATCHED (Cluster Alpha - 6 Nodes)' : 'CLEAN'}</strong></div>
+              <div>Mule Cluster Flag: <strong className="text-soc-danger font-bold">{activeTxn.dest_mule_cluster_id ? 'MATCHED (Cluster Alpha - 6 Nodes)' : 'CLEAN'}</strong></div>
             </div>
           </div>
         )}
@@ -114,7 +114,7 @@ export default function FraudDevToolsInspector({ activeTxn, evaluation }) {
               <div className="flex justify-between"><span>Isolation Forest Penalty (0-20):</span> <strong>+18.0 pts</strong></div>
               <div className="flex justify-between"><span>Cyber Precursor Window (+15):</span> <strong>+15.0 pts</strong></div>
               <div className="flex justify-between"><span>Mule Cluster Flag (+10):</span> <strong>+10.0 pts</strong></div>
-              <div className="border-t border-soc-border pt-1.5 flex justify-between font-bold text-rose-400">
+              <div className="border-t border-soc-border pt-1.5 flex justify-between font-bold text-soc-danger">
                 <span>TOTAL COMPOSITE RISK SCORE:</span> <span>94.0 / 100 [BLOCK]</span>
               </div>
             </div>
@@ -129,7 +129,7 @@ export default function FraudDevToolsInspector({ activeTxn, evaluation }) {
               {evaluation?.shap_features?.map((f, idx) => (
                 <div key={idx} className="flex justify-between p-2 bg-soc-surface border border-soc-border rounded">
                   <span>{f.feature}</span>
-                  <strong className={f.impact > 0 ? 'text-rose-400' : 'text-emerald-400'}>
+                  <strong className={f.impact > 0 ? 'text-soc-danger' : 'text-soc-success'}>
                     {f.impact > 0 ? `+${f.impact}` : f.impact}
                   </strong>
                 </div>
@@ -153,8 +153,8 @@ export default function FraudDevToolsInspector({ activeTxn, evaluation }) {
           <div className="space-y-2">
             <span className="text-[10px] text-soc-dim uppercase font-semibold">CERT-In Compliance & Audit Package</span>
             <div className="p-3 bg-soc-surface border border-soc-border rounded-lg space-y-1">
-              <div>Status: <strong className="text-emerald-400">PASSED 6-HOUR CERT-IN RULE</strong></div>
-              <div>Audit Hash: <strong className="text-purple-400">e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855</strong></div>
+              <div>Status: <strong className="text-soc-success">PASSED 6-HOUR CERT-IN RULE</strong></div>
+              <div>Audit Hash: <strong className="text-soc-quantum">e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855</strong></div>
             </div>
           </div>
         )}
@@ -162,3 +162,4 @@ export default function FraudDevToolsInspector({ activeTxn, evaluation }) {
     </div>
   );
 }
+
