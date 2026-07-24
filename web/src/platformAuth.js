@@ -21,23 +21,31 @@ function validateRuntimeConfig() {
   }
 }
 
-export async function bootstrapPlatformAuth(force = false) {
-  validateRuntimeConfig();
-  const now = Math.floor(Date.now() / 1000);
-  expiresAt = expiresAt || tokenExpiry(accessToken);
-  if (!force && accessToken && expiresAt > now + 30) return;
-  if (!import.meta.env.DEV) {
-    throw new Error('A current runtime access token is required in window.__FUSION_CONFIG__');
-  }
-  if (!refreshPromise) {
-    refreshPromise = rawFetch(`${API_BASE}/auth/token`, {
+function requestToken() {
+  // DEV talks directly to the backend with the shared local-only dev secret.
+  // Production never ships a client secret to the browser: it calls a
+  // same-origin serverless proxy (/api/token) that holds the real secret
+  // server-side and forwards a minted access token only.
+  if (import.meta.env.DEV) {
+    return rawFetch(`${API_BASE}/auth/token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         client_id: 'fusion-dashboard-dev',
         client_secret: 'fusion-dashboard-local-only',
       }),
-    }).then(async (response) => {
+    });
+  }
+  return rawFetch('/api/token', { method: 'POST' });
+}
+
+export async function bootstrapPlatformAuth(force = false) {
+  validateRuntimeConfig();
+  const now = Math.floor(Date.now() / 1000);
+  expiresAt = expiresAt || tokenExpiry(accessToken);
+  if (!force && accessToken && expiresAt > now + 30) return;
+  if (!refreshPromise) {
+    refreshPromise = requestToken().then(async (response) => {
       if (!response.ok) throw new Error(`Platform authentication failed: HTTP ${response.status}`);
       const body = await response.json();
       accessToken = body.access_token;
@@ -55,7 +63,7 @@ export function installAuthenticatedFetch() {
     const headers = new Headers(init.headers || {});
     headers.set('Authorization', `Bearer ${accessToken}`);
     let response = await rawFetch(input, { ...init, headers });
-    if (response.status === 401 && import.meta.env.DEV) {
+    if (response.status === 401) {
       await bootstrapPlatformAuth(true);
       headers.set('Authorization', `Bearer ${accessToken}`);
       response = await rawFetch(input, { ...init, headers });
