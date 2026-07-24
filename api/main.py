@@ -268,7 +268,7 @@ class TransactionRequest(BaseModel):
     oldbalanceDest: float = 0.0
     newbalanceDest: float = 0.0
     cyber_compromise_in_window: bool = False
-    dest_mule_cluster_id: str = None
+    dest_mule_cluster_id: str | None = None
 
 class CertInReportRequest(BaseModel):
     txn_id: str
