@@ -1,5 +1,7 @@
 # --- secrets ---
 .env
+android-keystore/
+*.jks
 
 # --- data (large / regenerable) ---
 data/raw/
@@ -47,3 +49,5 @@ Thumbs.db
 *.pdf
 !Docs/source/*.pdf
 *.db
+*.db-shm
+*.db-wal
