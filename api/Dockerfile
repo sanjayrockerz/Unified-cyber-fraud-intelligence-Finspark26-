@@ -19,6 +19,9 @@ COPY api/ api/
 COPY ml/__init__.py ml/__init__.py
 COPY ml/features.py ml/features.py
 COPY ml/predict.py ml/predict.py
+# Trained model binaries are gitignored on main but force-committed on the
+# deploy branch specifically so this COPY has something to pick up.
+COPY ml/models/ ml/models/
 COPY graph/ graph/
 
 # Expose port (default for local `docker run`; hosts that inject $PORT override it)
