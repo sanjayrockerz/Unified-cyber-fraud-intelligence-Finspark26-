@@ -1,7 +1,6 @@
-// Vercel serverless function. Mints a short-lived platform access token for the
-// dashboard SPA. The client_id/secret pair lives only in Vercel's server-side
-// environment (FUSION_DASHBOARD_CLIENT_ID / FUSION_DASHBOARD_CLIENT_SECRET) and
-// is never shipped to the browser bundle.
+// Vercel serverless function for the dashboard's short-lived platform token.
+// Keep the client secret in Vercel environment variables; it must never enter
+// the browser bundle or the QR pairing payload.
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method not allowed' });
