@@ -30,7 +30,12 @@ short-lived dashboard token at runtime as
 `window.__FUSION_CONFIG__.accessToken`; do not compile it into the bundle.
 Serve `web/dist` over HTTPS with SPA fallback.
 
-For a Vercel deployment, set these server-side/project environment variables:
+For a Vercel deployment, the repository `vercel.json` intentionally builds only
+the `web` dashboard and its Node token proxy. The FastAPI/ML backend under
+`api/` is deployed separately by Render; it must not be auto-detected as a
+Vercel Python Function.
+
+Set these server-side/project environment variables:
 
 - `VITE_API_BASE=https://<public-render-api>`
 - `FUSION_API_BASE=https://<public-render-api>`
