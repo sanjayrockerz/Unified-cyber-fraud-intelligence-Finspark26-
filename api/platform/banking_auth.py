@@ -1,3 +1,4 @@
+from supabase import create_client, Client
 from __future__ import annotations
 
 import hashlib
@@ -29,6 +30,10 @@ class LoginRequest(BaseModel):
     password: str = Field(min_length=8, max_length=256)
     device_id: str = Field(min_length=1, max_length=256)
     email: str | None = None
+    device_fingerprint: str | None = None
+    device_model: str | None = None
+    device_manufacturer: str | None = None
+    android_version: str | None = None
 
 
 class RegisterRequest(BaseModel):
@@ -220,7 +225,12 @@ class BankingAuthService:
             refresh_expires_at,
         )
 
-    def login(self, request: LoginRequest) -> tuple[TokenPair, dict[str, Any]]:
+def login(self, request: LoginRequest) -> tuple[TokenPair, dict[str, Any]]:
+        if supabase:
+            response = supabase.auth.sign_in_with_password({"email": request.email or request.username + "@fusionbank.com", "password": request.password})
+            if not response.user:
+                raise HTTPException(status_code=401, detail="Invalid credentials")
+        
         user = self.authenticate(request.username, request.password)
         new_device = request.device_id not in user.get("registered_devices", [])
         if new_device:
@@ -326,7 +336,13 @@ async def login(payload: LoginRequest, request: Request):
         customer=profile,
         device_id=payload.device_id,
         request=request,
-        device={"device_uuid": payload.device_id},
+        device={
+            "device_uuid": payload.device_id,
+            "fingerprint": payload.device_fingerprint or "",
+            "model": payload.device_model or "unknown",
+            "manufacturer": payload.device_manufacturer or "unknown",
+            "android_version": payload.android_version or "unknown"
+        },
     )
     from api.platform.notifications import notification_service
     if profile.get("new_device"):

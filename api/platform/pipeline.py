@@ -9,6 +9,7 @@ from typing import Any
 
 from api.cyber_threat_engine import CyberThreatEngine, cyber_threat_engine
 from api.sdk_engine import FusionAdaptiveTrustSDKEngine, sdk_engine
+from api.identity_trust.service import identity_trust
 from .graph_runtime import GraphRuntime, graph_runtime
 from .model_runtime import ModelRuntime, model_runtime
 from .decision_runtime import DecisionEngineAdapter, decision_engine
@@ -186,6 +187,17 @@ class AuthoritativePlatformPipeline:
         )
         decision = self.decision_engine.decide(inference, all_threats)
         decision["session_id"] = event["session_id"]
+        
+        # Record activity
+        if event["event_type"] in {"TRANSFER", "QR_PAYMENT"}:
+            identity_trust.record_activity(
+                sdk_session_id=event["session_id"],
+                event_type=event["event_type"],
+                user_id=event.get("user_id", "unknown"),
+                device_id=event.get("device_id", "unknown"),
+                risk_delta=10.0 if all_threats else 0.0,
+                metadata={"amount": event.get("amount", 0.0)}
+            )
 
         total_ms = (time.perf_counter() - total_started) * 1000.0
         event_ack.update(

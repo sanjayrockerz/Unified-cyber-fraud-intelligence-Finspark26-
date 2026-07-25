@@ -169,6 +169,32 @@ class IdentityTrustService:
         row["last_seen_at"] = _now(); row["updated_at"] = _now()
         put("active_sessions", row.get("session_uuid", sdk_session_id), row)
         self._write("risk_scores", {"id": str(uuid.uuid4()), "customer_id": row.get("customer_id"), "session_id": row.get("id"), "score": row["risk_score"], "device_score": None, "network_score": None, "behaviour_score": max(0, 80 - risk_delta), "threat_score": row["threat_count"] * 20, "transaction_score": risk_delta if event_type in {"TRANSFER", "QR_PAYMENT", "BENEFICIARY_ADDED"} else 0, "explanation": {"event_type": event_type, "metadata": metadata or {}}, "calculated_at": _now(), "created_at": _now(), "updated_at": _now()})
+        
+        # Update behavioural profiling (transaction_profiles)
+        if event_type in {"TRANSFER", "QR_PAYMENT"} and metadata and "amount" in metadata:
+            amount = float(metadata["amount"])
+            customer_id = row.get("customer_id")
+            profiles = list_all("transaction_profiles")
+            profile = next((p for p in profiles if p.get("customer_id") == customer_id), None)
+            if profile:
+                count = profile.get("transaction_count", 0) + 1
+                avg = profile.get("avg_transaction_amount", 0)
+                profile["avg_transaction_amount"] = ((avg * (count - 1)) + amount) / count
+                profile["max_transaction_amount"] = max(profile.get("max_transaction_amount", 0), amount)
+                profile["transaction_count"] = count
+                profile["updated_at"] = _now()
+                put("transaction_profiles", profile["id"], profile)
+            else:
+                self._write("transaction_profiles", {
+                    "id": str(uuid.uuid4()),
+                    "customer_id": customer_id,
+                    "avg_transaction_amount": amount,
+                    "max_transaction_amount": amount,
+                    "transaction_count": 1,
+                    "created_at": _now(),
+                    "updated_at": _now()
+                })
+        
         return row
 
 
