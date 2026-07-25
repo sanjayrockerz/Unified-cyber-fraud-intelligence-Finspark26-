@@ -8,7 +8,7 @@ import PageHeader from '../common/PageHeader';
 import StatStrip from '../common/StatStrip';
 import VerdictHero from '../common/VerdictHero';
 
-const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8001' : '');
+const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8000' : '');
 const WS_BASE = API_BASE.replace(/^http/, 'ws');
 const severityWeight = { CRITICAL: 4, HIGH: 3, MEDIUM: 2, LOW: 1 };
 const severityTone = { CRITICAL: 'text-soc-danger', HIGH: 'text-soc-danger', MEDIUM: 'text-soc-warning', LOW: 'text-soc-info' };

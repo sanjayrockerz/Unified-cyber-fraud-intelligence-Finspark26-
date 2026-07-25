@@ -6,7 +6,7 @@ import TrustComponentHeatmap from './TrustComponentHeatmap';
 import TrustPassportCard from './TrustPassportCard';
 import TrustTimelineChart from './TrustTimelineChart';
 
-const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8001' : '');
+const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8000' : '');
 const WS_BASE = (import.meta.env.VITE_WS_BASE || API_BASE).replace(/^http/, 'ws');
 
 export default function SessionIntelligenceDashboard() {

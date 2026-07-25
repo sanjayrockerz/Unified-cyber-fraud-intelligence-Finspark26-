@@ -41,24 +41,24 @@ from api.session_intelligence import (
     session_intelligence,
     trust_update_broker,
 )
-from api.platform import (
+from api.core_platform import (
     PlatformSecurityMiddleware,
     create_access_token,
     platform_settings,
 )
-from api.platform.observability import RequestContextMiddleware
-from api.platform.security import authenticate_websocket
-from api.platform.banking_auth import router as banking_auth_router
-from api.platform.events import platform_event_broker
-from api.platform.graph_runtime import graph_runtime
-from api.platform.model_runtime import model_runtime
-from api.platform.pipeline import PipelineValidationError, platform_pipeline
-from api.platform.decision_runtime import decision_engine
-from api.platform.pairing import pairing_registry
-from api.platform.notifications import notification_service
+from api.core_platform.observability import RequestContextMiddleware
+from api.core_platform.security import authenticate_websocket
+from api.core_platform.banking_auth import router as banking_auth_router
+from api.core_platform.events import platform_event_broker
+from api.core_platform.graph_runtime import graph_runtime
+from api.core_platform.model_runtime import model_runtime
+from api.core_platform.pipeline import PipelineValidationError, platform_pipeline
+from api.core_platform.decision_runtime import decision_engine
+from api.core_platform.pairing import pairing_registry
+from api.core_platform.notifications import notification_service
 from api.gateway_integration import router as gateway_router
 from api.identity_trust.router import router as identity_router
-
+from api.copilot_engine import router as copilot_router
 
 
 
@@ -80,6 +80,7 @@ app.add_middleware(RequestContextMiddleware)
 app.include_router(gateway_router)
 app.include_router(banking_auth_router)
 app.include_router(identity_router)
+app.include_router(copilot_router)
 
 
 class PairingRequest(BaseModel):
@@ -1471,7 +1472,8 @@ async def simulate_threat_scenario(payload: dict):
     result = await platform_pipeline.process(payload, require_existing_session=False)
     return {
         "status": "SIMULATED",
-
+        "result": result.model_dump() if hasattr(result, "model_dump") else result
+    }
 @app.post("/sdk/request-decision")
 async def sdk_request_decision(req: SDKDecisionRequest, request: Request):
     dec_dict = req.model_dump()
@@ -1628,7 +1630,7 @@ async def simulate_threat_scenario(payload: dict):
         "pipeline_id": result.pipeline_id,
     }
 
-from copilot_engine import router as copilot_router
+from api.copilot_engine import router as copilot_router
 app.include_router(copilot_router)
 
 if __name__ == "__main__":

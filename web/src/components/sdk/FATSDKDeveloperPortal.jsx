@@ -7,7 +7,7 @@ import {
   Copy, ExternalLink, Server, Lock, Layers
 } from 'lucide-react';
 
-const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8001' : '');
+const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8000' : '');
 const WS_BASE = (import.meta.env.VITE_WS_BASE || API_BASE).replace(/^http/, 'ws');
 
 // â”€â”€â”€ Syntax-highlight JSON for the API Explorer â”€â”€â”€

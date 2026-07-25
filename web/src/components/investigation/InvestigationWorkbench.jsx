@@ -49,7 +49,7 @@ import InvestigationIntelligencePanel from './InvestigationIntelligencePanel';
 import QuantumTrustPanel from '../quantum/QuantumTrustPanel';
 
 
-const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8001' : '');
+const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8000' : '');
 
 
 const WS_BASE = API_BASE.replace(/^http/, 'ws');

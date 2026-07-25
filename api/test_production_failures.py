@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from fastapi import HTTPException
 
-from api.platform.config import PlatformSettings
-from api.platform.graph_runtime import GraphRuntime
-from api.platform.security import create_access_token, validate_access_token
+from api.core_platform.config import PlatformSettings
+from api.core_platform.graph_runtime import GraphRuntime
+from api.core_platform.security import create_access_token, validate_access_token
 
 
 class OfflineGraphRepository:

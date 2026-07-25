@@ -9,7 +9,7 @@ export default function DeveloperPlatformPage() {
   const [events, setEvents] = useState([]);
   const [synthetic, setSynthetic] = useState(null);
   const [error, setError] = useState(null);
-  const [mobileBackend, setMobileBackend] = useState(import.meta.env.VITE_MOBILE_API_BASE || (import.meta.env.DEV ? 'http://10.0.2.2:8001' : API_BASE));
+  const [mobileBackend, setMobileBackend] = useState(import.meta.env.VITE_MOBILE_API_BASE || (import.meta.env.DEV ? 'http://10.0.2.2:8000' : API_BASE));
 
   const refresh = async () => {
     try {

@@ -1,5 +1,5 @@
-from supabase import create_client, Client
 from __future__ import annotations
+from supabase import create_client, Client
 
 import hashlib
 import hmac
@@ -23,6 +23,10 @@ from .security import create_access_token
 REFRESH_COLLECTION = "banking_refresh_tokens"
 USER_COLLECTION = "banking_users"
 PBKDF2_ITERATIONS = 310_000
+
+supabase_url = os.getenv("SUPABASE_URL")
+supabase_key = os.getenv("SUPABASE_ANON_KEY")
+supabase: Client | None = create_client(supabase_url, supabase_key) if supabase_url and supabase_key else None
 
 
 class LoginRequest(BaseModel):
@@ -225,7 +229,7 @@ class BankingAuthService:
             refresh_expires_at,
         )
 
-def login(self, request: LoginRequest) -> tuple[TokenPair, dict[str, Any]]:
+    def login(self, request: LoginRequest) -> tuple[TokenPair, dict[str, Any]]:
         if supabase:
             response = supabase.auth.sign_in_with_password({"email": request.email or request.username + "@fusionbank.com", "password": request.password})
             if not response.user:
@@ -311,8 +315,8 @@ async def login(payload: LoginRequest, request: Request):
             user = get(USER_COLLECTION, payload.username.strip().lower())
             email = payload.email or (user.get("email") if user else None)
             if email:
-                from api.platform.notifications import notification_service
-                from api.platform.events import platform_event_broker
+                from api.core_platform.notifications import notification_service
+                from api.core_platform.events import platform_event_broker
                 user_id = user["user_id"] if user else "UNKNOWN"
                 notification_service.create(
                     user_id=user_id,
@@ -344,14 +348,14 @@ async def login(payload: LoginRequest, request: Request):
             "android_version": payload.android_version or "unknown"
         },
     )
-    from api.platform.notifications import notification_service
+    from api.core_platform.notifications import notification_service
     if profile.get("new_device"):
         notification_service.create(
             user_id=profile["user_id"], device_id=payload.device_id,
             kind="NEW_DEVICE_LOGIN", severity="WARNING",
             message=f"We detected a login from a new device ({payload.device_id}).",
         )
-        from api.platform.events import platform_event_broker
+        from api.core_platform.events import platform_event_broker
         await platform_event_broker.publish({
             "msg_type": "security_notification",
             "event_type": "NEW_DEVICE_LOGIN",

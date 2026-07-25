@@ -7,8 +7,8 @@ from typing import Any
 
 from fastapi import Request
 
-from api.platform.events import platform_event_broker
-from api.platform.notifications import notification_service
+from api.core_platform.events import platform_event_broker
+from api.core_platform.notifications import notification_service
 from api.store import get, list_all, put
 from api.geo_utils import haversine_km, lookup_ip
 

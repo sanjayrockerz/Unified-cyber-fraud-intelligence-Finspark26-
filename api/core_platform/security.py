@@ -31,6 +31,7 @@ PUBLIC_PATHS = {
     "/identity/login",
     "/identity/refresh",
     "/identity/password-reset",
+    "/api/copilot/chat",
 }
 
 

@@ -1,11 +1,18 @@
 import React, { useState } from 'react';
 
-const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8001' : '');
+const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8000' : '');
 
 export default function AICopilotPanel({ activeContext }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [copiedIdx, setCopiedIdx] = useState(null);
+
+  const handleCopy = (text, idx) => {
+    navigator.clipboard.writeText(text);
+    setCopiedIdx(idx);
+    setTimeout(() => setCopiedIdx(null), 2000);
+  };
 
   const sendMessage = async () => {
     if (!input.trim()) return;
@@ -45,10 +52,17 @@ export default function AICopilotPanel({ activeContext }) {
         <p className="text-xs text-soc-muted font-mono mt-1">Context-aware cybersecurity assistant</p>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 font-mono text-sm">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 font-mono text-sm select-text">
         {messages.map((msg, idx) => (
-          <div key={idx} className={`p-3 rounded-lg ${msg.role === 'user' ? 'bg-soc-primary/20 text-soc-text self-end ml-8 border border-soc-primary/40' : 'bg-soc-panel text-soc-text mr-8 border border-soc-border'}`}>
-            {msg.content}
+          <div key={idx} className={`relative p-3 rounded-lg group ${msg.role === 'user' ? 'bg-soc-primary/20 text-soc-text self-end ml-8 border border-soc-primary/40' : 'bg-soc-panel text-soc-text mr-8 border border-soc-border'}`}>
+            <div className="whitespace-pre-wrap select-text">{msg.content}</div>
+            <button
+              onClick={() => handleCopy(msg.content, idx)}
+              className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity text-[10px] px-2 py-1 bg-soc-surface border border-soc-border text-soc-muted hover:text-soc-text rounded"
+              title="Copy message"
+            >
+              {copiedIdx === idx ? 'Copied ✓' : 'Copy'}
+            </button>
           </div>
         ))}
         {loading && <div className="text-soc-muted animate-pulse">Copilot is thinking...</div>}
@@ -65,7 +79,7 @@ export default function AICopilotPanel({ activeContext }) {
         <div className="flex gap-2">
           <input
             type="text"
-            className="flex-1 bg-soc-surface border border-soc-border rounded-lg px-3 py-2 text-soc-text text-sm focus:outline-none focus:border-soc-primary"
+            className="flex-1 bg-soc-surface border border-soc-border rounded-lg px-3 py-2 text-soc-text text-sm focus:outline-none focus:border-soc-primary select-text"
             placeholder="Ask Copilot anything..."
             value={input}
             onChange={(e) => setInput(e.target.value)}

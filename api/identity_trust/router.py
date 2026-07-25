@@ -3,7 +3,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, EmailStr, Field
 
-from api.platform.banking_auth import LoginRequest, RegisterRequest, banking_auth
+from api.core_platform.banking_auth import LoginRequest, RegisterRequest, banking_auth
 from api.store import list_all
 from .service import identity_trust
 from .supabase import SupabaseError, supabase_rest
