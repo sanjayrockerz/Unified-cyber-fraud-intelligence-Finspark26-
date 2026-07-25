@@ -499,6 +499,8 @@ object Fusion {
         withContext(Dispatchers.Main) { callback(result) }
     }
 
+    fun getBaseUrl(): String = if (isInitialized) config.baseUrl else BuildConfig.FUSION_BASE_URL
+
     private fun checkInitialized() {
         check(isInitialized) { "Fusion SDK is not initialized" }
     }
