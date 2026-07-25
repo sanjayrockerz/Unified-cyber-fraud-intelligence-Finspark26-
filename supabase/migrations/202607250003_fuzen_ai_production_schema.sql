@@ -51,7 +51,7 @@ create table if not exists public.sessions (
   id uuid primary key default gen_random_uuid(),
   customer_id uuid not null references public.customers(id) on delete cascade,
   device_id uuid references public.registered_devices(id) on delete set null,
-  session_uuid uuid not null unique default gen_random_uuid(),
+  session_uuid uuid not null default gen_random_uuid(),
   status text not null default 'ACTIVE' check (status in ('ACTIVE','SUSPICIOUS','REVOKED','CLOSED')),
   risk_score numeric(5,2) not null default 0 check (risk_score between 0 and 100),
   trust_score numeric(5,2) not null default 100.0 check (trust_score between 0 and 100),
@@ -68,12 +68,24 @@ create table if not exists public.sessions (
   updated_at timestamptz not null default timezone('utc', now())
 );
 
+-- Ensure session_uuid column exists and has a named unique constraint
+-- (safe to run even if sessions table was created by a previous migration)
+alter table public.sessions
+  add column if not exists session_uuid uuid not null default gen_random_uuid();
+alter table public.sessions
+  drop constraint if exists sessions_session_uuid_key;
+create unique index if not exists sessions_session_uuid_unique
+  on public.sessions (session_uuid);
+
 -- 4. Login History Table
+-- Note: session_ref references sessions(id) primary key to avoid column-constraint issues.
+-- The session_uuid value is stored as plain text in device_uuid context.
 create table if not exists public.login_history (
   id uuid primary key default gen_random_uuid(),
   customer_id uuid not null references public.customers(id) on delete cascade,
   device_uuid text not null,
-  session_uuid uuid references public.sessions(session_uuid) on delete set null,
+  session_ref uuid references public.sessions(id) on delete set null,
+  session_uuid uuid,                           -- stores the session_uuid value for lookup (no FK)
   ip_address inet,
   vpn_detected boolean not null default false,
   unknown_device boolean not null default false,
