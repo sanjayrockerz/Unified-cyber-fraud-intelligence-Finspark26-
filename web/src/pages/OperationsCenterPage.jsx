@@ -8,6 +8,7 @@ import FusionLifecyclePipeline from '../components/runtime/FusionLifecyclePipeli
 import FraudDevToolsInspector from '../components/runtime/FraudDevToolsInspector';
 import NarrativeAIStoryteller from '../components/runtime/NarrativeAIStoryteller';
 import SessionTrustPassportPanel from '../components/trust/SessionTrustPassportPanel';
+import VerdictHero from '../components/common/VerdictHero';
 import InvestigationIntelligencePanel from '../components/investigation/InvestigationIntelligencePanel';
 import AICopilotPanel from '../components/copilot/AICopilotPanel';
 
@@ -98,6 +99,7 @@ export default function OperationsCenterPage() {
               id: `CASE-2026-${Math.floor(8900 + Math.random() * 100)}`,
               txn_id: data.txn_id || 'txn_demo_999',
               user_id: data.user_id || 'usr_abc',
+              session_id: data.session_id || evalData.session_id || 'SESS_9921_CRITICAL',
               nameOrig: data.nameOrig || 'ACC_ABC_123',
               nameDest: data.nameDest || 'ACC_MULE_NEW',
               amount: data.amount || 750000,
@@ -139,6 +141,7 @@ export default function OperationsCenterPage() {
       id: 'CASE-2026-8942',
       txn_id: 'txn_demo_999',
       user_id: 'usr_abc',
+      session_id: 'SESS_9921_CRITICAL',
       nameOrig: 'ACC_ABC_123',
       nameDest: 'ACC_MULE_NEW',
       amount: 750000,
@@ -274,13 +277,20 @@ export default function OperationsCenterPage() {
         </div>
       </div>
 
+      <VerdictHero
+        verdict={activeCase.action}
+        score={activeCase.score}
+        reason={activeCase.counterfactual_sentence || activeCase.reasons?.[0] || 'No explanation available for this decision yet.'}
+        timestamp={activeCase.createdTime}
+      />
+
       {/* SECTION 3: MULTI-CHECKPOINT PRE-TRANSACTION TRUST PIPELINE */}
       <div className="w-full">
         <FusionLifecyclePipeline activeTxn={activeTxnPayload} evaluation={activeCase} websocketStages={websocketStages} />
       </div>
 
       {/* SECTION 3.5: SESSION TRUST PASSPORT */}
-      <SessionTrustPassportPanel sessionId="SESS_9921_CRITICAL" activeTxn={activeTxnPayload} />
+      <SessionTrustPassportPanel sessionId={activeCase.session_id} activeTxn={activeTxnPayload} />
 
       {/* SECTION 4: THREAT CORRELATION TIMELINE & MULE RING INTELLIGENCE */}
       <InvestigationIntelligencePanel caseId={activeCase.id} activeTxn={activeTxnPayload} />
@@ -291,7 +301,7 @@ export default function OperationsCenterPage() {
       {/* SECTION 7: FUZEN AI COPILOT */}
       <div className="h-[520px]">
         <AICopilotPanel 
-          activeContext={{ user_id: activeCase?.user_id, session_id: 'SESS_9921_CRITICAL' }} 
+          activeContext={{ user_id: activeCase?.user_id, session_id: activeCase?.session_id }}
           onSelectCustomer={(custRow) => {
             if (custRow && custRow.customerId) {
               setSelectedCase({

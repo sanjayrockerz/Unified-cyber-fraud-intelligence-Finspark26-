@@ -47,6 +47,7 @@ import DigitalTwinBaseline from '../fabric/DigitalTwinBaseline';
 import SessionTrustPassportPanel from '../trust/SessionTrustPassportPanel';
 import InvestigationIntelligencePanel from './InvestigationIntelligencePanel';
 import QuantumTrustPanel from '../quantum/QuantumTrustPanel';
+import VerdictHero from '../common/VerdictHero';
 
 
 const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8000' : '');
@@ -65,6 +66,8 @@ export default function InvestigationWorkbench({ caseId = 'CASE-2026-8942' }) {
   const [activeTab, setActiveTab] = useState('orchestrator');
 
   const wsRef = useRef(null);
+
+  const sessionId = evaluation?.session_id || currentTxn?.session_id || 'SESS_9921_CRITICAL';
 
   useEffect(() => {
     startSynchronizedReplay();
@@ -189,7 +192,14 @@ export default function InvestigationWorkbench({ caseId = 'CASE-2026-8942' }) {
 
   return (
     <div className="flex w-full min-w-0 flex-col gap-4 max-w-[1850px] mx-auto select-none font-sans text-soc-text">
-      
+
+      <VerdictHero
+        verdict={evaluation?.action}
+        score={evaluation?.score}
+        reason={evaluation?.counterfactual_sentence || evaluation?.reasons?.[0] || 'No explanation available for this decision yet.'}
+        timestamp={currentTxn?.timestamp}
+      />
+
       {/* 1. TOP METADATA & REPLAY CONTROL STRIP */}
       <div className="bg-soc-surface border border-soc-border rounded-xl p-4 flex flex-wrap items-center justify-between gap-4 shadow-xl">
         <div className="flex min-w-0 items-center gap-4">
@@ -245,7 +255,7 @@ export default function InvestigationWorkbench({ caseId = 'CASE-2026-8942' }) {
       <DigitalTwinBaseline userId={activeTxnPayload.user_id} />
 
       {/* 3.5. PRE-TRANSACTION SESSION TRUST PASSPORT */}
-      <SessionTrustPassportPanel sessionId="SESS_9921_CRITICAL" activeTxn={activeTxnPayload} />
+      <SessionTrustPassportPanel sessionId={sessionId} activeTxn={activeTxnPayload} />
 
       {/* 3.8. INVESTIGATION INTELLIGENCE LAYER */}
       <InvestigationIntelligencePanel caseId={caseId} activeTxn={activeTxnPayload} />
