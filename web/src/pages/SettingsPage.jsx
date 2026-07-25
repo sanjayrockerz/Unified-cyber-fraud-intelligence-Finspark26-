@@ -1,5 +1,5 @@
 ﻿import React, { useEffect, useState } from 'react';
-import { Sliders, Save, Loader2, CheckCircle2 } from 'lucide-react';
+import { Sliders, Save, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8000' : '');
 
@@ -13,7 +13,10 @@ export default function SettingsPage() {
   useEffect(() => {
     let cancelled = false;
     fetch(`${API_BASE}/settings/policy`)
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error('Could not load policy settings.');
+        return res.json();
+      })
       .then((data) => {
         if (cancelled) return;
         setBlockThreshold(data.block_threshold);
@@ -28,7 +31,7 @@ export default function SettingsPage() {
   const handleSave = async () => {
     setSaveState('saving');
     try {
-      await fetch(`${API_BASE}/settings/policy`, {
+      const response = await fetch(`${API_BASE}/settings/policy`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -37,6 +40,7 @@ export default function SettingsPage() {
           window_seconds: Number(windowSeconds),
         }),
       });
+      if (!response.ok) throw new Error('Could not save policy settings.');
       setSaveState('saved');
       setTimeout(() => setSaveState('idle'), 2000);
     } catch {
@@ -86,15 +90,22 @@ export default function SettingsPage() {
           <input type="range" min="60" max="900" step="30" value={windowSeconds} onChange={(e) => setWindowSeconds(e.target.value)} className="w-full" />
         </div>
 
-        <button
-          type="button"
-          onClick={handleSave}
-          disabled={saveState === 'saving'}
-          className="px-4 py-2 bg-soc-primary hover:bg-soc-primary text-soc-onPrimary rounded text-xs font-mono font-bold flex items-center gap-2 transition-colors mt-4 disabled:opacity-60"
-        >
-          {saveState === 'saving' ? <Loader2 className="w-4 h-4 animate-spin" /> : saveState === 'saved' ? <CheckCircle2 className="w-4 h-4" /> : <Save className="w-4 h-4" />}
-          <span>{saveState === 'saved' ? 'Saved' : 'Save Policy Configuration'}</span>
-        </button>
+        <div className="flex flex-col gap-2">
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={saveState === 'saving'}
+            className={`px-4 py-2 rounded text-xs font-mono font-bold flex items-center gap-2 transition-colors mt-4 disabled:opacity-60 ${
+              saveState === 'error'
+                ? 'bg-soc-danger text-soc-onDanger hover:bg-soc-danger'
+                : 'bg-soc-primary text-soc-onPrimary hover:bg-soc-primary'
+            }`}
+          >
+            {saveState === 'saving' ? <Loader2 className="w-4 h-4 animate-spin" /> : saveState === 'saved' ? <CheckCircle2 className="w-4 h-4" /> : saveState === 'error' ? <AlertCircle className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+            <span>{saveState === 'saved' ? 'Saved' : saveState === 'error' ? 'Error — try again' : 'Save Policy Configuration'}</span>
+          </button>
+          {saveState === 'error' && <p className="text-xs text-soc-danger">Failed to save settings. Please try again.</p>}
+        </div>
       </div>
     </div>
   );
