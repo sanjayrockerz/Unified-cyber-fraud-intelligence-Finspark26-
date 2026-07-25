@@ -4,8 +4,8 @@ test('exposes the complete grouped Fuzen AI navigation', async ({ page }) => {
   await page.goto('http://127.0.0.1:5173/');
 
   await expect(page.getByRole('link', { name: 'Overview' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Operations Center' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Cases' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Operations Center' }).first()).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Cases' }).first()).toBeVisible();
   await expect(page.getByRole('link', { name: 'Analytics' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Executive Command Center' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Settings' })).toBeVisible();
