@@ -1,10 +1,48 @@
-﻿import React, { useState } from 'react';
-import { Sliders, Save, ShieldAlert, Cpu } from 'lucide-react';
+﻿import React, { useEffect, useState } from 'react';
+import { Sliders, Save, Loader2, CheckCircle2 } from 'lucide-react';
+
+const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8000' : '');
 
 export default function SettingsPage() {
   const [blockThreshold, setBlockThreshold] = useState(75);
   const [challengeThreshold, setChallengeThreshold] = useState(50);
   const [windowSeconds, setWindowSeconds] = useState(300);
+  const [status, setStatus] = useState('loading');
+  const [saveState, setSaveState] = useState('idle');
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`${API_BASE}/settings/policy`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (cancelled) return;
+        setBlockThreshold(data.block_threshold);
+        setChallengeThreshold(data.challenge_threshold);
+        setWindowSeconds(data.window_seconds);
+        setStatus('ready');
+      })
+      .catch(() => !cancelled && setStatus('error'));
+    return () => { cancelled = true; };
+  }, []);
+
+  const handleSave = async () => {
+    setSaveState('saving');
+    try {
+      await fetch(`${API_BASE}/settings/policy`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          block_threshold: Number(blockThreshold),
+          challenge_threshold: Number(challengeThreshold),
+          window_seconds: Number(windowSeconds),
+        }),
+      });
+      setSaveState('saved');
+      setTimeout(() => setSaveState('idle'), 2000);
+    } catch {
+      setSaveState('error');
+    }
+  };
 
   return (
     <div className="flex flex-col gap-5 max-w-[1600px] mx-auto select-none">
@@ -21,55 +59,41 @@ export default function SettingsPage() {
       </div>
 
       <div className="bg-soc-surface border border-soc-border rounded-xl p-4 max-w-2xl space-y-4">
+        {status === 'loading' && <p className="text-xs text-soc-muted">Loading saved policy…</p>}
+        {status === 'error' && <p className="text-xs text-soc-danger">Could not load saved policy — showing defaults.</p>}
+
         <div>
           <label className="text-xs font-mono text-soc-muted flex justify-between mb-1">
-            <span>BLOCK Verdict Cutoff Threshold (Score â‰¥ N):</span>
-            <span className="text-soc-danger font-bold font-mono">{blockThreshold}/100</span>
+            <span>BLOCK Verdict Cutoff Threshold (Score ≥ N):</span>
+            <span className="text-soc-danger font-bold font-mono tabular-nums">{blockThreshold}/100</span>
           </label>
-          <input
-            type="range"
-            min="60"
-            max="95"
-            value={blockThreshold}
-            onChange={(e) => setBlockThreshold(e.target.value)}
-            className="w-full"
-          />
+          <input type="range" min="60" max="95" value={blockThreshold} onChange={(e) => setBlockThreshold(e.target.value)} className="w-full" />
         </div>
 
         <div>
           <label className="text-xs font-mono text-soc-muted flex justify-between mb-1">
-            <span>CHALLENGE Verdict Cutoff Threshold (Score â‰¥ N):</span>
-            <span className="text-soc-warning font-bold font-mono">{challengeThreshold}/100</span>
+            <span>CHALLENGE Verdict Cutoff Threshold (Score ≥ N):</span>
+            <span className="text-soc-warning font-bold font-mono tabular-nums">{challengeThreshold}/100</span>
           </label>
-          <input
-            type="range"
-            min="30"
-            max="65"
-            value={challengeThreshold}
-            onChange={(e) => setChallengeThreshold(e.target.value)}
-            className="w-full"
-          />
+          <input type="range" min="30" max="65" value={challengeThreshold} onChange={(e) => setChallengeThreshold(e.target.value)} className="w-full" />
         </div>
 
         <div>
           <label className="text-xs font-mono text-soc-muted flex justify-between mb-1">
             <span>Cyber Compromise Correlation Window:</span>
-            <span className="text-soc-primary font-bold font-mono">{windowSeconds} seconds (5 mins)</span>
+            <span className="text-soc-primary font-bold font-mono tabular-nums">{windowSeconds} seconds</span>
           </label>
-          <input
-            type="range"
-            min="60"
-            max="900"
-            step="30"
-            value={windowSeconds}
-            onChange={(e) => setWindowSeconds(e.target.value)}
-            className="w-full"
-          />
+          <input type="range" min="60" max="900" step="30" value={windowSeconds} onChange={(e) => setWindowSeconds(e.target.value)} className="w-full" />
         </div>
 
-        <button className="px-4 py-2 bg-soc-primary hover:bg-soc-primary text-soc-onPrimary rounded text-xs font-mono font-bold flex items-center gap-2 transition-colors mt-4">
-          <Save className="w-4 h-4" />
-          <span>Save Policy Configuration</span>
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={saveState === 'saving'}
+          className="px-4 py-2 bg-soc-primary hover:bg-soc-primary text-soc-onPrimary rounded text-xs font-mono font-bold flex items-center gap-2 transition-colors mt-4 disabled:opacity-60"
+        >
+          {saveState === 'saving' ? <Loader2 className="w-4 h-4 animate-spin" /> : saveState === 'saved' ? <CheckCircle2 className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+          <span>{saveState === 'saved' ? 'Saved' : 'Save Policy Configuration'}</span>
         </button>
       </div>
     </div>
