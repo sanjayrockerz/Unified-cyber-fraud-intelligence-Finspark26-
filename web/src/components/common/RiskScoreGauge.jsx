@@ -25,7 +25,7 @@ export default function RiskScoreGauge({ score = 0, max = 100 }) {
             cx="40"
             cy="40"
             r={radius}
-            stroke="rgb(var(--soc-border-default))"
+            stroke="rgb(var(--soc-border-subtle))"
             strokeWidth="6"
             fill="transparent"
           />
