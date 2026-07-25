@@ -493,6 +493,28 @@ async def list_customers(
     return _paginated_collection("customers", page, page_size, sort, q)
 
 
+class PolicySettings(BaseModel):
+    block_threshold: int = 75
+    challenge_threshold: int = 50
+    window_seconds: int = 300
+
+
+_DEFAULT_POLICY = PolicySettings().model_dump()
+
+
+@app.get("/settings/policy")
+async def get_settings_policy():
+    saved = store.get("settings", "policy")
+    return saved if saved else _DEFAULT_POLICY
+
+
+@app.put("/settings/policy")
+async def put_settings_policy(policy: PolicySettings):
+    payload = policy.model_dump()
+    store.put("settings", "policy", payload)
+    return payload
+
+
 @app.on_event("startup")
 async def seed_demo_scale_data_when_requested():
     if os.environ.get("SEED_DEMO_SCALE") != "1":
