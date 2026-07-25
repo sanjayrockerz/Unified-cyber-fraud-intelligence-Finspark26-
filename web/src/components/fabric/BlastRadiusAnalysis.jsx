@@ -27,7 +27,7 @@ export default function BlastRadiusAnalysis({ activeTxn }) {
           </h3>
         </div>
         <span className="text-[10px] px-2 py-0.5 rounded bg-soc-warning/10 text-soc-warning border border-soc-warning/30">
-          CONTAINMENT MODELLING
+          SIMULATED — illustrative exposure figures
         </span>
       </div>
 

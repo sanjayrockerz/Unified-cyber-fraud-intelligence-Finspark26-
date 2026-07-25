@@ -23,8 +23,8 @@ export default function LearningLoop({ caseId }) {
             </span>
           </div>
         </div>
-        <span className="text-[10px] px-2 py-0.5 rounded bg-soc-success/10 text-soc-success border border-soc-success/30">
-          MLOps REVIEW QUEUE
+        <span className="text-[10px] px-2 py-0.5 rounded bg-soc-warning/10 text-soc-warning border border-soc-warning/30">
+          SIMULATED — no retraining queue is wired up
         </span>
       </div>
 

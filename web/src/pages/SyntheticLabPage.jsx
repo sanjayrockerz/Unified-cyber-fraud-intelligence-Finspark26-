@@ -41,7 +41,15 @@ export default function SyntheticLabPage() {
 
   return (
     <div className="flex flex-col gap-5 max-w-[1600px] mx-auto select-none font-mono text-xs text-soc-text">
-      
+
+      {/* DATASET HONESTY NOTICE */}
+      <div className="bg-soc-warning/10 border border-soc-warning/40 rounded-xl p-3 flex items-start gap-2">
+        <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-soc-warning">Dataset Honesty Notice</span>
+        <p className="text-xs text-soc-muted">
+          Every record generated on this page is synthetic — produced by this repo's own generator, not real bank data. It exists as a controlled evaluation harness for scale/demo testing, not a claim about any real institution's data.
+        </p>
+      </div>
+
       {/* HEADER STRIP */}
       <div className="bg-soc-surface border border-soc-border p-4 rounded-xl flex flex-wrap items-center justify-between gap-4 shadow-lg">
         <div className="flex items-center gap-3">

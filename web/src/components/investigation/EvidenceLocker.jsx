@@ -96,32 +96,35 @@ export default function EvidenceLocker({ currentTxn, evaluation, onDownloadRepor
             </button>
           </div>
         ) : (
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => handleAction('BLOCK & INTERCEPT')}
-              disabled={isSubmitting}
-              className="flex-1 px-3 py-2 bg-soc-danger hover:bg-soc-danger text-soc-onPrimary rounded-lg text-xs font-mono font-bold flex items-center justify-center gap-1.5 transition-colors shadow-lg shadow-rose-950/40"
-            >
-              <ShieldAlert className="w-4 h-4" />
-              <span>{isSubmitting ? 'ENFORCING...' : 'CONFIRM BLOCK'}</span>
-            </button>
+          <div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => handleAction('BLOCK & INTERCEPT')}
+                disabled={isSubmitting}
+                className="flex-1 px-3 py-2 bg-soc-danger hover:bg-soc-danger text-soc-onPrimary rounded-lg text-xs font-mono font-bold flex items-center justify-center gap-1.5 transition-colors shadow-lg shadow-rose-950/40"
+              >
+                <ShieldAlert className="w-4 h-4" />
+                <span>{isSubmitting ? 'ENFORCING...' : 'CONFIRM BLOCK'}</span>
+              </button>
 
-            <button
-              onClick={() => handleAction('CHALLENGE MFA')}
-              disabled={isSubmitting}
-              className="px-3 py-2 bg-soc-warning hover:bg-soc-warning text-soc-onPrimary rounded-lg text-xs font-mono font-bold flex items-center justify-center gap-1.5 transition-colors"
-            >
-              <span>STEP-UP MFA</span>
-            </button>
+              <button
+                onClick={() => handleAction('CHALLENGE MFA')}
+                disabled={isSubmitting}
+                className="px-3 py-2 bg-soc-warning hover:bg-soc-warning text-soc-onPrimary rounded-lg text-xs font-mono font-bold flex items-center justify-center gap-1.5 transition-colors"
+              >
+                <span>STEP-UP MFA</span>
+              </button>
 
-            <button
-              onClick={onDownloadReport}
-              className="px-3 py-2 bg-soc-surface hover:bg-soc-border border border-soc-border text-soc-text rounded-lg text-xs font-mono flex items-center justify-center gap-1.5 transition-colors"
-              title="Generate CERT-In PDF Report"
-            >
-              <FileText className="w-4 h-4 text-soc-primary" />
-              <span>CERT-In PDF</span>
-            </button>
+              <button
+                onClick={onDownloadReport}
+                className="px-3 py-2 bg-soc-surface hover:bg-soc-border border border-soc-border text-soc-text rounded-lg text-xs font-mono flex items-center justify-center gap-1.5 transition-colors"
+                title="Generate CERT-In PDF Report"
+              >
+                <FileText className="w-4 h-4 text-soc-primary" />
+                <span>CERT-In PDF</span>
+              </button>
+            </div>
+            <p className="text-[10px] text-soc-dim mt-1">Simulated action — no live enforcement call is made.</p>
           </div>
         )}
       </div>

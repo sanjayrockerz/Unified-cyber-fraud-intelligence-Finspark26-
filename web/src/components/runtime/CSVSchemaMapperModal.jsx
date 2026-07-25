@@ -44,6 +44,9 @@ export default function CSVSchemaMapperModal({ isOpen, onClose, onIngest }) {
             <h3 className="text-sm font-mono font-bold text-soc-text uppercase tracking-wider">
               CSV Dataset Ingestion & Dynamic Schema Mapper
             </h3>
+            <span className="text-[10px] px-2 py-0.5 rounded bg-soc-warning/10 text-soc-warning border border-soc-warning/30">
+              SIMULATED — no real file upload
+            </span>
           </div>
           <button onClick={onClose} className="text-soc-dim hover:text-soc-text p-1 rounded">
             <X className="w-4 h-4" />
