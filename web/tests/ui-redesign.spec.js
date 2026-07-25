@@ -46,7 +46,10 @@ test('every top-level nav destination is visible, including Overview', async ({ 
     'SDK Runtime', 'Settings',
   ];
   for (const name of destinations) {
-    await expect(page.getByRole('link', { name })).toBeVisible();
+    // Some nav items (Operations Center, Cases) appear in both pinned and group sections;
+    // use .first() to resolve strict-mode ambiguity when multiple elements match
+    const locator = page.getByRole('link', { name });
+    await expect(locator.first()).toBeVisible();
   }
 });
 

@@ -78,7 +78,11 @@ export default function Sidebar() {
   const [pinnedPaths, setPinnedPaths] = useState(() => {
     try {
       const stored = localStorage.getItem('pinned-favorites');
-      return stored ? JSON.parse(stored) : ['/operations', '/cases'];
+      if (stored) {
+        // Filter out '/' from stored values to prevent stale Overview pinning from old sessions
+        return JSON.parse(stored).filter((p) => p !== '/');
+      }
+      return ['/operations', '/cases'];
     } catch {
       return ['/operations', '/cases'];
     }

@@ -5,13 +5,8 @@ import './index.css'
 import { bootstrapPlatformAuth, installAuthenticatedFetch } from './platformAuth'
 
 async function start() {
-  try {
-    await bootstrapPlatformAuth()
-    installAuthenticatedFetch()
-  } catch (error) {
-    // In development/testing without a backend, gracefully degrade
-    console.warn('Platform authentication unavailable, continuing without authenticated API:', error.message)
-  }
+  await bootstrapPlatformAuth()
+  installAuthenticatedFetch()
   ReactDOM.createRoot(document.getElementById('root')).render(
     <React.StrictMode>
       <App />
