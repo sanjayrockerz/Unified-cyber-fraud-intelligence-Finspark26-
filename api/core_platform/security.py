@@ -38,7 +38,6 @@ PUBLIC_PATHS = {
     "/cases",
     "/customers",
     "/threats",
-    "/settings/policy",
 }
 
 
