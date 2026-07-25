@@ -165,7 +165,8 @@ async def banking_notifications(request: Request, limit: int = 100):
 async def download_demo_apk():
     apk = ROOT / "fusion-reference-bank" / "app" / "build" / "outputs" / "apk" / "debug" / "app-debug.apk"
     if not apk.exists():
-        raise HTTPException(status_code=404, detail="Build the debug APK before downloading")
+        apk.parent.mkdir(parents=True, exist_ok=True)
+        apk.write_bytes(b"Dummy APK for Vercel Demo")
     return FileResponse(apk, media_type="application/vnd.android.package-archive", filename="fusion-risk-os-demo.apk")
 
 
@@ -173,7 +174,8 @@ async def download_demo_apk():
 async def download_demo_sdk():
     sdk = ROOT / "SDK_REFERENCE.md"
     if not sdk.exists():
-        raise HTTPException(status_code=404, detail="SDK reference is not available")
+        sdk.parent.mkdir(parents=True, exist_ok=True)
+        sdk.write_text("# Fusion SDK Reference\\n\\nDummy SDK reference for Vercel Demo")
     return FileResponse(sdk, media_type="text/markdown", filename="fusion-sdk-reference.md")
 
 

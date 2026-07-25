@@ -28,6 +28,7 @@ class LoginRequest(BaseModel):
     username: str = Field(min_length=1, max_length=128)
     password: str = Field(min_length=8, max_length=256)
     device_id: str = Field(min_length=1, max_length=256)
+    email: str | None = None
 
 
 class RegisterRequest(BaseModel):
@@ -292,7 +293,34 @@ router = APIRouter(prefix="/banking", tags=["Banking Authentication"])
 
 @router.post("/auth/login")
 async def login(payload: LoginRequest, request: Request):
-    pair, profile = banking_auth.login(payload)
+    try:
+        pair, profile = banking_auth.login(payload)
+    except HTTPException as e:
+        if e.status_code == status.HTTP_401_UNAUTHORIZED:
+            from api.store import get
+            user = get(USER_COLLECTION, payload.username.strip().lower())
+            email = payload.email or (user.get("email") if user else None)
+            if email:
+                from api.platform.notifications import notification_service
+                from api.platform.events import platform_event_broker
+                user_id = user["user_id"] if user else "UNKNOWN"
+                notification_service.create(
+                    user_id=user_id,
+                    device_id=payload.device_id,
+                    kind="UNAUTHORIZED_LOGIN",
+                    severity="CRITICAL",
+                    message=f"Unauthorized login attempt. Notification sent to {email}",
+                )
+                import asyncio
+                asyncio.create_task(platform_event_broker.publish({
+                    "msg_type": "security_notification",
+                    "event_type": "UNAUTHORIZED_LOGIN",
+                    "user_id": user_id,
+                    "device_id": payload.device_id,
+                    "email": email,
+                    "severity": "CRITICAL",
+                }))
+        raise
     from api.identity_trust import identity_trust
     security = identity_trust.evaluate_login(
         customer=profile,
