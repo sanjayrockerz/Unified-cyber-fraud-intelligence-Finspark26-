@@ -90,7 +90,7 @@ export default function QuantumTrustPanel() {
 
   const handleExportReport = (format) => {
     const reportData = {
-      title: "Fusion Quantum Trust Layer â€” Readiness & PQC Migration Report",
+      title: "Fusion Quantum Trust Layer — Readiness & PQC Migration Report",
       generated_at: new Date().toISOString(),
       quantum_readiness: readiness,
       cryptographic_assessment: assessment,

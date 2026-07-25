@@ -16,7 +16,7 @@ MITRE_ATTACK_MAPPINGS = {
 
 class SessionTrustPassportEngine:
     """
-    Pre-Transaction Session Intelligence Engine for Fusion Risk OS.
+    Pre-Transaction Session Intelligence Engine for Fuzen AI.
     Executes a 6-checkpoint pre-transaction evaluation before any financial action.
     Outputs a Session Trust Passport.
     """

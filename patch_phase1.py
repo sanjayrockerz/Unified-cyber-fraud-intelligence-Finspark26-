@@ -51,7 +51,7 @@ auth_content = re.sub(r'    security = identity_trust\.evaluate_login\(.*?      
 login_method = """
     def login(self, request: LoginRequest) -> tuple[TokenPair, dict[str, Any]]:
         if supabase:
-            response = supabase.auth.sign_in_with_password({"email": request.email or request.username + "@fusionbank.com", "password": request.password})
+            response = supabase.auth.sign_in_with_password({"email": request.email or request.username + "@fuzenbank.com", "password": request.password})
             if not response.user:
                 raise HTTPException(status_code=401, detail="Invalid credentials")
         

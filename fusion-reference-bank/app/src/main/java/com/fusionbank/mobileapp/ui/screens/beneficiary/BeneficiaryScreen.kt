@@ -113,7 +113,7 @@ fun BeneficiaryScreen(
                 Text("Beneficiary Added", color = StatusGreen, fontWeight = FontWeight.Bold)
             },
             text = {
-                Text("Beneficiary saved successfully. Telemetry event BENEFICIARY_ADDED streamed to Fusion Risk OS.", color = TextPrimaryDark)
+                Text("Beneficiary saved successfully. Telemetry event BENEFICIARY_ADDED streamed to Fuzen AI.", color = TextPrimaryDark)
             },
             confirmButton = {
                 Button(onClick = { viewModel.resetSaved(); onBack() }) {

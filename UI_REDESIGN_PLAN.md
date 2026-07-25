@@ -1,4 +1,4 @@
-# Fusion Risk OS — UI/UX Redesign Plan
+# Fuzen AI — UI/UX Redesign Plan
 
 **Project:** Unified Cyber-Fraud Intelligence Platform (FinSpark'26, Bank of Maharashtra PS2)
 **Repo root:** `C:\Users\clash\Documents\Unified Cyber-Fraud Intelligence Platform`

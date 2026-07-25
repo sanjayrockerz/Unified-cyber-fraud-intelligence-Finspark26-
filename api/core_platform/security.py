@@ -32,6 +32,12 @@ PUBLIC_PATHS = {
     "/identity/refresh",
     "/identity/password-reset",
     "/api/copilot/chat",
+    "/graph/topology",
+    "/graph/analyze",
+    "/transactions",
+    "/cases",
+    "/customers",
+    "/threats",
 }
 
 

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   ShieldAlert, 
   Layers, 
@@ -28,7 +28,7 @@ export default function InvestigationIntelligencePanel({ caseId = 'CASE-2026-894
 
   useEffect(() => {
     fetchInvestigationBrief();
-  }, [caseId, activeTxn]);
+  }, [caseId, activeTxn?.user_id, activeTxn?.txn_id, activeTxn?.amount]);
 
   const fetchInvestigationBrief = async () => {
     setLoading(true);

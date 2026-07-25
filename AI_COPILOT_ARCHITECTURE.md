@@ -1,7 +1,7 @@
-# Fusion AI Copilot Architecture
+# Fuzen AI Copilot Architecture
 
 ## Overview
-The Fusion AI Copilot serves as an interactive intelligence layer on top of the existing pre-transaction security platform. By leveraging the Gemini API and robust backend function-calling, the Copilot provides natural language insights, dynamically fetches live system data, and integrates directly into the Operations Center interface.
+The Fuzen AI Copilot serves as an interactive intelligence layer on top of the existing pre-transaction security platform. By leveraging the Gemini API and robust backend function-calling, the Copilot provides natural language insights, dynamically fetches live system data, and integrates directly into the Operations Center interface.
 
 ## Components
 

@@ -4,7 +4,7 @@ Audit date: July 24, 2026
 
 ## Executive Summary
 
-Fusion Risk OS is substantially more coherent than the pre-stabilization baseline, but it is not yet ready for production deployment or for a credible Phase 3 handoff.
+Fuzen AI is substantially more coherent than the pre-stabilization baseline, but it is not yet ready for production deployment or for a credible Phase 3 handoff.
 
 What improved:
 
@@ -93,7 +93,7 @@ Could not fully verify in CLI:
 
 3. The Android reference login remains a demo experience.
 
-- Evidence: `fusion-reference-bank/app/src/main/java/com/fusionbank/mobileapp/FusionBankApp.kt` and app login flow
+- Evidence: `fusion-reference-bank/app/src/main/java/com/fuzenbank/mobileapp/FuzenAIBankApp.kt` and app login flow
 - Reason: platform transport is secured, but end-user banking authentication is still not a real integrated identity flow
 - Impact: production banking posture cannot be claimed end-to-end
 

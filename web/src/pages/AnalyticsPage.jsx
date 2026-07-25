@@ -374,7 +374,7 @@ export default function AnalyticsPage() {
                     <span>FN Count:</span> <span className="font-bold text-soc-danger">{currentSweepPt.FN}</span>
                   </div>
                   <div className="flex justify-between text-xs border-t border-soc-border pt-1 mt-1">
-                    <span>Total Cost (INR):</span> <span className="font-bold text-soc-warning">â‚¹{currentSweepPt.total_cost.toLocaleString()}</span>
+                    <span>Total Cost (INR):</span> <span className="font-bold text-soc-warning">₹{currentSweepPt.total_cost.toLocaleString()}</span>
                   </div>
                   
                   <div className="pt-2">
@@ -396,10 +396,10 @@ export default function AnalyticsPage() {
                 <LineChart data={chartData} margin={{ top: 20, right: 20, left: 20, bottom: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#2D3748" />
                   <XAxis dataKey="threshold" stroke="#A0AEC0" tick={{fontSize: 10}} label={{ value: 'Threshold (0-100)', position: 'insideBottom', offset: -10, fill: '#A0AEC0', fontSize: 10 }} />
-                  <YAxis stroke="#A0AEC0" tick={{fontSize: 10}} tickFormatter={(v) => 'â‚¹' + (v/1000).toFixed(0) + 'k'} width={60} />
+                  <YAxis stroke="#A0AEC0" tick={{fontSize: 10}} tickFormatter={(v) => '₹' + (v/1000).toFixed(0) + 'k'} width={60} />
                   <RechartsTooltip 
                     contentStyle={{ backgroundColor: '#1A202C', borderColor: '#2D3748', fontSize: '11px', fontFamily: 'monospace', borderRadius: '8px' }}
-                    formatter={(value, name) => ['â‚¹' + value.toLocaleString(), name]}
+                    formatter={(value, name) => ['₹' + value.toLocaleString(), name]}
                     labelFormatter={(label) => `Threshold: ${label}`}
                   />
                   <Legend verticalAlign="top" height={36} iconType="circle" wrapperStyle={{ fontSize: '11px', fontWeight: 'bold' }}/>

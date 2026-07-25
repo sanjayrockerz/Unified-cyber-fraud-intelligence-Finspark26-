@@ -14,7 +14,7 @@ Excluded by design:
 
 ## Outcome
 
-Fusion Risk OS now executes through one authoritative backend path for SDK and transaction evaluation:
+Fuzen AI now executes through one authoritative backend path for SDK and transaction evaluation:
 
 `APK -> Fusion SDK -> REST -> AuthoritativePlatformPipeline -> CyberThreatEngine -> GraphRuntime -> ModelRuntime/Fallback -> DecisionEngineAdapter -> Session update (when present) -> WebSocket -> APK/Dashboard`
 
@@ -50,8 +50,8 @@ Modified:
 
 - `api/main.py`
 - `web/src/platformAuth.js`
-- `fusion-reference-bank/app/src/main/java/com/fusionbank/mobileapp/sdk/Fusion.kt`
-- `fusion-reference-bank/app/src/main/java/com/fusionbank/mobileapp/sdk/FusionConfig.kt`
+- `fusion-reference-bank/app/src/main/java/com/fuzenbank/mobileapp/sdk/Fusion.kt`
+- `fusion-reference-bank/app/src/main/java/com/fuzenbank/mobileapp/sdk/FusionConfig.kt`
 
 Result:
 
@@ -96,9 +96,9 @@ Modified:
 
 - `fusion-reference-bank/app/build.gradle.kts`
 - `fusion-reference-bank/app/src/main/AndroidManifest.xml`
-- `fusion-reference-bank/app/src/main/java/com/fusionbank/mobileapp/FusionBankApp.kt`
-- `fusion-reference-bank/app/src/main/java/com/fusionbank/mobileapp/sdk/*`
-- `fusion-reference-bank/app/src/main/java/com/fusionbank/mobileapp/sdk/security/SecureStorage.kt`
+- `fusion-reference-bank/app/src/main/java/com/fuzenbank/mobileapp/FuzenAIBankApp.kt`
+- `fusion-reference-bank/app/src/main/java/com/fuzenbank/mobileapp/sdk/*`
+- `fusion-reference-bank/app/src/main/java/com/fuzenbank/mobileapp/sdk/security/SecureStorage.kt`
 - `fusion-reference-bank/app/src/main/res/xml/network_security_config.xml`
 - `fusion-reference-bank/app/src/debug/res/xml/network_security_config.xml`
 

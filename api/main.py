@@ -28,6 +28,7 @@ from api.synthetic_universe.fraud_scenario_engine import generate_bank_universe
 from api.synthetic_universe.graph_generator import generate_graph_topology
 from api.synthetic_universe.exporter import export_dataset_csv, export_dataset_json, export_dataset_replay, export_dataset_parquet_bytes
 from api.synthetic_universe.bank_model import get_virtual_bank, BANK_REGISTRY
+from api.synthetic_universe.dynamic_event_stream import dynamic_stream_engine
 from api.digital_twin_engine import get_or_create_digital_twin
 from api.session_intelligence_engine import session_engine
 from api.investigation_intelligence_engine import investigation_engine
@@ -65,7 +66,7 @@ from api.copilot_engine import router as copilot_router
 
 
 
-app = FastAPI(title="Fusion Risk OS", version="2.5.0")
+app = FastAPI(title="Fuzen AI", version="2.5.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -113,7 +114,7 @@ async def register_paired_device(req: DeviceRegistrationRequest):
     if not record:
         raise HTTPException(status_code=401, detail="Pairing token is invalid, expired, or already used")
     device = pairing_registry.register_device(req.pair_id, req.model_dump())
-    client = platform_settings.clients.get("fusion-android-dev", {"roles": ["sdk"], "app_id": "com.fusionbank.mobileapp"})
+    client = platform_settings.clients.get("fusion-android-dev", {"roles": ["sdk"], "app_id": "com.fuzenbank.mobileapp"})
     access_token, expires_at = create_access_token(
         "fusion-android-dev", {**client, "roles": ["sdk"]}, subject=device["device_id"]
     )
@@ -668,7 +669,7 @@ async def generate_cert_in_report(req: CertInReportRequest):
     p.drawString(50, 660, f"Transaction ID: {req.txn_id}")
     p.drawString(50, 640, f"Affected User ID: {req.user_id}")
     p.drawString(50, 620, f"Amount at Risk: INR {req.amount:,.2f}")
-    p.drawString(50, 600, f"Fusion Risk Score: {req.score}")
+    p.drawString(50, 600, f"Fuzen AI Score: {req.score}")
     
     p.setFont("Helvetica-Bold", 12)
     p.drawString(50, 560, "Detection Reasons / Vectors")
@@ -845,6 +846,35 @@ async def list_live_sessions(
             lifecycle = SessionLifecycle(state.upper())
         except ValueError as exc:
             raise HTTPException(status_code=422, detail=f"Unknown session state: {state}") from exc
+    if not session_intelligence.repository.list_sessions(include_closed=True):
+        session_intelligence.process_event({
+            "session_id": "SESS_9921_CRITICAL",
+            "user_id": "usr_demo_001",
+            "event_type": "SESSION_STARTED",
+            "device_id": "dev_9999",
+            "latitude": 28.6139,
+            "longitude": 77.2090,
+            "ip": "185.15.2.22"
+        })
+        session_intelligence.process_event({
+            "session_id": "SESS_FUSB_1001",
+            "user_id": "usr_000001",
+            "event_type": "SESSION_STARTED",
+            "device_id": "dev_android_991",
+            "latitude": 19.0760,
+            "longitude": 72.8777,
+            "ip": "192.168.1.10"
+        })
+        session_intelligence.process_event({
+            "session_id": "SESS_FUSB_1002",
+            "user_id": "usr_000002",
+            "event_type": "SESSION_STARTED",
+            "device_id": "dev_android_992",
+            "latitude": 12.9716,
+            "longitude": 77.5946,
+            "ip": "192.168.1.12"
+        })
+
     sessions = session_intelligence.repository.list_sessions(
         state=lifecycle,
         search=search,
@@ -852,6 +882,18 @@ async def list_live_sessions(
         limit=limit,
     )
     return {"sessions": [session.model_dump(mode="json") for session in sessions], "count": len(sessions)}
+
+
+@app.get("/timeline/stream")
+async def get_unified_event_timeline(limit: int = 50):
+    events = dynamic_stream_engine.get_unified_timeline(limit=limit)
+    if not events:
+        # Pre-seed dynamic timeline if empty
+        for _ in range(15):
+            evt = dynamic_stream_engine.generate_synthetic_event()
+            dynamic_stream_engine.record_event(evt)
+        events = dynamic_stream_engine.get_unified_timeline(limit=limit)
+    return {"timeline": events, "count": len(events)}
 
 
 @app.get("/sessions/{session_id}")
@@ -1262,6 +1304,14 @@ async def sdk_session_start(req: SDKSessionStartRequest, request: Request):
         "event_type": "DEVICE_ATTESTATION",
     }
     result = await platform_pipeline.process(device_event, require_existing_session=True)
+    dynamic_stream_engine.add_live_apk_event({
+        "event_type": "Live APK Session Started",
+        "user_id": session["user_id"],
+        "device_id": session["device_id"],
+        "customer_name": f"Live APK Customer ({session['user_id']})",
+        "risk_score": len(result.threats) * 20 + 15,
+        "status": "APPROVED" if len(result.threats) == 0 else "CHALLENGED"
+    })
     return {
         **session,
         "request_id": result.request_id,

@@ -58,7 +58,7 @@ export default function TrustPassportCard({ passport, connectionState }) {
           <Info label="Passport ID" value={passport.passport_id} icon={ShieldCheck} />
           <Info
             label="Last update"
-            value={passport.updated_time ? new Date(passport.updated_time).toLocaleTimeString() : 'â€”'}
+            value={passport.updated_time ? new Date(passport.updated_time).toLocaleTimeString() : '—'}
             icon={Clock3}
           />
         </div>
@@ -74,7 +74,7 @@ function Info({ label, value, icon: Icon, valueClass = 'text-soc-text' }) {
         <Icon className="h-3 w-3" /> {label}
       </div>
       <div className={`truncate font-mono text-xs font-bold ${valueClass}`} title={String(value ?? '')}>
-        {value ?? 'â€”'}
+        {value ?? '—'}
       </div>
     </div>
   );

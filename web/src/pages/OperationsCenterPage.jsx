@@ -3,20 +3,10 @@ import { authenticatedWebSocketUrl } from '../platformAuth';
 import { useNavigate } from 'react-router-dom';
 import { ShieldAlert, Radio, RefreshCw, Upload, Terminal, Landmark, User, ChevronDown, ChevronUp } from 'lucide-react';
 
-import EnterpriseBadge from '../components/common/EnterpriseBadge';
-import StatusBadge from '../components/common/StatusBadge';
-import SeverityBadge from '../components/common/SeverityBadge';
-import RiskBadge from '../components/common/RiskBadge';
-import MetricCard from '../components/common/MetricCard';
-import Table from '../components/common/Table';
-import SearchInput from '../components/common/SearchInput';
-import Button from '../components/common/Button';
-
-// Pre-Transaction Security & Runtime Components
+import CSVSchemaMapperModal from '../components/runtime/CSVSchemaMapperModal';
 import FusionLifecyclePipeline from '../components/runtime/FusionLifecyclePipeline';
 import FraudDevToolsInspector from '../components/runtime/FraudDevToolsInspector';
 import NarrativeAIStoryteller from '../components/runtime/NarrativeAIStoryteller';
-import CSVSchemaMapperModal from '../components/runtime/CSVSchemaMapperModal';
 import SessionTrustPassportPanel from '../components/trust/SessionTrustPassportPanel';
 import InvestigationIntelligencePanel from '../components/investigation/InvestigationIntelligencePanel';
 import AICopilotPanel from '../components/copilot/AICopilotPanel';
@@ -35,12 +25,12 @@ export default function OperationsCenterPage() {
   const [quantumData, setQuantumData] = useState(null);
   const [isCSVMapperOpen, setIsCSVMapperOpen] = useState(false);
   const [websocketStages, setWebsocketStages] = useState([]);
-  const [showSecondaryFeeds, setShowSecondaryFeeds] = useState(false); // Progressive disclosure for raw logs
+  const [showSecondaryFeeds, setShowSecondaryFeeds] = useState(false);
 
   // Engine Metrics State
   const [apiLatency, setApiLatency] = useState(48);
   const [wsConnected, setWsConnected] = useState(false);
-  const [totalLossPrevented, setTotalLossPrevented] = useState(750000);
+  const [totalLossPrevented, setTotalLossPrevented] = useState(1980000);
 
   const wsRef = useRef(null);
 
@@ -181,7 +171,7 @@ export default function OperationsCenterPage() {
   const displayCases = evaluatedCases.length > 0 ? evaluatedCases : defaultCases;
   const activeCase = selectedCase || displayCases[0];
 
-  const activeTxnPayload = activeCase.rawTxn || {
+  const activeTxnPayload = useMemo(() => activeCase.rawTxn || {
     txn_id: activeCase.txn_id,
     user_id: activeCase.user_id,
     nameOrig: activeCase.nameOrig,
@@ -192,7 +182,7 @@ export default function OperationsCenterPage() {
     device_id: activeCase.device_id || 'dev_9999',
     cyber_compromise_in_window: activeCase.cyber_compromise_in_window || true,
     dest_mule_cluster_id: activeCase.dest_mule_cluster_id || 'cluster_alpha'
-  };
+  }, [activeCase]);
 
   return (
     <div className="flex w-full min-w-0 flex-col gap-5 max-w-[1850px] mx-auto select-none font-sans text-soc-text pb-8">
@@ -206,7 +196,7 @@ export default function OperationsCenterPage() {
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-base font-mono font-black text-soc-text tracking-wider uppercase">
-                Fusion Risk OS â€” Pre-Transaction Cyber Fraud Prevention Platform
+                Fuzen AI — Pre-Transaction Cyber Fraud Prevention Platform
               </h1>
               <span className="text-[10px] font-mono px-2.5 py-0.5 rounded bg-soc-success/20 text-soc-success font-bold border border-soc-success/30">
                 PRE-TRANSACTION PROTECTION ACTIVE
@@ -298,9 +288,22 @@ export default function OperationsCenterPage() {
       {/* SECTION 5 & 6: DECISION SUMMARY & NARRATIVE AI RESPONSE */}
       <NarrativeAIStoryteller activeTxn={activeTxnPayload} evaluation={activeCase} />
 
-      {/* SECTION 7: FUSION AI COPILOT */}
-      <div className="h-[500px]">
-        <AICopilotPanel activeContext={{ user_id: activeCase?.user_id, session_id: 'SESS_9921_CRITICAL' }} />
+      {/* SECTION 7: FUZEN AI COPILOT */}
+      <div className="h-[520px]">
+        <AICopilotPanel 
+          activeContext={{ user_id: activeCase?.user_id, session_id: 'SESS_9921_CRITICAL' }} 
+          onSelectCustomer={(custRow) => {
+            if (custRow && custRow.customerId) {
+              setSelectedCase({
+                ...activeCase,
+                user_id: custRow.customerId,
+                nameOrig: custRow.customer,
+                score: custRow.riskScore,
+                amount: 750000,
+              });
+            }
+          }}
+        />
       </div>
 
       {/* PROGRESSIVE DISCLOSURE: EXPANDABLE SECONDARY RAW STREAM FEEDS */}
@@ -336,7 +339,7 @@ export default function OperationsCenterPage() {
                 <div className="max-h-[220px] overflow-y-auto space-y-2 text-[11px]">
                   {displayCases.map((c) => (
                     <div key={c.id} onClick={() => setSelectedCase(c)} className="p-2 bg-soc-bg border border-soc-border rounded flex justify-between cursor-pointer">
-                      <span>{c.id} â€” {c.nameOrig} â†’ {c.nameDest}</span>
+                      <span>{c.id} — {c.nameOrig} ➔ {c.nameDest}</span>
                       <span className="font-bold text-soc-danger">INR {c.amount.toLocaleString('en-IN')}</span>
                     </div>
                   ))}
@@ -355,12 +358,12 @@ export default function OperationsCenterPage() {
                 <div className="max-h-[220px] overflow-y-auto space-y-2 text-[11px]">
                   {cyberEvents.length === 0 ? (
                     <div className="p-2 bg-soc-danger/10 border border-soc-danger/30 text-soc-danger rounded">
-                      [T-0:40s] Impossible Travel Login Detected (IP 185.15.2.22, Moscow âž” Mumbai)
+                      [T-0:40s] Impossible Travel Login Detected (IP 185.15.2.22, Moscow ➔ Mumbai)
                     </div>
                   ) : (
                     cyberEvents.map((evt, idx) => (
                       <div key={idx} className="p-2 bg-soc-bg border border-soc-border rounded text-soc-muted">
-                        {evt.timestamp} â€¢ {evt.event_type} â€¢ User: {evt.user_id} â€¢ IP: {evt.ip}
+                        {evt.timestamp} • {evt.event_type} • User: {evt.user_id} • IP: {evt.ip}
                       </div>
                     ))
                   )}
@@ -376,7 +379,7 @@ export default function OperationsCenterPage() {
         )}
       </div>
 
-      {/* CSV Dataset Ingestion Modal */}
+      {/* Dataset Schema Mapper Ingestion Modal */}
       <CSVSchemaMapperModal 
         isOpen={isCSVMapperOpen} 
         onClose={() => setIsCSVMapperOpen(false)} 
@@ -386,5 +389,3 @@ export default function OperationsCenterPage() {
     </div>
   );
 }
-
-

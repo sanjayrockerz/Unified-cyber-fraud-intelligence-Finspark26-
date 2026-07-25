@@ -229,7 +229,7 @@ export default function SyntheticLabPage() {
                           <td className="py-1.5 px-2 font-bold text-soc-primary">{c.customer_id}</td>
                           <td className="py-1.5 px-2 text-soc-text">{c.full_name}</td>
                           <td className="py-1.5 px-2 text-soc-dim">{c.city}</td>
-                          <td className="py-1.5 px-2 text-soc-success font-bold">â‚¹{c.annual_salary.toLocaleString('en-IN')}</td>
+                          <td className="py-1.5 px-2 text-soc-success font-bold">₹{c.annual_salary.toLocaleString('en-IN')}</td>
                           <td className="py-1.5 px-2 text-soc-danger font-bold">{c.risk_tier}</td>
                         </tr>
                       ))}

@@ -78,6 +78,18 @@ class NetworkXGraphRepository:
     def __init__(self):
         self.graph = nx.MultiDiGraph()
         self._lock = threading.RLock()
+        self._seed_default_topology()
+
+    def _seed_default_topology(self):
+        default_events = [
+            {"user_id": "usr_000001", "nameOrig": "ACC_FUSB_1001", "nameDest": "ACC_MULE_NEW", "device_id": "dev_android_991", "txn_id": "txn_demo_101", "amount": 750000.0},
+            {"user_id": "usr_000002", "nameOrig": "ACC_FUSB_1002", "nameDest": "ACC_MULE_NEW", "device_id": "dev_android_992", "txn_id": "txn_demo_102", "amount": 250000.0},
+            {"user_id": "usr_000003", "nameOrig": "ACC_FUSB_1003", "nameDest": "ACC_MULE_NEW", "device_id": "dev_android_993", "txn_id": "txn_demo_103", "amount": 180000.0},
+            {"user_id": "usr_abc", "nameOrig": "ACC_ABC_123", "nameDest": "ACC_MULE_002", "device_id": "dev_9999", "txn_id": "txn_demo_999", "amount": 750000.0},
+            {"user_id": "usr_demo_ring", "nameOrig": "ACC_MULE_002", "nameDest": "ACC_ABC_123", "device_id": "dev_9999", "txn_id": "txn_demo_cycle", "amount": 500000.0},
+        ]
+        for evt in default_events:
+            self.observe(evt)
 
     def verify_connectivity(self) -> bool:
         return True

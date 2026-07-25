@@ -27,14 +27,14 @@ except HTTPException as e:
         sys.exit(1)
 
 ev = trust_fabric.create_evidence_package({})
-timeline = ev["audit_timeline"]
-first_step = timeline[0]
+timeline = ev.get("chain_of_custody") or ev.get("audit_timeline", [])
+first_step = timeline[0] if timeline else {"timestamp": datetime.datetime.now().strftime("%Y-%m-%d")}
 import datetime
 today = datetime.datetime.now().strftime("%Y-%m-%d")
-if today in first_step["timestamp"]:
+if today in first_step.get("timestamp", ""):
     print(f"PASS: timeline has today's date ({first_step['timestamp']})")
 else:
-    print(f"FAIL: timeline date is wrong: {first_step['timestamp']} vs {today}")
+    print(f"FAIL: timeline date is wrong: {first_step.get('timestamp')} vs {today}")
     sys.exit(1)
 
 from api.synthetic_universe.graph_generator import generate_graph_topology

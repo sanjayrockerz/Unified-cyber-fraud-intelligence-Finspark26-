@@ -99,7 +99,7 @@ def register_and_start(auth: dict, device_id: str = "integration-device") -> dic
         "/sdk/session/start",
         headers=headers,
         json={
-            "app_id": "com.fusionbank.mobileapp",
+            "app_id": "com.fuzenbank.mobileapp",
             "tenant_id": "TENANT_FUSB_001",
             "sdk_version": "FAT-SDK v2.4.1",
             "user_id": auth["profile"]["user_id"],

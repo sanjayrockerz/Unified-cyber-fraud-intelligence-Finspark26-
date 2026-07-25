@@ -59,7 +59,7 @@ export default function DigitalTwinBaseline({ userId = 'usr_abc' }) {
           <div>
             <div className="flex items-center gap-2">
               <h3 className="font-bold text-soc-text text-xs uppercase tracking-wider">
-                Digital Twin Customer Intelligence â€” {identity.full_name} ({userId})
+                Digital Twin Customer Intelligence — {identity.full_name} ({userId})
               </h3>
               <span className="text-[9px] font-bold px-2 py-0.5 rounded bg-soc-success/10 text-soc-success border border-soc-success/30">
                 LIVE TWIN ACTIVE

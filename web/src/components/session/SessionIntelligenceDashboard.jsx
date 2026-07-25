@@ -138,7 +138,7 @@ export default function SessionIntelligenceDashboard() {
     <div className="space-y-4">
       <div className="grid gap-3 sm:grid-cols-3">
         <Metric label="Live sessions" value={activeCount} icon={ShieldCheck} />
-        <Metric label="Backend latency" value={latency === null ? 'â€”' : `${latency} ms`} icon={Clock3} />
+        <Metric label="Backend latency" value={latency === null ? '—' : `${latency} ms`} icon={Clock3} />
         <Metric label="Trust stream" value={connectionState} icon={connectionState === 'LIVE' ? Wifi : WifiOff} />
       </div>
 

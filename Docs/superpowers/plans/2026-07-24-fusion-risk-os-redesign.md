@@ -1,8 +1,8 @@
-# Fusion Risk OS UI Redesign Implementation Plan
+# Fuzen AI UI Redesign Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:executing-plans` to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Deliver the approved dark-first, accessible, responsive Fusion Risk OS redesign across every routed platform page while adding bounded, server-paginated data views for transactions, cases, and customers.
+**Goal:** Deliver the approved dark-first, accessible, responsive Fuzen AI redesign across every routed platform page while adding bounded, server-paginated data views for transactions, cases, and customers.
 
 **Architecture:** Keep the existing React/Vite application and FastAPI process. Add a small reusable frontend primitive layer (`PageHeader`, `VerdictHero`, `StatStrip`, `DataTable`, `LiveFeed`, `NavGroup`, `EmptyState`), route every existing page, and make the flagship overview compose those primitives. Add a generic SQLite-backed pagination helper and additive list endpoints; demo-scale data is deliberately not seeded automatically.
 

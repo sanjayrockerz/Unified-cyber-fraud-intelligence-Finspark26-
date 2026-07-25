@@ -1,4 +1,4 @@
-# Fusion Risk OS — Comprehensive Implementation Audit
+# Fuzen AI — Comprehensive Implementation Audit
 
 **Audit date:** 24 July 2026  
 **Repository:** `Unified-Cyber-Fraud-Intelligence-Platform`  
@@ -62,7 +62,7 @@ The project has national-level potential, but it requires a smaller, truthful, r
 | Threat-rule wall time | 2,000 direct evaluations | Median 0.018 ms; p95 0.031 ms; max 0.349 ms |
 | Threat reported time | Same 2,000 evaluations | Median 5.0 ms; p95 7.75 ms because 2–8 ms random padding is added |
 | APK size | Artifact inspection | NOT MEASURABLE — APK absent |
-| Stored OpenAPI contract | `openapi.json` inspection | INVALID FOR THIS PROJECT — UTF-16 Lodestar maritime API, not Fusion Risk OS |
+| Stored OpenAPI contract | `openapi.json` inspection | INVALID FOR THIS PROJECT — UTF-16 Lodestar maritime API, not Fuzen AI |
 
 ## Reverse-Engineered Repository
 
@@ -161,7 +161,7 @@ is **not confirmed**.
 | Bills | PARTIAL | Same limitation as QR (`BillViewModel.kt:26-28`). |
 | Profile | FULL as demo UI | Profile, SDK details, trust display, logout, and hidden entry exist. Several roadmap items are explicitly placeholders. |
 | SDK Integration | PARTIAL | Embedded singleton is integrated; not packaged as a reusable SDK module. |
-| `Fusion.initialize()` | FULL | Called from `FusionBankApp.onCreate()` (`FusionBankApp.kt:10-22`). |
+| `Fusion.initialize()` | FULL | Called from `FuzenAIBankApp.onCreate()` (`FuzenAIBankApp.kt:10-22`). |
 | `Fusion.startSession()` | PARTIAL | Registers device and starts backend session; ignores device registration failure/body (`Fusion.kt:96-110`). |
 | `Fusion.reportEvent()` | PARTIAL | Sends or queues events; no completion result or ACK exposed (`Fusion.kt:141-175`). |
 | `Fusion.requestDecision()` | FULL for SDK rules | Calls `/sdk/request-decision` and returns typed result (`Fusion.kt:177-219`). It does not use the model-backed fusion engine. |
@@ -465,7 +465,7 @@ Every displayed component must carry `value`, `source`, `observed_at`, `freshnes
 
 | Finding | File | Class / Method | Proof |
 |---|---|---|---|
-| Android initialization | `FusionBankApp.kt:10-22` | `FusionBankApp.onCreate` | Calls `Fusion.initialize` with build config. |
+| Android initialization | `FuzenAIBankApp.kt:10-22` | `FuzenAIBankApp.onCreate` | Calls `Fusion.initialize` with build config. |
 | Global BODY logging | `Fusion.kt:47-56` | `Fusion.initialize` | `HttpLoggingInterceptor.Level.BODY`. |
 | Room queue | `OfflineEventQueueManager.kt:25-70` | `enqueueEvent`, `flushQueue` | Inserts FIFO and deletes after successful response. |
 | Plaintext fallback | `SecureStorage.kt:10-24` | constructor | Falls back to normal SharedPreferences on any exception. |

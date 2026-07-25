@@ -23,7 +23,7 @@ export default function BlastRadiusAnalysis({ activeTxn }) {
         <div className="flex items-center gap-2">
           <ShieldAlert className="w-5 h-5 text-soc-warning" />
           <h3 className="font-bold text-soc-text text-xs uppercase tracking-wider">
-            Blast Radius Analysis â€” Secondary Incident Exposure & Containment
+            Blast Radius Analysis — Secondary Incident Exposure & Containment
           </h3>
         </div>
         <span className="text-[10px] px-2 py-0.5 rounded bg-soc-warning/10 text-soc-warning border border-soc-warning/30">

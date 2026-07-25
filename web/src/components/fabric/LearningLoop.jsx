@@ -16,7 +16,7 @@ export default function LearningLoop({ caseId }) {
           <RefreshCw className="w-5 h-5 text-soc-success" />
           <div>
             <h3 className="font-bold text-soc-text text-xs uppercase tracking-wider">
-              Continuous Model Learning Loop â€” Closed Case Feedback
+              Continuous Model Learning Loop — Closed Case Feedback
             </h3>
             <span className="text-[10px] text-soc-muted">
               Label closed cases to queue dataset updates for supervised model retraining

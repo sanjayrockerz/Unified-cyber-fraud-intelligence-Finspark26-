@@ -33,7 +33,7 @@ export default function DecisionTrustReport({ trustData, action = 'BLOCK' }) {
           </div>
           <div>
             <h3 className="text-xs font-mono font-bold text-soc-text uppercase tracking-wider flex items-center gap-2">
-              <span>Why Should I Trust This? â€” Decision Trust Report</span>
+              <span>Why Should I Trust This? — Decision Trust Report</span>
               <span className="text-[9px] px-2 py-0.5 rounded bg-soc-primary/20 text-soc-primary font-bold border border-soc-primary/30">
                 DEFENSIBLE AUDIT VERDICT
               </span>

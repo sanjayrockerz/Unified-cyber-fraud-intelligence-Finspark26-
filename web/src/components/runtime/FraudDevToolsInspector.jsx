@@ -30,7 +30,7 @@ export default function FraudDevToolsInspector({ activeTxn, evaluation }) {
         <div className="flex items-center gap-2">
           <Terminal className="w-4 h-4 text-soc-primary" />
           <span className="font-bold text-soc-text text-xs uppercase tracking-wider">
-            Chrome DevTools for Fraud â€” Transaction Inspector
+            Chrome DevTools for Fraud — Transaction Inspector
           </span>
         </div>
 

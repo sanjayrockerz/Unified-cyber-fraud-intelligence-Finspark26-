@@ -56,16 +56,16 @@ The Cyber Attack Simulator is organized into 15 professional sections styled wit
 
 ## 4. Proposed File Changes
 
-### [NEW] Component: Cyber Attack Simulator Module (`com.fusionbank.mobileapp.ui.screens.simulator`)
+### [NEW] Component: Cyber Attack Simulator Module (`com.fuzenbank.mobileapp.ui.screens.simulator`)
 
-- [NEW] [SimulatorViewModel.kt](file:///c:/Users/motis/Downloads/fastapi/Unified-Cyber-Fraud-Intelligence-Platform/fusion-reference-bank/app/src/main/java/com/fusionbank/mobileapp/ui/screens/simulator/SimulatorViewModel.kt) — State management, attack campaign orchestrator, SDK event dispatching
-- [NEW] [SimulatorScreen.kt](file:///c:/Users/motis/Downloads/fastapi/Unified-Cyber-Fraud-Intelligence-Platform/fusion-reference-bank/app/src/main/java/com/fusionbank/mobileapp/ui/screens/simulator/SimulatorScreen.kt) — 15-section Material 3 Dark theme UI
-- [NEW] [DemoScenarioLibrary.kt](file:///c:/Users/motis/Downloads/fastapi/Unified-Cyber-Fraud-Intelligence-Platform/fusion-reference-bank/app/src/main/java/com/fusionbank/mobileapp/ui/screens/simulator/DemoScenarioLibrary.kt) — Pre-defined campaign scenarios
+- [NEW] [SimulatorViewModel.kt](file:///c:/Users/motis/Downloads/fastapi/Unified-Cyber-Fraud-Intelligence-Platform/fusion-reference-bank/app/src/main/java/com/fuzenbank/mobileapp/ui/screens/simulator/SimulatorViewModel.kt) — State management, attack campaign orchestrator, SDK event dispatching
+- [NEW] [SimulatorScreen.kt](file:///c:/Users/motis/Downloads/fastapi/Unified-Cyber-Fraud-Intelligence-Platform/fusion-reference-bank/app/src/main/java/com/fuzenbank/mobileapp/ui/screens/simulator/SimulatorScreen.kt) — 15-section Material 3 Dark theme UI
+- [NEW] [DemoScenarioLibrary.kt](file:///c:/Users/motis/Downloads/fastapi/Unified-Cyber-Fraud-Intelligence-Platform/fusion-reference-bank/app/src/main/java/com/fuzenbank/mobileapp/ui/screens/simulator/DemoScenarioLibrary.kt) — Pre-defined campaign scenarios
 
 ### [MODIFY] Existing Files
-- [MODIFY] [NavGraph.kt](file:///c:/Users/motis/Downloads/fastapi/Unified-Cyber-Fraud-Intelligence-Platform/fusion-reference-bank/app/src/main/java/com/fusionbank/mobileapp/ui/navigation/NavGraph.kt) — Add `Destinations.SIMULATOR` route.
-- [MODIFY] [LiveStatusCard.kt](file:///c:/Users/motis/Downloads/fastapi/Unified-Cyber-Fraud-Intelligence-Platform/fusion-reference-bank/app/src/main/java/com/fusionbank/mobileapp/ui/components/LiveStatusCard.kt) — Add 7-tap gesture trigger on shield logo to launch Demo Mode.
-- [MODIFY] [ProfileScreen.kt](file:///c:/Users/motis/Downloads/fastapi/Unified-Cyber-Fraud-Intelligence-Platform/fusion-reference-bank/app/src/main/java/com/fusionbank/mobileapp/ui/screens/profile/ProfileScreen.kt) — Add long-press trigger on SDK Version string to launch Demo Mode.
+- [MODIFY] [NavGraph.kt](file:///c:/Users/motis/Downloads/fastapi/Unified-Cyber-Fraud-Intelligence-Platform/fusion-reference-bank/app/src/main/java/com/fuzenbank/mobileapp/ui/navigation/NavGraph.kt) — Add `Destinations.SIMULATOR` route.
+- [MODIFY] [LiveStatusCard.kt](file:///c:/Users/motis/Downloads/fastapi/Unified-Cyber-Fraud-Intelligence-Platform/fusion-reference-bank/app/src/main/java/com/fuzenbank/mobileapp/ui/components/LiveStatusCard.kt) — Add 7-tap gesture trigger on shield logo to launch Demo Mode.
+- [MODIFY] [ProfileScreen.kt](file:///c:/Users/motis/Downloads/fastapi/Unified-Cyber-Fraud-Intelligence-Platform/fusion-reference-bank/app/src/main/java/com/fuzenbank/mobileapp/ui/screens/profile/ProfileScreen.kt) — Add long-press trigger on SDK Version string to launch Demo Mode.
 
 ---
 

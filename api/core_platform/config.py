@@ -29,7 +29,7 @@ def _clients(mode: str) -> dict[str, dict[str, Any]]:
             "secret": "fusion-android-local-only",
             "roles": ["sdk"],
             "tenant_id": "TENANT_FUSB_001",
-            "app_id": "com.fusionbank.mobileapp",
+            "app_id": "com.fuzenbank.mobileapp",
         },
         "fusion-test": {
             "secret": "fusion-test-local-only",

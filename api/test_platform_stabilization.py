@@ -80,7 +80,7 @@ def test_authoritative_sdk_pipeline_reports_explicit_model_and_graph_state(
         "/sdk/session/start",
         headers=headers,
         json={
-            "app_id": "com.fusionbank.mobileapp",
+            "app_id": "com.fuzenbank.mobileapp",
             "tenant_id": "TENANT_FUSB_001",
             "sdk_version": "FAT-SDK v2.4.1",
             "user_id": "platform-test-user",

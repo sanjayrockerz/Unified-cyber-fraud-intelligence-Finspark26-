@@ -147,4 +147,7 @@ dependencies {
 
     // Debugging / Testing
     debugImplementation(libs.androidx.ui.tooling)
+
+    // ZXing Android Embedded for offline QR code scanning support
+    implementation("com.journeyapps:zxing-android-embedded:4.3.0")
 }

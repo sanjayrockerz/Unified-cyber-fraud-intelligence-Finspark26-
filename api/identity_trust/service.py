@@ -90,7 +90,7 @@ class IdentityTrustService:
             "id": str(uuid.uuid4()), "auth_user_id": auth_user_id, "customer_id": customer_id,
             "full_name": display_name, "display_name": display_name, "email": email.lower().strip(),
             "mobile_number": phone, "phone": phone, "account_number": account_number,
-            "tenant_id": "TENANT_FUSB_001", "app_id": "com.fusionbank.mobileapp",
+            "tenant_id": "TENANT_FUSB_001", "app_id": "com.fuzenbank.mobileapp",
             "status": "ACTIVE", "created_at": _now(), "updated_at": _now(),
         }
         customer = self._write("customers", row)

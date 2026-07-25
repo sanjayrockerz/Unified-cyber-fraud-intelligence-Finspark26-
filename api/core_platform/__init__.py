@@ -1,4 +1,4 @@
-"""Production platform integration services for Fusion Risk OS."""
+"""Production platform integration services for Fuzen AI."""
 
 from .config import platform_settings
 from .security import (

@@ -86,7 +86,7 @@ fun LiveStatusCard(
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "FUSION RISK OS — FAT-SDK v2.4.1",
+                        text = "FUZEN AI — FAT-SDK v2.4.1",
                         style = MaterialTheme.typography.labelSmall,
                         color = AccentCyan,
                         fontWeight = FontWeight.Bold

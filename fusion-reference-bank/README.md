@@ -1,7 +1,7 @@
 # Fusion Reference Banking Application (`fusion-reference-bank`)
 ## Fusion Adaptive Trust SDK (FAT-SDK) Production Reference Integration
 
-Welcome to the official **Fusion Reference Banking Application**. This repository contains a production-ready, modern Kotlin Android application demonstrating how financial institutions integrate with **Fusion Risk OS** via the embedded **Fusion Adaptive Trust SDK (FAT-SDK)**.
+Welcome to the official **Fusion Reference Banking Application**. This repository contains a production-ready, modern Kotlin Android application demonstrating how financial institutions integrate with **Fuzen AI** via the embedded **Fusion Adaptive Trust SDK (FAT-SDK)**.
 
 ---
 
@@ -28,7 +28,7 @@ Welcome to the official **Fusion Reference Banking Application**. This repositor
                                          │  HTTP / REST API & WebSocket Stream
                                          ▼
 ┌─────────────────────────────────────────────────────────────────────────────────┐
-│                             FUSION RISK OS BACKEND                              │
+│                             FUZEN AI BACKEND                              │
 │                                                                                 │
 │  ┌───────────────────────┐   ┌─────────────────────────┐   ┌─────────────────┐  │
 │  │  Session Intelligence  │   │  Trust Passport Engine  │   │ Decision Engine │  │

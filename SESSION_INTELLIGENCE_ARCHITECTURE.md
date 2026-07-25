@@ -1,4 +1,4 @@
-# Fusion Risk OS — Session Intelligence Architecture
+# Fuzen AI — Session Intelligence Architecture
 
 ## Scope
 

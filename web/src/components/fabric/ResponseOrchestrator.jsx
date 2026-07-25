@@ -199,7 +199,7 @@ export default function ResponseOrchestrator({ activeCase, onDownloadReport }) {
                 <FileText className="w-4 h-4" />
               </div>
               <div>
-                <span className="font-bold text-soc-text text-xs">2. Matched SOAR Playbook â€” {matched_playbook?.name}</span>
+                <span className="font-bold text-soc-text text-xs">2. Matched SOAR Playbook — {matched_playbook?.name}</span>
                 <div className="text-[10px] text-soc-muted">{matched_playbook?.description}</div>
               </div>
             </div>

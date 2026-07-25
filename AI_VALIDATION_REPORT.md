@@ -11,4 +11,4 @@
 *   Prompt injection mitigations have been applied at the system prompt level, restricting the Copilot to only answer queries related to cyber fraud and operations.
 
 ## Conclusion
-The Fusion AI Copilot meets the required specifications for Phase 1. It provides a secure, context-aware interface that significantly enhances analyst productivity.
+The Fuzen AI Copilot meets the required specifications for Phase 1. It provides a secure, context-aware interface that significantly enhances analyst productivity.

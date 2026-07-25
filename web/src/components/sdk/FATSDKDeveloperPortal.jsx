@@ -44,7 +44,7 @@ function CodeSnippet({ code, lang = 'kotlin' }) {
   );
 }
 
-const KOTLIN_INIT = `// Fusion Adaptive Trust SDK â€” Kotlin Integration
+const KOTLIN_INIT = `// Fusion Adaptive Trust SDK — Kotlin Integration
 import com.fusion.sdk.Fusion
 import com.fusion.sdk.FusionConfig
 
@@ -128,7 +128,7 @@ export default function FATSDKDeveloperPortal() {
 
   // API Explorer state
   const [explorerEndpoint, setExplorerEndpoint] = useState(API_ENDPOINTS[0]);
-  const [explorerPayload, setExplorerPayload] = useState('{\n  "app_id": "com.fusionbank.mobileapp",\n  "tenant_id": "TENANT_FUSB_001",\n  "sdk_version": "FAT-SDK v2.4.1",\n  "user_id": "usr_demo",\n  "device_id": "DEV_12345",\n  "environment": "PRODUCTION"\n}');
+  const [explorerPayload, setExplorerPayload] = useState('{\n  "app_id": "com.fuzenbank.mobileapp",\n  "tenant_id": "TENANT_FUSB_001",\n  "sdk_version": "FAT-SDK v2.4.1",\n  "user_id": "usr_demo",\n  "device_id": "DEV_12345",\n  "environment": "PRODUCTION"\n}');
   const [explorerResult, setExplorerResult] = useState(null);
   const [explorerLoading, setExplorerLoading] = useState(false);
 
@@ -273,14 +273,14 @@ export default function FATSDKDeveloperPortal() {
           <div>
             <div className="flex items-center gap-2">
               <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-soc-info/10 text-soc-info border border-soc-info/30">
-                FUSION ADAPTIVE TRUST SDK â€” DEVELOPER PLATFORM
+                FUSION ADAPTIVE TRUST SDK — DEVELOPER PLATFORM
               </span>
               <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-soc-success/20 text-soc-success border border-soc-success/30">
                 FAT-SDK v2.4.1
               </span>
             </div>
             <h2 className="text-base font-black text-soc-text tracking-wide mt-1">
-              ENTERPRISE BANKING SECURITY SDK â€” STRIPE-CLASS DEVELOPER EXPERIENCE
+              ENTERPRISE BANKING SECURITY SDK — STRIPE-CLASS DEVELOPER EXPERIENCE
             </h2>
           </div>
         </div>
@@ -340,7 +340,7 @@ export default function FATSDKDeveloperPortal() {
           <div className="p-4 bg-soc-panel border border-soc-border rounded-lg">
             <span className="text-[10px] text-soc-dim uppercase font-bold block mb-3">SDK Architecture Flow</span>
             <div className="flex flex-wrap items-center gap-2 text-[11px] font-bold">
-              {['Bank Mobile App', 'FAT-SDK', 'Fusion Event Stream', 'Fusion Risk OS', 'Trust Passport', 'Decision API', 'Bank Backend', 'Core Banking'].map((step, i, arr) => (
+              {['Bank Mobile App', 'FAT-SDK', 'Fusion Event Stream', 'Fuzen AI', 'Trust Passport', 'Decision API', 'Bank Backend', 'Core Banking'].map((step, i, arr) => (
                 <React.Fragment key={step}>
                   <span className="px-2.5 py-1.5 bg-soc-bg border border-soc-info/30 text-soc-info rounded-lg">{step}</span>
                   {i < arr.length - 1 && <ChevronRight className="w-3 h-3 text-soc-dim" />}
@@ -351,7 +351,7 @@ export default function FATSDKDeveloperPortal() {
 
           {/* Privacy guarantees */}
           <div className="p-4 bg-soc-panel border border-soc-border rounded-lg">
-            <span className="text-[10px] text-soc-dim uppercase font-bold block mb-2">Privacy Guarantees â€” What the SDK NEVER Collects</span>
+            <span className="text-[10px] text-soc-dim uppercase font-bold block mb-2">Privacy Guarantees — What the SDK NEVER Collects</span>
             <div className="flex flex-wrap gap-2">
               {['Passwords', 'OTPs', 'Account Numbers', 'Card Numbers', 'Screen Content', 'User Input Text', 'PAN / Aadhaar'].map(item => (
                 <span key={item} className="px-2 py-1 text-[10px] bg-soc-danger/10 text-soc-danger border border-soc-danger/30 rounded font-bold flex items-center gap-1">
@@ -487,7 +487,7 @@ export default function FATSDKDeveloperPortal() {
           <div className="p-4 bg-soc-panel border border-soc-border rounded-lg space-y-4">
             <div className="flex items-center gap-2 text-soc-info font-bold border-b border-soc-border pb-2">
               <Play className="w-4 h-4" />
-              <span>SDK Showcase â€” Device & Trust Scenario Simulator</span>
+              <span>SDK Showcase — Device & Trust Scenario Simulator</span>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -647,7 +647,7 @@ export default function FATSDKDeveloperPortal() {
               </div>
             )) : (
               <div className="p-4 bg-soc-panel border border-soc-border rounded text-soc-dim text-[11px] text-center">
-                No events yet â€” run the SDK Showcase to generate events.
+                No events yet — run the SDK Showcase to generate events.
               </div>
             )}
           </div>

@@ -55,7 +55,8 @@ export default function App() {
                           <Route index element={<ThreatDashboard />} />
                           <Route path="dashboard" element={<Navigate to="/operations" replace />} />
                           <Route path="threats" element={<Navigate to="/" replace />} />
-                          <Route path="operations" element={<RouteSurface title="Operations Center" description="Monitor the live pre-transaction protection workflow and take action on the riskiest decision."><OperationsCenterPage /></RouteSurface>} />
+                          <Route path="copilot" element={<Navigate to="/operations" replace />} />
+                          <Route path="operations" element={<OperationsCenterPage />} />
                           <Route path="cases" element={<CasesPage />} />
                           <Route path="customers" element={<CustomersPage />} />
                           <Route path="investigation/:caseId?" element={<RouteSurface title="Investigation" description="Follow linked fraud, cyber, and evidence signals through one focused case workspace."><InvestigationPage /></RouteSurface>} />

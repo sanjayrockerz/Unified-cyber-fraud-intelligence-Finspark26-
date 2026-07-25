@@ -5,7 +5,7 @@ from typing import Dict, List, Any
 
 class InvestigationIntelligenceEngine:
     """
-    Investigation Intelligence Layer for Fusion Risk OS.
+    Investigation Intelligence Layer for Fuzen AI.
     Executes network-level fraud intelligence analysis after pre-transaction session evaluation:
     1. Burst Attack Detection
     2. Graph Mule Discovery (Neo4j)

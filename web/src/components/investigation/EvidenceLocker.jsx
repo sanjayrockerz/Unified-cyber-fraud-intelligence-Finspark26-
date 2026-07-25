@@ -3,7 +3,7 @@ import { ShieldAlert, FileText, CheckCircle2, Lock, Sparkles, Download, MessageS
 
 export default function EvidenceLocker({ currentTxn, evaluation, onDownloadReport }) {
   const [notes, setNotes] = useState(
-    "Investigation Note: High-risk correlation confirmed between impossible travel login (4,500km from Mumbai) and immediate â‚¹7.5L UPI transfer to flagged mule cluster ACC_MULE_NEW."
+    "Investigation Note: High-risk correlation confirmed between impossible travel login (4,500km from Mumbai) and immediate ₹7.5L UPI transfer to flagged mule cluster ACC_MULE_NEW."
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [decisionExecuted, setDecisionExecuted] = useState(null);

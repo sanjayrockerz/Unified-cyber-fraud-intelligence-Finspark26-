@@ -4,12 +4,12 @@
 
 This document outlines the detailed architecture, engineering specification, API contracts, execution roadmap, risk matrix, and validation criteria for **Phase 1: Official Android Reference Banking Application (`fusion-reference-bank`) and Fusion Adaptive Trust SDK (FAT-SDK) Integration**.
 
-The reference banking application is a production-grade Android application built with **Modern Kotlin, Jetpack Compose, Material 3, MVVM Architecture, Hilt Dependency Injection, Retrofit, OkHttp WebSockets, Coroutines, StateFlow, and Jetpack Security**. It serves as the official reference implementation for financial institutions integrating Fusion Risk OS.
+The reference banking application is a production-grade Android application built with **Modern Kotlin, Jetpack Compose, Material 3, MVVM Architecture, Hilt Dependency Injection, Retrofit, OkHttp WebSockets, Coroutines, StateFlow, and Jetpack Security**. It serves as the official reference implementation for financial institutions integrating Fuzen AI.
 
 **Core Directive:**
 - **Zero modification** to existing backend services (`api/`), decision engines, Trust Passport, Developer Portal, or React Dashboard (`web/`).
 - **Live backend communication:** All authentication, device registration, event streaming, decision requests, policy sync, and WebSockets interact directly with the running FastAPI backend (`http://<host>:8001`).
-- **Real-time telemetry:** Every user flow (login, navigation, transfer, beneficiary addition, QR payment, bill payment, logout) streams telemetry directly into Fusion Risk OS.
+- **Real-time telemetry:** Every user flow (login, navigation, transfer, beneficiary addition, QR payment, bill payment, logout) streams telemetry directly into Fuzen AI.
 
 ---
 
@@ -78,9 +78,9 @@ Following an exhaustive audit of the existing repository:
 
 ---
 
-### 3.3 Embedded Fusion Adaptive Trust SDK (`com.fusionbank.sdk`)
+### 3.3 Embedded Fusion Adaptive Trust SDK (`com.fuzenbank.sdk`)
 
-The SDK component will be structured clean and isolated inside `com.fusionbank.sdk`, wrapping all communication with Fusion Risk OS:
+The SDK component will be structured clean and isolated inside `com.fuzenbank.sdk`, wrapping all communication with Fuzen AI:
 
 ```kotlin
 object Fusion {
@@ -140,8 +140,8 @@ fusion-reference-bank/
 │       │   │   ├── xml/network_security_config.xml
 │       │   │   ├── values/colors.xml, strings.xml, themes.xml
 │       │   │   └── drawable/
-│       │   └── java/com/fusionbank/mobileapp/
-│       │       ├── FusionBankApp.kt
+│       │   └── java/com/fuzenbank/mobileapp/
+│       │       ├── FuzenAIBankApp.kt
 │       │       ├── di/ (AppModule, NetworkModule, DatabaseModule)
 │       │       ├── sdk/ (Fusion SDK Layer)
 │       │       │   ├── Fusion.kt
@@ -173,7 +173,7 @@ fusion-reference-bank/
 ## 5. Execution Roadmap
 
 1. **Phase 1.1: Project Skeleton Initialization**: Setup Gradle project structure, dependencies (Hilt, Jetpack Compose, Retrofit, OkHttp, Room, Security).
-2. **Phase 1.2: Fusion SDK Core Engine (`com.fusionbank.sdk`)**: Build device attestation scanner, secure storage, model definitions, and API client.
+2. **Phase 1.2: Fusion SDK Core Engine (`com.fuzenbank.sdk`)**: Build device attestation scanner, secure storage, model definitions, and API client.
 3. **Phase 1.3: Networking & WebSocket Infrastructure**: Implement Retrofit services for `/sdk/*` endpoints and OkHttp WebSocket client for `/ws/stream` with exponential reconnect logic.
 4. **Phase 1.4: Offline Storage & Resilient Event Queue**: Build Room DB offline queue that caches unsent events when offline and flushes them automatically upon network restoration.
 5. **Phase 1.5: UI Layer Implementation (Material 3 Jetpack Compose)**: Implement all 9 application screens with dark/light theme support and the persistent Live Status Card.

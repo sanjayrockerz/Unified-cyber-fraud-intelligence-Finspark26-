@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   ShieldCheck, 
   ShieldAlert, 
@@ -29,7 +29,7 @@ export default function SessionTrustPassportPanel({ sessionId = 'SESS_9921_CRITI
 
   useEffect(() => {
     fetchSessionPassport();
-  }, [sessionId, activeTxn]);
+  }, [sessionId, activeTxn?.user_id, activeTxn?.txn_id, activeTxn?.amount]);
 
   const fetchSessionPassport = async () => {
     setLoading(true);

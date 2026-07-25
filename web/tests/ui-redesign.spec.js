@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-test('exposes the complete grouped Fusion Risk OS navigation', async ({ page }) => {
+test('exposes the complete grouped Fuzen AI navigation', async ({ page }) => {
   await page.goto('http://127.0.0.1:5173/');
 
   await expect(page.getByRole('link', { name: 'Overview' })).toBeVisible();
