@@ -7,55 +7,31 @@ import {
 } from 'lucide-react';
 import { useSidebar } from '../../context/SidebarContext';
 
-const groups = [
-  {
-    label: 'Fraud Operations',
-    items: [
-      { to: '/operations', label: 'Operations Center', icon: Activity },
-      { to: '/cases', label: 'Cases', icon: FileBarChart2 },
-      { to: '/customers', label: 'Customers', icon: Users },
-      { to: '/investigation', label: 'Investigation', icon: Workflow },
-    ],
-  },
-  {
-    label: 'Intelligence',
-    items: [
-      { to: '/analytics', label: 'Analytics', icon: BarChart3 },
-      { to: '/reports', label: 'Reports', icon: FileBarChart2 },
-      { to: '/sessions', label: 'Session Intelligence', icon: Radio },
-      { to: '/graph', label: 'Graph Runtime', icon: Network },
-    ],
-  },
-  {
-    label: 'Platform',
-    items: [
-      { to: '/executive', label: 'Executive Command Center', icon: LayoutDashboard },
-      { to: '/telemetry', label: 'Telemetry', icon: Activity },
-      { to: '/banking', label: 'Banking', icon: Building2 },
-      { to: '/synthetic-lab', label: 'Synthetic Lab', icon: FlaskConical },
-      { to: '/developer', label: 'SDK Runtime', icon: Code2 },
-    ],
-  },
+const NAV_ITEMS = [
+  { to: '/', label: 'Overview', icon: LayoutDashboard, group: null },
+  { to: '/operations', label: 'Operations Center', icon: Activity, group: 'Fraud Operations' },
+  { to: '/cases', label: 'Cases', icon: FileBarChart2, group: 'Fraud Operations' },
+  { to: '/customers', label: 'Customers', icon: Users, group: 'Fraud Operations' },
+  { to: '/investigation', label: 'Investigation', icon: Workflow, group: 'Fraud Operations' },
+  { to: '/analytics', label: 'Analytics', icon: BarChart3, group: 'Intelligence' },
+  { to: '/reports', label: 'Reports', icon: FileBarChart2, group: 'Intelligence' },
+  { to: '/sessions', label: 'Session Intelligence', icon: Radio, group: 'Intelligence' },
+  { to: '/graph', label: 'Graph Runtime', icon: Network, group: 'Intelligence' },
+  { to: '/executive', label: 'Executive Command Center', icon: LayoutDashboard, group: 'Leadership & Platform' },
+  { to: '/telemetry', label: 'Telemetry', icon: Activity, group: 'Leadership & Platform' },
+  { to: '/banking', label: 'Banking', icon: Building2, group: 'Leadership & Platform' },
+  { to: '/synthetic-lab', label: 'Synthetic Lab', icon: FlaskConical, group: 'Leadership & Platform' },
+  { to: '/developer', label: 'SDK Runtime', icon: Code2, group: 'Leadership & Platform' },
+  { to: '/settings', label: 'Settings', icon: Settings, group: null },
 ];
 
-// Flat list lookup of all navigation links to dynamically populate pinned list
-const allNavItems = [
-  { to: '/', label: 'Overview', icon: LayoutDashboard },
-  { to: '/operations', label: 'Operations Center', icon: Activity },
-  { to: '/cases', label: 'Cases', icon: FileBarChart2 },
-  { to: '/customers', label: 'Customers', icon: Users },
-  { to: '/investigation', label: 'Investigation', icon: Workflow },
-  { to: '/analytics', label: 'Analytics', icon: BarChart3 },
-  { to: '/reports', label: 'Reports', icon: FileBarChart2 },
-  { to: '/sessions', label: 'Session Intelligence', icon: Radio },
-  { to: '/graph', label: 'Graph Runtime', icon: Network },
-  { to: '/executive', label: 'Executive Command Center', icon: LayoutDashboard },
-  { to: '/telemetry', label: 'Telemetry', icon: Activity },
-  { to: '/banking', label: 'Banking', icon: Building2 },
-  { to: '/synthetic-lab', label: 'Synthetic Lab', icon: FlaskConical },
-  { to: '/developer', label: 'SDK Runtime', icon: Code2 },
-  { to: '/settings', label: 'Settings', icon: Settings },
-];
+const GROUP_ORDER = ['Fraud Operations', 'Intelligence', 'Leadership & Platform'];
+const groups = GROUP_ORDER.map((label) => ({
+  label,
+  items: NAV_ITEMS.filter((item) => item.group === label),
+}));
+const allNavItems = NAV_ITEMS;
+const overviewItem = NAV_ITEMS.find((item) => item.to === '/');
 
 function DirectNavLink({ to, label, icon: Icon, end = false, collapsed, isPinned, onTogglePin }) {
   return (
@@ -102,9 +78,9 @@ export default function Sidebar() {
   const [pinnedPaths, setPinnedPaths] = useState(() => {
     try {
       const stored = localStorage.getItem('pinned-favorites');
-      return stored ? JSON.parse(stored) : ['/', '/operations', '/cases'];
+      return stored ? JSON.parse(stored) : ['/operations', '/cases'];
     } catch {
-      return ['/', '/operations', '/cases'];
+      return ['/operations', '/cases'];
     }
   });
 
@@ -162,6 +138,17 @@ export default function Sidebar() {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Permanent Overview link — always visible, not part of the removable-pin system */}
+      <div className="border-b border-soc-border px-2 py-2">
+        <DirectNavLink
+          to={overviewItem.to}
+          label={overviewItem.label}
+          icon={overviewItem.icon}
+          end
+          collapsed={isCollapsed}
+        />
       </div>
 
       {/* Navigation Body */}

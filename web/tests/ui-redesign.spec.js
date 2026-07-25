@@ -36,3 +36,28 @@ test('keeps the Investigation workspace within its content viewport', async ({ p
 
   expect(hasHorizontalOverflow).toBe(false);
 });
+
+test('every top-level nav destination is visible, including Overview', async ({ page }) => {
+  await page.goto('http://127.0.0.1:5173/');
+  const destinations = [
+    'Overview', 'Operations Center', 'Cases', 'Customers', 'Investigation',
+    'Analytics', 'Reports', 'Session Intelligence', 'Graph Runtime',
+    'Executive Command Center', 'Telemetry', 'Banking', 'Synthetic Lab',
+    'SDK Runtime', 'Settings',
+  ];
+  for (const name of destinations) {
+    await expect(page.getByRole('link', { name })).toBeVisible();
+  }
+});
+
+test('Overview link survives a cleared localStorage state', async ({ page }) => {
+  await page.goto('http://127.0.0.1:5173/');
+  await page.evaluate(() => localStorage.clear());
+  await page.reload();
+  await expect(page.getByRole('link', { name: 'Overview' })).toBeVisible();
+});
+
+test('the retired /dashboard route no longer 404s into a dead page', async ({ page }) => {
+  await page.goto('http://127.0.0.1:5173/dashboard');
+  await expect(page).toHaveURL('http://127.0.0.1:5173/');
+});

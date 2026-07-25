@@ -53,7 +53,6 @@ export default function App() {
                       <Routes>
                         <Route path="/" element={<AppLayout quantumData={null} />}>
                           <Route index element={<ThreatDashboard />} />
-                          <Route path="dashboard" element={<Navigate to="/operations" replace />} />
                           <Route path="threats" element={<Navigate to="/" replace />} />
                           <Route path="copilot" element={<Navigate to="/operations" replace />} />
                           <Route path="operations" element={<OperationsCenterPage />} />
