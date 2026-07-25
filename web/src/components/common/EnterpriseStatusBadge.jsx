@@ -42,7 +42,7 @@ export default function EnterpriseStatusBadge({ status, size = 'md' }) {
       break;
     case 'OFFLINE':
       label = 'Offline';
-      bg = 'bg-gray-500/10 border-gray-500/30 text-gray-500';
+      bg = 'bg-soc-dim/10 border-soc-dim/30 text-soc-dim';
       break;
     case 'INVESTIGATING':
     case 'IN_REVIEW':

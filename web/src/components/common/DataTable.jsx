@@ -106,7 +106,7 @@ export default function DataTable({
                       <button
                         type="button"
                         onClick={() => toggleSort(column.key)}
-                        className="inline-flex items-center gap-1 text-left hover:text-white transition-colors focus-visible:outline-none"
+                        className="inline-flex items-center gap-1 text-left hover:text-soc-text transition-colors focus-visible:outline-none"
                       >
                         <span>{column.label}</span>
                         <ChevronsUpDown className="h-3 w-3 text-soc-primary" />
@@ -141,7 +141,7 @@ export default function DataTable({
                         <button
                           type="button"
                           onClick={(e) => toggleRowExpand(rowId, e)}
-                          className="flex h-5 w-5 items-center justify-center rounded border border-soc-border bg-soc-panel/50 text-soc-muted hover:border-soc-primary hover:text-white transition-all"
+                          className="flex h-5 w-5 items-center justify-center rounded border border-soc-border bg-soc-panel/50 text-soc-muted hover:border-soc-primary hover:text-soc-text transition-all"
                         >
                           {isExpanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRightIcon className="h-3 w-3" />}
                         </button>
@@ -176,7 +176,7 @@ export default function DataTable({
             aria-label="Previous page"
             disabled={page <= 1}
             onClick={() => setPage((currentPage) => Math.max(1, currentPage - 1))}
-            className="inline-flex h-8 w-8 items-center justify-center rounded border border-soc-border text-soc-muted enabled:hover:border-soc-primary enabled:hover:text-white disabled:cursor-not-allowed disabled:opacity-30 transition-all"
+            className="inline-flex h-8 w-8 items-center justify-center rounded border border-soc-border text-soc-muted enabled:hover:border-soc-primary enabled:hover:text-soc-text disabled:cursor-not-allowed disabled:opacity-30 transition-all"
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
@@ -185,7 +185,7 @@ export default function DataTable({
             aria-label="Next page"
             disabled={page >= result.total_pages}
             onClick={() => setPage((currentPage) => currentPage + 1)}
-            className="inline-flex h-8 w-8 items-center justify-center rounded border border-soc-border text-soc-muted enabled:hover:border-soc-primary enabled:hover:text-white disabled:cursor-not-allowed disabled:opacity-30 transition-all"
+            className="inline-flex h-8 w-8 items-center justify-center rounded border border-soc-border text-soc-muted enabled:hover:border-soc-primary enabled:hover:text-soc-text disabled:cursor-not-allowed disabled:opacity-30 transition-all"
           >
             <ChevronRight className="h-4 w-4" />
           </button>

@@ -170,19 +170,19 @@ export default function ThreatIntelligenceDashboard() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-5 font-sans text-xs text-soc-muted p-2 bg-[#0c121f] rounded border border-soc-border/40">
         <div>
           <span className="text-[10px] uppercase font-mono block text-soc-dim">Transaction ID</span>
-          <span className="text-white font-mono mt-0.5 block">{txn.txn_id}</span>
+          <span className="text-soc-text font-mono mt-0.5 block">{txn.txn_id}</span>
         </div>
         <div>
           <span className="text-[10px] uppercase font-mono block text-soc-dim">Customer ID / Account</span>
-          <span className="text-white font-mono mt-0.5 block">{txn.user_id} · {txn.nameOrig || '—'}</span>
+          <span className="text-soc-text font-mono mt-0.5 block">{txn.user_id} · {txn.nameOrig || '—'}</span>
         </div>
         <div>
           <span className="text-[10px] uppercase font-mono block text-soc-dim">Channel / Type</span>
-          <span className="text-white font-mono mt-0.5 block">{txn.channel} · {txn.type}</span>
+          <span className="text-soc-text font-mono mt-0.5 block">{txn.channel} · {txn.type}</span>
         </div>
         <div>
           <span className="text-[10px] uppercase font-mono block text-soc-dim">Recipient Account</span>
-          <span className="text-white font-mono mt-0.5 block">{txn.nameDest || '—'}</span>
+          <span className="text-soc-text font-mono mt-0.5 block">{txn.nameDest || '—'}</span>
         </div>
         <div className="col-span-2">
           <span className="text-[10px] uppercase font-mono block text-soc-dim">Evidence Assessment</span>
@@ -196,7 +196,7 @@ export default function ThreatIntelligenceDashboard() {
           <button 
             type="button" 
             onClick={(e) => { e.stopPropagation(); selectCase('CASE-2026-8942'); alert(`Elevating transaction ${txn.txn_id} to case dossier.`); }} 
-            className="px-2.5 py-1 bg-soc-primary/10 border border-soc-primary/30 text-soc-primary hover:bg-soc-primary hover:text-white rounded transition-all"
+            className="px-2.5 py-1 bg-soc-primary/10 border border-soc-primary/30 text-soc-primary hover:bg-soc-primary hover:text-soc-onPrimary rounded transition-all"
           >
             Investigate Case
           </button>
@@ -225,7 +225,7 @@ export default function ThreatIntelligenceDashboard() {
       {/* 1. Compact Header Row */}
       <div className="flex items-center justify-between border-b border-soc-border pb-3">
         <div className="flex items-center gap-2">
-          <h1 className="text-xl font-bold tracking-tight text-white font-mono">Overview</h1>
+          <h1 className="text-xl font-bold tracking-tight text-soc-text font-mono">Overview</h1>
           <span className="text-soc-muted">|</span>
           <span className="text-xs font-semibold text-soc-muted tracking-wide">Live Banking Security Operations</span>
         </div>
@@ -237,7 +237,7 @@ export default function ThreatIntelligenceDashboard() {
           <button 
             type="button" 
             onClick={fetchThreats} 
-            className="inline-flex items-center gap-1.5 rounded border border-soc-border bg-soc-panel px-2.5 py-1.5 text-[11px] font-bold text-white transition-all hover:border-soc-primary hover:shadow-[0_0_10px_rgba(109,94,248,0.15)]"
+            className="inline-flex items-center gap-1.5 rounded border border-soc-border bg-soc-panel px-2.5 py-1.5 text-[11px] font-bold text-soc-text transition-all hover:border-soc-primary hover:shadow-[0_0_10px_rgba(109,94,248,0.15)]"
           >
             <RefreshCw className={`h-3 w-3 ${loading ? 'animate-spin' : ''}`} />
             <span>Refresh Workspace</span>
@@ -262,7 +262,7 @@ export default function ThreatIntelligenceDashboard() {
             className={`bg-[#101827] border border-soc-border rounded p-3 flex flex-col justify-between shadow-sm transition-all hover:translate-y-[-2px] hover:shadow-md hover:border-soc-primary ${kpi.border}`}
           >
             <span className="text-[9px] uppercase tracking-wider font-mono font-black text-soc-muted">{kpi.label}</span>
-            <span className={`text-base font-black font-mono mt-1 text-white tracking-wide ${kpi.isStatus ? 'text-emerald-400' : ''}`}>
+            <span className={`text-base font-black font-mono mt-1 text-soc-text tracking-wide ${kpi.isStatus ? 'text-emerald-400' : ''}`}>
               {kpi.value}
             </span>
           </div>
@@ -273,7 +273,7 @@ export default function ThreatIntelligenceDashboard() {
       <div className="flex flex-col md:flex-row items-center justify-between border border-soc-border bg-[#101827] rounded-lg p-3 px-4 gap-4 shadow-md hover:border-soc-primary/40 transition-all duration-300">
         <div className="flex items-center gap-3">
           <Terminal className="h-4 w-4 text-soc-primary animate-pulse" />
-          <span className="text-xs font-mono font-black uppercase text-white tracking-widest">Decision Engine</span>
+          <span className="text-xs font-mono font-black uppercase text-soc-text tracking-widest">Decision Engine</span>
           <span className="text-soc-muted">|</span>
           <span className="text-[10px] uppercase font-mono text-soc-muted font-bold">Verdict:</span>
           <EnterpriseStatusBadge status={decisionVal} size="xs" />
@@ -290,7 +290,7 @@ export default function ThreatIntelligenceDashboard() {
           ].map((block, idx) => (
             <div key={idx} className="flex flex-col min-w-[80px]">
               <span className="text-[9px] uppercase tracking-wider font-mono font-bold text-soc-muted">{block.label}</span>
-              <span className={`font-mono text-xs font-bold text-white mt-0.5 ${block.isStatus ? 'text-emerald-400' : ''}`}>
+              <span className={`font-mono text-xs font-bold text-soc-text mt-0.5 ${block.isStatus ? 'text-emerald-400' : ''}`}>
                 {block.value}
               </span>
             </div>
@@ -314,7 +314,7 @@ export default function ThreatIntelligenceDashboard() {
             <div className="flex items-center justify-between border-b border-soc-border pb-2 mb-3">
               <div className="flex items-center gap-2">
                 <Globe className="h-4 w-4 text-soc-primary" />
-                <h4 className="text-xs font-mono font-black text-white uppercase tracking-wider">Geo Intelligence</h4>
+                <h4 className="text-xs font-mono font-black text-soc-text uppercase tracking-wider">Geo Intelligence</h4>
               </div>
               <span className="text-[9px] font-mono text-soc-muted font-bold">Origin Share</span>
             </div>
@@ -328,7 +328,7 @@ export default function ThreatIntelligenceDashboard() {
               ].map((geo, idx) => (
                 <div key={idx} className="space-y-1">
                   <div className="flex items-center justify-between text-[10px] font-mono">
-                    <span className="text-white font-bold">{geo.country}</span>
+                    <span className="text-soc-text font-bold">{geo.country}</span>
                     <span className="text-soc-muted">{geo.percent}%</span>
                   </div>
                   <div className="w-full h-1.5 bg-soc-panel rounded-full overflow-hidden">
@@ -348,7 +348,7 @@ export default function ThreatIntelligenceDashboard() {
             <div className="flex items-center justify-between border-b border-soc-border px-4 py-3 bg-soc-panel/35">
               <div className="flex items-center gap-2">
                 <ShieldAlert className="h-4.5 w-4.5 text-soc-primary animate-pulse" />
-                <h3 className="text-xs font-mono font-black text-white uppercase tracking-wider">Incident Queue</h3>
+                <h3 className="text-xs font-mono font-black text-soc-text uppercase tracking-wider">Incident Queue</h3>
               </div>
               <span className="px-1.5 py-0.5 bg-red-500/10 border border-red-500/30 text-red-400 text-[9px] font-mono font-black rounded animate-pulse">
                 {incidents.filter(i => i.severity === 'CRITICAL' || i.severity === 'HIGH').length} SENSITIVE
@@ -367,10 +367,10 @@ export default function ThreatIntelligenceDashboard() {
                     <EnterpriseStatusBadge status={inc.severity} size="xs" />
                   </div>
                   <div className="col-span-2 flex flex-col">
-                    <span className="text-white font-bold truncate">{inc.name}</span>
+                    <span className="text-soc-text font-bold truncate">{inc.name}</span>
                     <span className="text-[9px] text-soc-muted font-normal mt-0.5 truncate">{inc.customer}</span>
                   </div>
-                  <div className="col-span-1 text-center font-bold text-white">
+                  <div className="col-span-1 text-center font-bold text-soc-text">
                     {inc.risk}
                   </div>
                   <div className="col-span-1 text-right text-soc-muted text-[10px] hidden sm:block">
@@ -388,7 +388,7 @@ export default function ThreatIntelligenceDashboard() {
           <section className="flex flex-col gap-2">
             <div className="flex items-center justify-between mb-1">
               <div>
-                <h3 className="text-xs font-mono font-black text-white uppercase tracking-wider font-bold">Transaction Ledger</h3>
+                <h3 className="text-xs font-mono font-black text-soc-text uppercase tracking-wider font-bold">Transaction Ledger</h3>
                 <p className="text-[10px] text-soc-muted font-mono mt-0.5">Real-time decisions with expandible forensic verification.</p>
               </div>
               <input 
@@ -396,7 +396,7 @@ export default function ThreatIntelligenceDashboard() {
                 value={tableQuery} 
                 onChange={(e) => setTableQuery(e.target.value)} 
                 placeholder="Search ledger..."
-                className="h-8 w-44 rounded border border-soc-border bg-soc-bg px-2.5 font-mono text-[10px] text-white placeholder:text-soc-muted focus:border-soc-primary focus:outline-none"
+                className="h-8 w-44 rounded border border-soc-border bg-soc-bg px-2.5 font-mono text-[10px] text-soc-text placeholder:text-soc-muted focus:border-soc-primary focus:outline-none"
               />
             </div>
             
@@ -420,7 +420,7 @@ export default function ThreatIntelligenceDashboard() {
             <div className="flex items-center justify-between border-b border-soc-border pb-2">
               <div className="flex items-center gap-1.5">
                 <Sparkles className="h-4.5 w-4.5 text-soc-primary animate-pulse" />
-                <h4 className="text-xs font-mono font-black text-white uppercase tracking-wider">Fusion AI Intelligence</h4>
+                <h4 className="text-xs font-mono font-black text-soc-text uppercase tracking-wider">Fusion AI Intelligence</h4>
               </div>
               <span className="px-1.5 py-0.5 bg-soc-primary/10 border border-soc-primary/30 text-soc-primary text-[9px] font-mono font-black rounded">
                 ACTIVE
@@ -433,8 +433,8 @@ export default function ThreatIntelligenceDashboard() {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-soc-primary opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-soc-primary"></span>
               </div>
-              <span className="text-white font-bold text-[10px] uppercase block mb-1">Live Recommendations</span>
-              <p className="text-white">
+              <span className="text-soc-text font-bold text-[10px] uppercase block mb-1">Live Recommendations</span>
+              <p className="text-soc-text">
                 Freeze account immediately. Current transaction attempts match high-correlation carding clusters routing from Saint Petersburg, Russia. Dispatched biometric MFA step-up.
               </p>
             </div>
@@ -446,7 +446,7 @@ export default function ThreatIntelligenceDashboard() {
                 'Quarantine network range 185.112.0.0/16',
                 'Audit beneficiary ledger ACC_ABC_123',
               ].map((rec, i) => (
-                <div key={i} className="flex items-start gap-2 text-[10px] font-mono text-white">
+                <div key={i} className="flex items-start gap-2 text-[10px] font-mono text-soc-text">
                   <span className="text-soc-primary font-bold mt-0.5">•</span>
                   <span>{rec}</span>
                 </div>
@@ -469,8 +469,8 @@ export default function ThreatIntelligenceDashboard() {
                   { name: 'Mule-Network-Alpha', status: 'ESCALATED', color: 'bg-red-500' },
                 ].map((act, idx) => (
                   <div key={idx} className="flex items-center justify-between bg-[#0b1019] px-2.5 py-1.5 border border-soc-border/40 rounded font-mono text-[10px]">
-                    <span className="text-white font-bold">{act.name}</span>
-                    <span className={`px-1 rounded text-[8px] font-black text-white ${act.color}`}>
+                    <span className="text-soc-text font-bold">{act.name}</span>
+                    <span className={`px-1 rounded text-[8px] font-black text-soc-onPrimary ${act.color}`}>
                       {act.status}
                     </span>
                   </div>
@@ -492,13 +492,13 @@ export default function ThreatIntelligenceDashboard() {
                   <div key={idx} className="flex items-center justify-between text-[10px] font-mono">
                     <span className="text-soc-muted">{ioc.label}:</span>
                     <div className="flex items-center gap-1">
-                      <span className="text-white bg-[#0b1019] px-1 border border-soc-border/40 rounded text-[9px] font-bold">
+                      <span className="text-soc-text bg-[#0b1019] px-1 border border-soc-border/40 rounded text-[9px] font-bold">
                         {ioc.value}
                       </span>
                       <button 
                         type="button" 
                         onClick={() => copyToClipboard(ioc.value, idx)} 
-                        className="text-soc-muted hover:text-white transition-colors"
+                        className="text-soc-muted hover:text-soc-text transition-colors"
                         title="Copy IOC value"
                       >
                         {copiedText === idx ? <Check className="h-3 w-3 text-soc-success" /> : <Copy className="h-3 w-3" />}
@@ -521,7 +521,7 @@ export default function ThreatIntelligenceDashboard() {
                   { feed: 'Russian ransomware hackers listing HDFC credential leaks.', time: '8 hours ago' }
                 ].map((dw, i) => (
                   <div key={i} className="flex flex-col text-[10px] font-mono bg-[#0b1019]/40 p-2 border border-soc-border/30 rounded">
-                    <p className="text-white leading-relaxed">{dw.feed}</p>
+                    <p className="text-soc-text leading-relaxed">{dw.feed}</p>
                     <span className="text-[8px] text-soc-muted mt-1 block text-right font-semibold">{dw.time}</span>
                   </div>
                 ))}
@@ -550,7 +550,7 @@ export default function ThreatIntelligenceDashboard() {
         title="Forensic Transaction Evidence"
       >
         {selectedTransaction && (
-          <div className="flex flex-col gap-6 font-mono text-xs text-white">
+          <div className="flex flex-col gap-6 font-mono text-xs text-soc-text">
             <div className="flex items-center justify-between border-b border-soc-border pb-3">
               <span className="text-[10px] uppercase font-bold text-soc-muted">Transaction ID:</span>
               <span className="text-soc-primary font-bold">{selectedTransaction.txn_id}</span>
@@ -601,14 +601,14 @@ export default function ThreatIntelligenceDashboard() {
                 <button
                   type="button"
                   onClick={() => { setSelectedTransaction(null); alert(`Approve command issued for ${selectedTransaction.txn_id}`); }}
-                  className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded font-bold transition-all text-center"
+                  className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-500 text-soc-onPrimary rounded font-bold transition-all text-center"
                 >
                   Approve Override
                 </button>
                 <button
                   type="button"
                   onClick={() => { setSelectedTransaction(null); alert(`Block transaction issued for ${selectedTransaction.txn_id}`); }}
-                  className="flex-1 py-2 bg-red-600 hover:bg-red-500 text-white rounded font-bold transition-all text-center"
+                  className="flex-1 py-2 bg-red-600 hover:bg-red-500 text-soc-onPrimary rounded font-bold transition-all text-center"
                 >
                   Confirm Block
                 </button>
@@ -625,7 +625,7 @@ export default function ThreatIntelligenceDashboard() {
         title="SOC Incident Detail Dashboard"
       >
         {selectedIncident && (
-          <div className="flex flex-col gap-5 font-mono text-xs text-white">
+          <div className="flex flex-col gap-5 font-mono text-xs text-soc-text">
             <div className="flex items-center justify-between border-b border-soc-border pb-3">
               <span className="text-[10px] uppercase font-bold text-soc-muted">Incident Code:</span>
               <span className="text-soc-primary font-bold">{selectedIncident.id}</span>
@@ -634,12 +634,12 @@ export default function ThreatIntelligenceDashboard() {
             <div className="space-y-4">
               <div>
                 <span className="text-[10px] uppercase font-bold text-soc-muted block">Threat Type:</span>
-                <span className="text-sm font-bold text-white mt-1 block">{selectedIncident.name}</span>
+                <span className="text-sm font-bold text-soc-text mt-1 block">{selectedIncident.name}</span>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <span className="text-[10px] uppercase font-bold text-soc-muted block">Customer Context:</span>
-                  <span className="mt-1 block font-bold text-white">{selectedIncident.customer}</span>
+                  <span className="mt-1 block font-bold text-soc-text">{selectedIncident.customer}</span>
                 </div>
                 <div>
                   <span className="text-[10px] uppercase font-bold text-soc-muted block">Age / Detected:</span>
@@ -674,8 +674,8 @@ export default function ThreatIntelligenceDashboard() {
                     onClick={() => handleIncidentStatusChange(selectedIncident.id, statusOption)}
                     className={`py-1.5 border rounded text-[10px] font-bold transition-all ${
                       selectedIncident.status === statusOption
-                        ? 'bg-soc-primary border-soc-primary text-white shadow'
-                        : 'bg-soc-panel border-soc-border text-soc-muted hover:border-soc-primary hover:text-white'
+                        ? 'bg-soc-primary border-soc-primary text-soc-onPrimary shadow'
+                        : 'bg-soc-panel border-soc-border text-soc-muted hover:border-soc-primary hover:text-soc-text'
                     }`}
                   >
                     {statusOption.charAt(0) + statusOption.slice(1).toLowerCase()}
@@ -688,7 +688,7 @@ export default function ThreatIntelligenceDashboard() {
               <button
                 type="button"
                 onClick={() => { setSelectedIncident(null); selectCase('CASE-2026-8942'); alert(`Dossier CASE-2026-8942 linking incident ${selectedIncident.id} opened.`); }}
-                className="w-full py-2 bg-soc-primary text-white rounded font-bold hover:bg-soc-primary/80 transition-all text-center flex items-center justify-center gap-1.5"
+                className="w-full py-2 bg-soc-primary text-soc-onPrimary rounded font-bold hover:bg-soc-primary/80 transition-all text-center flex items-center justify-center gap-1.5"
               >
                 <MessageSquare className="h-4 w-4" />
                 <span>Open in Case Dossier</span>

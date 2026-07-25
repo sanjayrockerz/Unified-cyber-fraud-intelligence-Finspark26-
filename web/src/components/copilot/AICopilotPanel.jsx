@@ -33,7 +33,7 @@ function InlineMarkdown({ text }) {
   const renderedElements = parts.map((part, index) => {
     if (part.startsWith('**') && part.endsWith('**')) {
       return (
-        <strong key={index} className="font-semibold text-white">
+        <strong key={index} className="font-semibold text-soc-text">
           {part.slice(2, -2)}
         </strong>
       );
@@ -338,7 +338,7 @@ function RiskScoreCard({ title, blocks }) {
         {/* Risk score radial ring display */}
         <div className="col-span-1 flex flex-col items-center border-r border-soc-border/40 pr-2">
           <div className="relative flex items-center justify-center h-16 w-16 rounded-full border-4 border-red-500/20 border-t-red-500 shadow-inner">
-            <span className="font-mono text-base font-black text-white">{overallRisk.split('/')[0].trim()}</span>
+            <span className="font-mono text-base font-black text-soc-text">{overallRisk.split('/')[0].trim()}</span>
           </div>
           <span className="text-[9px] uppercase font-mono text-soc-muted font-bold mt-1 text-center">Risk Score</span>
         </div>
@@ -348,7 +348,7 @@ function RiskScoreCard({ title, blocks }) {
           {otherStats.map((stat, idx) => (
             <div key={idx} className="flex flex-col">
               <span className="text-[9px] text-soc-muted uppercase font-bold">{stat.label}</span>
-              <span className="text-white font-bold mt-0.5">{stat.value}</span>
+              <span className="text-soc-text font-bold mt-0.5">{stat.value}</span>
             </div>
           ))}
           {otherStats.length === 0 && (
@@ -359,7 +359,7 @@ function RiskScoreCard({ title, blocks }) {
               </div>
               <div className="flex flex-col">
                 <span className="text-[9px] text-soc-muted uppercase font-bold">Estimated Loss</span>
-                <span className="text-white font-bold mt-0.5">₹1,980,000</span>
+                <span className="text-soc-text font-bold mt-0.5">₹1,980,000</span>
               </div>
             </>
           )}
@@ -470,7 +470,7 @@ function ActionButtons({ title, blocks }) {
             key={idx}
             type="button"
             onClick={() => handleActionClick(act)}
-            className="flex items-center justify-center gap-1.5 px-3 py-2 bg-soc-panel border border-soc-border hover:border-soc-primary hover:bg-soc-primary/10 text-white rounded text-xs font-bold font-mono transition-all hover:shadow-[0_0_10px_rgba(109,94,248,0.1)]"
+            className="flex items-center justify-center gap-1.5 px-3 py-2 bg-soc-panel border border-soc-border hover:border-soc-primary hover:bg-soc-primary/10 text-soc-text rounded text-xs font-bold font-mono transition-all hover:shadow-[0_0_10px_rgba(109,94,248,0.1)]"
           >
             <Zap className="h-3 w-3 text-[#f59e0b]" />
             <span>{act}</span>
@@ -503,12 +503,12 @@ function MITRETechniqueCard({ title, blocks }) {
                 <span className="px-1.5 py-0.5 bg-red-500/20 text-red-400 font-black rounded text-[9px]">
                   {match[1]}
                 </span>
-                <span className="text-white">{match[2]}</span>
+                <span className="text-soc-text">{match[2]}</span>
               </div>
             );
           }
           return (
-            <div key={idx} className="bg-red-950/20 border border-red-950/40 p-2 rounded text-white">
+            <div key={idx} className="bg-red-950/20 border border-red-950/40 p-2 rounded text-soc-text">
               <InlineMarkdown text={item} />
             </div>
           );
@@ -559,7 +559,7 @@ function MarkdownReportRenderer({ content, onSelectCustomer }) {
         if (block.type === 'heading') {
           return (
             <div key={idx} className="mt-5 mb-2 first:mt-0 border-b border-soc-border pb-1">
-              <h3 className="text-xs font-black tracking-wide text-white uppercase font-mono">
+              <h3 className="text-xs font-black tracking-wide text-soc-text uppercase font-mono">
                 {block.text}
               </h3>
             </div>
@@ -626,7 +626,7 @@ function MarkdownReportRenderer({ content, onSelectCustomer }) {
                 <button 
                   type="button" 
                   onClick={() => copyCode(codeString, idx)}
-                  className="hover:text-white transition-colors flex items-center gap-1"
+                  className="hover:text-soc-text transition-colors flex items-center gap-1"
                 >
                   {copiedCodeIdx === idx ? <CopyCheck className="h-3 w-3 text-soc-success" /> : <Copy className="h-3 w-3" />}
                   <span>{copiedCodeIdx === idx ? 'Copied' : 'Copy'}</span>
@@ -663,7 +663,7 @@ function MarkdownReportRenderer({ content, onSelectCustomer }) {
                     {headers.map((h, i) => <th key={i} className="p-2.5 font-bold">{h}</th>)}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-soc-border/40 text-white">
+                <tbody className="divide-y divide-soc-border/40 text-soc-text">
                   {rows.map((row, rowIdx) => (
                     <tr key={rowIdx} className="hover:bg-soc-panel/30 transition-colors cursor-pointer">
                       {row.map((cell, cIdx) => (
@@ -695,7 +695,7 @@ export default function AICopilotPanel({ activeContext, onSelectCustomer }) {
       heading: 'Latest Critical Alerts',
       stats: [
         { label: 'Total Critical', value: '7', color: 'text-red-500' },
-        { label: 'Affected Users', value: '5', color: 'text-white' },
+        { label: 'Affected Users', value: '5', color: 'text-soc-text' },
         { label: 'High Risk Score', value: '92', color: 'text-red-500 font-black' },
         { label: 'Confidence Avg.', value: '87%', color: 'text-soc-quantum' },
       ],
@@ -799,7 +799,7 @@ export default function AICopilotPanel({ activeContext, onSelectCustomer }) {
             <Bot className="w-4 h-4 text-soc-primary animate-pulse" />
           </div>
           <div>
-            <h2 className="text-xs font-semibold text-white flex items-center gap-1.5 tracking-wider font-mono">
+            <h2 className="text-xs font-semibold text-soc-text flex items-center gap-1.5 tracking-wider font-mono">
               Fuzen AI Copilot
               <span className="text-[10px] px-1.5 py-0.5 rounded bg-soc-primary/15 border border-soc-primary/30 text-soc-primary font-mono font-bold">
                 GEMINI POWERED
@@ -828,7 +828,7 @@ export default function AICopilotPanel({ activeContext, onSelectCustomer }) {
               <button
                 key={act.label}
                 onClick={() => sendMessage(act.query)}
-                className="flex items-center justify-center gap-1.5 p-2 rounded bg-[#101827] border border-soc-border hover:border-soc-primary/50 hover:bg-[#162337] text-soc-muted hover:text-white transition-all text-[11px] font-semibold text-center font-mono hover:shadow-inner"
+                className="flex items-center justify-center gap-1.5 p-2 rounded bg-[#101827] border border-soc-border hover:border-soc-primary/50 hover:bg-[#162337] text-soc-muted hover:text-soc-text transition-all text-[11px] font-semibold text-center font-mono hover:shadow-inner"
               >
                 <Icon className={`w-3.5 h-3.5 ${act.tint || 'text-soc-primary'}`} />
                 <span className="truncate">{act.label}</span>
@@ -862,7 +862,7 @@ export default function AICopilotPanel({ activeContext, onSelectCustomer }) {
                   <div className="px-4 py-2.5 bg-[#162337] border-b border-soc-border flex items-center justify-between font-mono">
                     <div className="flex items-center gap-2">
                       <span className="text-red-500 animate-pulse text-xs">🔴</span>
-                      <span className="text-xs font-black tracking-wide text-white uppercase">AI Investigation Summary</span>
+                      <span className="text-xs font-black tracking-wide text-soc-text uppercase">AI Investigation Summary</span>
                     </div>
                     <span className="px-1.5 py-0.2 bg-red-500/10 border border-red-500/30 text-red-400 text-[10px] font-black rounded uppercase">
                       HIGH
@@ -880,7 +880,7 @@ export default function AICopilotPanel({ activeContext, onSelectCustomer }) {
                     
                     {/* Render custom page tables/stats if this is the initial structured state */}
                     {msg.heading && (
-                      <h3 className="text-xs font-bold text-white flex items-center gap-1.5 font-mono mb-2 border-b border-soc-border pb-1 uppercase tracking-wide">
+                      <h3 className="text-xs font-bold text-soc-text flex items-center gap-1.5 font-mono mb-2 border-b border-soc-border pb-1 uppercase tracking-wide">
                         <ShieldAlert className="w-3.5 h-3.5 text-red-500 animate-bounce" />
                         {msg.heading}
                       </h3>
@@ -910,7 +910,7 @@ export default function AICopilotPanel({ activeContext, onSelectCustomer }) {
                               <th className="p-2">Status</th>
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-soc-border/40 text-white">
+                          <tbody className="divide-y divide-soc-border/40 text-soc-text">
                             {msg.tableData.map((row, rIdx) => (
                               <tr
                                 key={rIdx}
@@ -952,28 +952,28 @@ export default function AICopilotPanel({ activeContext, onSelectCustomer }) {
                     <button 
                       type="button" 
                       onClick={() => alert('Investigation dossier initialized.')}
-                      className="px-2 py-1 rounded bg-[#0c121e] border border-soc-border hover:border-soc-primary text-soc-muted hover:text-white transition-all font-bold"
+                      className="px-2 py-1 rounded bg-[#0c121e] border border-soc-border hover:border-soc-primary text-soc-muted hover:text-soc-text transition-all font-bold"
                     >
                       Open Investigation
                     </button>
                     <button 
                       type="button" 
                       onClick={() => alert('Dispatched customer history timeline request.')}
-                      className="px-2 py-1 rounded bg-[#0c121e] border border-soc-border hover:border-soc-primary text-soc-muted hover:text-white transition-all font-bold"
+                      className="px-2 py-1 rounded bg-[#0c121e] border border-soc-border hover:border-soc-primary text-soc-muted hover:text-soc-text transition-all font-bold"
                     >
                       Timeline Context
                     </button>
                     <button 
                       type="button" 
                       onClick={() => alert('Graph visualizer focal node updated.')}
-                      className="px-2 py-1 rounded bg-[#0c121e] border border-soc-border hover:border-soc-primary text-soc-muted hover:text-white transition-all font-bold"
+                      className="px-2 py-1 rounded bg-[#0c121e] border border-soc-border hover:border-soc-primary text-soc-muted hover:text-soc-text transition-all font-bold"
                     >
                       View Graph
                     </button>
                     <button 
                       type="button" 
                       onClick={() => alert('Regulatory summary compiled and printed.')}
-                      className="px-2 py-1 rounded bg-[#0c121e] border border-soc-border hover:border-soc-primary text-soc-muted hover:text-white transition-all font-bold"
+                      className="px-2 py-1 rounded bg-[#0c121e] border border-soc-border hover:border-soc-primary text-soc-muted hover:text-soc-text transition-all font-bold"
                     >
                       Generate SAR
                     </button>
@@ -996,11 +996,11 @@ export default function AICopilotPanel({ activeContext, onSelectCustomer }) {
       {/* Persistent Input Bar (Bottom Pinned) */}
       <div className="p-3 bg-[#101827] border-t border-soc-border">
         <div className="flex items-center gap-2 bg-[#0c121e] border border-soc-border focus-within:border-soc-primary rounded-lg px-3 py-2 transition-all">
-          <Paperclip className="w-4 h-4 text-soc-muted cursor-pointer hover:text-white" />
-          <Mic className="w-4 h-4 text-soc-muted cursor-pointer hover:text-white" />
+          <Paperclip className="w-4 h-4 text-soc-muted cursor-pointer hover:text-soc-text" />
+          <Mic className="w-4 h-4 text-soc-muted cursor-pointer hover:text-soc-text" />
           <input
             type="text"
-            className="flex-1 bg-transparent text-white text-xs focus:outline-none placeholder-soc-muted font-mono"
+            className="flex-1 bg-transparent text-soc-text text-xs focus:outline-none placeholder-soc-muted font-mono"
             placeholder="Ask me anything about fraud, risk, or customers..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -1009,7 +1009,7 @@ export default function AICopilotPanel({ activeContext, onSelectCustomer }) {
           <button
             onClick={() => sendMessage()}
             disabled={loading}
-            className="p-1.5 bg-soc-primary text-white rounded hover:bg-soc-primary/80 transition-colors disabled:opacity-50"
+            className="p-1.5 bg-soc-primary text-soc-onPrimary rounded hover:bg-soc-primary/80 transition-colors disabled:opacity-50"
           >
             <Send className="w-3.5 h-3.5" />
           </button>

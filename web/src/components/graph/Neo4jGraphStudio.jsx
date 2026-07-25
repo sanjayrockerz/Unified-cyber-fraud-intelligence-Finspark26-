@@ -418,8 +418,8 @@ export default function Neo4jGraphStudio({ graphData, onNodeClick }) {
             onClick={() => setFilterGroup(key)}
             className={`shrink-0 text-[10px] font-mono px-2 py-0.5 rounded border transition-colors ${
               filterGroup === key
-                ? 'border-white/40 text-white bg-white/10'
-                : 'border-soc-border text-soc-muted hover:text-white'
+                ? 'border-white/40 text-soc-text bg-white/10'
+                : 'border-soc-border text-soc-muted hover:text-soc-text'
             }`}
             style={filterGroup === key ? { borderColor: color, color } : {}}
           >

@@ -3,13 +3,13 @@ import React from 'react';
 export default function RiskScoreGauge({ score = 0, max = 100 }) {
   const normalized = Math.min(100, Math.max(0, score));
   
-  let color = '#10B981'; // Green
+  let color = 'rgb(var(--soc-status-success))';
   let category = 'LOW RISK';
   if (normalized >= 75) {
-    color = '#EF4444'; // Red
+    color = 'rgb(var(--soc-status-danger))';
     category = 'CRITICAL RISK';
   } else if (normalized >= 50) {
-    color = '#F59E0B'; // Amber
+    color = 'rgb(var(--soc-status-warning))';
     category = 'ELEVATED RISK';
   }
 
@@ -25,7 +25,7 @@ export default function RiskScoreGauge({ score = 0, max = 100 }) {
             cx="40"
             cy="40"
             r={radius}
-            stroke="#1E293B"
+            stroke="rgb(var(--soc-border-default))"
             strokeWidth="6"
             fill="transparent"
           />
@@ -42,14 +42,14 @@ export default function RiskScoreGauge({ score = 0, max = 100 }) {
             className="transition-all duration-700 ease-out"
           />
         </svg>
-        <span className="absolute font-mono font-black text-xl text-soc-text">
+        <span className="absolute font-mono font-black text-xl text-soc-text tabular-nums">
           {Math.round(normalized)}
         </span>
       </div>
       <div className="flex flex-col justify-center">
         <span className="text-[10px] font-mono uppercase text-soc-dim tracking-wider">Composite Score</span>
         <span className="text-sm font-bold tracking-wide" style={{ color }}>{category}</span>
-        <span className="text-xs text-soc-muted mt-0.5 font-mono">{normalized}/100 Risk Index</span>
+        <span className="text-xs text-soc-muted mt-0.5 font-mono tabular-nums">{normalized}/100 Risk Index</span>
       </div>
     </div>
   );

@@ -13,7 +13,7 @@ export default function MetricCard({ title, value, subtext, icon: Icon, trend, c
     <div className="bg-soc-surface border border-soc-border rounded-xl p-4 flex items-center justify-between shadow-md select-none">
       <div>
         <span className="text-[10px] font-mono uppercase text-soc-dim font-semibold">{title}</span>
-        <div className="text-xl font-mono font-bold text-soc-text mt-1">{value}</div>
+        <div className="text-xl font-mono font-bold text-soc-text mt-1 tabular-nums">{value}</div>
         {subtext && <span className="text-[11px] font-mono text-soc-muted mt-0.5 inline-block">{subtext}</span>}
       </div>
       {Icon && (

@@ -63,7 +63,7 @@ export default function LiveThreatMap() {
       <div className="flex items-center justify-between border-b border-soc-border px-4 py-3 bg-soc-panel/55">
         <div className="flex items-center gap-2">
           <Globe className="h-4.5 w-4.5 text-soc-primary" />
-          <h3 className="text-xs font-mono font-black text-white uppercase tracking-wider">Live Threat Map</h3>
+          <h3 className="text-xs font-mono font-black text-soc-text uppercase tracking-wider">Live Threat Map</h3>
         </div>
         <div className="flex items-center gap-4 text-[10px] font-mono font-bold">
           <div className="flex items-center gap-1.5 text-emerald-400">
@@ -71,7 +71,7 @@ export default function LiveThreatMap() {
             <span>Active Sensors</span>
           </div>
           <span className="text-soc-muted">|</span>
-          <span className="text-white">{throughput} txn/s</span>
+          <span className="text-soc-text">{throughput} txn/s</span>
         </div>
       </div>
 
@@ -200,14 +200,14 @@ export default function LiveThreatMap() {
         {hoveredNode && (
           <div className="absolute top-3 left-3 z-20 w-52 bg-[#101827]/95 border border-soc-primary/40 p-2.5 rounded shadow-2xl font-mono text-[10px] text-soc-text backdrop-blur-md">
             <div className="flex items-center justify-between border-b border-soc-border pb-1.5 mb-1.5">
-              <span className="font-black text-white">{hoveredNode.name}</span>
+              <span className="font-black text-soc-text">{hoveredNode.name}</span>
               <span className="px-1 py-0.2 bg-soc-danger/10 border border-soc-danger/40 text-soc-danger rounded font-bold">
                 {hoveredNode.risk} RISK
               </span>
             </div>
             <div className="space-y-1">
-              <div className="flex justify-between"><span className="text-soc-muted">IP Source:</span><span className="text-white">{hoveredNode.ip}</span></div>
-              <div className="flex justify-between"><span className="text-soc-muted">Type:</span><span className="text-white text-right break-words max-w-[120px]">{hoveredNode.type}</span></div>
+              <div className="flex justify-between"><span className="text-soc-muted">IP Source:</span><span className="text-soc-text">{hoveredNode.ip}</span></div>
+              <div className="flex justify-between"><span className="text-soc-muted">Type:</span><span className="text-soc-text text-right break-words max-w-[120px]">{hoveredNode.type}</span></div>
               <div className="flex justify-between"><span className="text-soc-muted">Target:</span><span className="text-emerald-400">SBI IN</span></div>
             </div>
           </div>
@@ -235,7 +235,7 @@ export default function LiveThreatMap() {
             >
               <div className="flex items-center gap-2">
                 <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: origin.color }} />
-                <span className="text-white font-bold">{origin.ip}</span>
+                <span className="text-soc-text font-bold">{origin.ip}</span>
                 <span className="text-soc-muted">({origin.name.split(',')[1].trim()})</span>
               </div>
               <div className="flex items-center gap-3">

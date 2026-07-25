@@ -42,8 +42,8 @@ function DirectNavLink({ to, label, icon: Icon, end = false, collapsed, isPinned
         title={label}
         className={({ isActive }) => `flex-1 flex items-center gap-3 px-3.5 py-2.5 text-xs font-semibold transition-all border-l-2 ${
           isActive
-            ? 'border-soc-primary bg-soc-primary/10 text-white shadow-inner font-bold'
-            : 'border-transparent text-soc-muted hover:text-white hover:translate-x-0.5'
+            ? 'border-soc-primary bg-soc-primary/10 text-soc-text shadow-inner font-bold'
+            : 'border-transparent text-soc-muted hover:text-soc-text hover:translate-x-0.5'
         }`}
       >
         <Icon className="h-4 w-4 shrink-0 text-soc-primary" strokeWidth={2} />
@@ -59,7 +59,7 @@ function DirectNavLink({ to, label, icon: Icon, end = false, collapsed, isPinned
             e.stopPropagation();
             onTogglePin(to);
           }}
-          className={`opacity-0 group-hover/nav:opacity-100 p-1 text-soc-muted hover:text-white hover:bg-soc-panel/60 rounded transition-all ${
+          className={`opacity-0 group-hover/nav:opacity-100 p-1 text-soc-muted hover:text-soc-text hover:bg-soc-panel/60 rounded transition-all ${
             isPinned ? 'opacity-90 text-soc-primary animate-pulse' : ''
           }`}
           title={isPinned ? 'Remove from favorites' : 'Pin to favorites'}
@@ -137,7 +137,7 @@ export default function Sidebar() {
           </div>
           {!isCollapsed && (
             <div className="flex flex-col">
-              <span className="font-mono text-sm font-black tracking-widest text-white leading-tight">FUZEN AI</span>
+              <span className="font-mono text-sm font-black tracking-widest text-soc-text leading-tight">FUZEN AI</span>
               <span className="text-[9px] font-mono tracking-wider text-soc-muted">v2.4.1-prod</span>
             </div>
           )}
@@ -222,14 +222,14 @@ export default function Sidebar() {
             <div className="px-3 space-y-1">
               <a
                 href="/investigation/CASE-2026-8942"
-                className="flex items-center justify-between text-[11px] font-mono text-soc-muted hover:text-white transition-colors"
+                className="flex items-center justify-between text-[11px] font-mono text-soc-muted hover:text-soc-text transition-colors"
               >
                 <span>CASE-8942</span>
                 <span className="px-1 bg-soc-danger/15 text-soc-danger rounded border border-soc-danger/30 text-[9px] font-bold">CRITICAL</span>
               </a>
               <a
                 href="/investigation/CASE-2026-2104"
-                className="flex items-center justify-between text-[11px] font-mono text-soc-muted hover:text-white transition-colors"
+                className="flex items-center justify-between text-[11px] font-mono text-soc-muted hover:text-soc-text transition-colors"
               >
                 <span>CASE-2104</span>
                 <span className="px-1 bg-soc-warning/15 text-soc-warning rounded border border-soc-warning/30 text-[9px] font-bold">HIGH</span>
@@ -249,7 +249,7 @@ export default function Sidebar() {
               <button
                 type="button"
                 onClick={handleSimulateAttack}
-                className="w-full text-left px-2.5 py-1.5 bg-soc-panel hover:bg-soc-panel/80 text-[11px] font-medium text-white border border-soc-border rounded transition-all hover:border-soc-primary flex items-center gap-2 hover:shadow-[0_0_10px_rgba(109,94,248,0.1)]"
+                className="w-full text-left px-2.5 py-1.5 bg-soc-panel hover:bg-soc-panel/80 text-[11px] font-medium text-soc-text border border-soc-border rounded transition-all hover:border-soc-primary flex items-center gap-2 hover:shadow-[0_0_10px_rgba(109,94,248,0.1)]"
               >
                 <Zap className="h-3.5 w-3.5 text-soc-warning" />
                 <span>Simulate Cyber Event</span>
@@ -282,7 +282,7 @@ export default function Sidebar() {
         type="button"
         onClick={toggleSidebar}
         aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-        className="flex items-center gap-3 border-t border-soc-border px-3.5 py-3.5 text-xs text-soc-muted transition-colors hover:bg-soc-panel hover:text-white"
+        className="flex items-center gap-3 border-t border-soc-border px-3.5 py-3.5 text-xs text-soc-muted transition-colors hover:bg-soc-panel hover:text-soc-text"
       >
         {isCollapsed ? <Menu className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
         {!isCollapsed && <span className="font-semibold">Collapse Navigation</span>}

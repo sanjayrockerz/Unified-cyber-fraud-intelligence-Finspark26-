@@ -41,7 +41,7 @@ export default function TopBar({ quantumData }) {
           </span>
         </div>
         <div className="flex flex-col">
-          <span className="font-mono text-sm font-black tracking-wider text-white">FUSION AI SOC</span>
+          <span className="font-mono text-sm font-black tracking-wider text-soc-text">FUSION AI SOC</span>
           <span className="text-[9px] uppercase tracking-[0.2em] text-soc-primary font-bold">Command Center</span>
         </div>
       </div>
@@ -53,7 +53,7 @@ export default function TopBar({ quantumData }) {
           <span className="text-[9px] uppercase tracking-[0.1em] text-soc-muted font-bold">Environment</span>
           <div className="flex items-center gap-1.5 mt-0.5">
             <span className="h-1.5 w-1.5 rounded-full bg-soc-success animate-pulse" />
-            <span className="font-mono text-xs font-bold text-white">Production</span>
+            <span className="font-mono text-xs font-bold text-soc-text">Production</span>
           </div>
         </div>
 
@@ -120,7 +120,7 @@ export default function TopBar({ quantumData }) {
         <button
           type="button"
           onClick={openSearch}
-          className="flex h-9 items-center gap-2 rounded-md border border-soc-border bg-soc-bg px-3 text-xs text-soc-muted transition-all hover:border-soc-primary hover:text-white"
+          className="flex h-9 items-center gap-2 rounded-md border border-soc-border bg-soc-bg px-3 text-xs text-soc-muted transition-all hover:border-soc-primary hover:text-soc-text"
         >
           <Search className="h-3.5 w-3.5 shrink-0" />
           <span className="hidden sm:inline">Search...</span>
@@ -132,7 +132,7 @@ export default function TopBar({ quantumData }) {
           type="button"
           onClick={toggleTheme}
           aria-label="Toggle light or dark theme"
-          className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-soc-border text-soc-muted transition-all hover:border-soc-primary hover:text-white"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-soc-border text-soc-muted transition-all hover:border-soc-primary hover:text-soc-text"
         >
           {theme === 'dark' ? <Sun className="h-4 w-4 text-soc-warning" /> : <Moon className="h-4 w-4 text-soc-primary" />}
         </button>
@@ -141,11 +141,11 @@ export default function TopBar({ quantumData }) {
         <button
           type="button"
           aria-label={`Notifications${unreadCount ? `, ${unreadCount} unread` : ''}`}
-          className="relative inline-flex h-9 w-9 items-center justify-center rounded-md border border-soc-border text-soc-muted transition-all hover:border-soc-primary hover:text-white"
+          className="relative inline-flex h-9 w-9 items-center justify-center rounded-md border border-soc-border text-soc-muted transition-all hover:border-soc-primary hover:text-soc-text"
         >
           <Bell className="h-4 w-4" />
           {unreadCount > 0 && (
-            <span className="absolute -right-1 -top-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-soc-danger px-1 font-mono text-[9px] font-semibold text-white animate-pulse">
+            <span className="absolute -right-1 -top-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-soc-danger px-1 font-mono text-[9px] font-semibold text-soc-onPrimary animate-pulse">
               {unreadCount}
             </span>
           )}
@@ -157,7 +157,7 @@ export default function TopBar({ quantumData }) {
             <span className="font-mono text-xs font-bold">A4</span>
           </div>
           <div className="hidden flex-col xl:flex">
-            <span className="font-mono text-xs text-white font-semibold">Analyst_04</span>
+            <span className="font-mono text-xs text-soc-text font-semibold">Analyst_04</span>
             <span className="text-[9px] text-soc-muted">Tier 2 SOC</span>
           </div>
         </div>
