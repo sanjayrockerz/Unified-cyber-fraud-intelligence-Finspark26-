@@ -1,11 +1,12 @@
 ﻿import React from 'react';
 
-export default function Ledger({ events }) {
-  if (!events.length) return <div className="text-sm text-soc-muted text-center mt-10">Awaiting transactions...</div>;
+export default function Ledger({ events = [] }) {
+  const safeEvents = events ?? [];
+  if (!safeEvents.length) return <div className="text-sm text-soc-muted text-center mt-10">Awaiting transactions...</div>;
 
   return (
     <div className="flex flex-col gap-3">
-      {events.map((evt, i) => (
+      {safeEvents.map((evt, i) => (
         <div key={i} className="p-3 rounded-lg bg-soc-overlay/30 border border-soc-border hover:border-soc-primary/50 transition-colors">
           <div className="flex justify-between items-start mb-2">
             <span className="text-xs font-mono text-soc-muted">{evt.timestamp.split(' ')[1]}</span>
