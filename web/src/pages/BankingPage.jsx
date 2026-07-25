@@ -1,13 +1,31 @@
-import React from 'react';
-import { Landmark, DollarSign, CreditCard } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Landmark } from 'lucide-react';
 import Ledger from '../components/Ledger';
+import EmptyState from '../components/common/EmptyState';
+
+const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8000' : '');
 
 export default function BankingPage() {
-  const sampleEvents = [
-    { timestamp: "2026-07-16 10:00:40", txn_id: "txn_demo_999", type: "TRANSFER", amount: 750000.0, nameOrig: "ACC_ABC_123", nameDest: "ACC_MULE_NEW" },
-    { timestamp: "2026-07-16 09:45:10", txn_id: "txn_demo_998", type: "CASH_OUT", amount: 12000.0, nameOrig: "ACC_XYZ_992", nameDest: "ACC_ATM_404" },
-    { timestamp: "2026-07-16 09:30:00", txn_id: "txn_demo_997", type: "TRANSFER", amount: 450000.0, nameOrig: "ACC_404_112", nameDest: "ACC_BENEFICIARY_88" }
-  ];
+  const [events, setEvents] = useState([]);
+  const [status, setStatus] = useState('loading');
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch(`${API_BASE}/transactions?page=1&page_size=25&sort=-timestamp`, { signal: controller.signal })
+      .then((res) => {
+        if (!res.ok) throw new Error('transactions fetch failed');
+        return res.json();
+      })
+      .then((data) => {
+        setEvents(data.items ?? []);
+        setStatus('ready');
+      })
+      .catch((error) => {
+        if (error.name === 'AbortError') return;
+        setStatus('error');
+      });
+    return () => controller.abort();
+  }, []);
 
   return (
     <div className="flex flex-col gap-5 max-w-[1600px] mx-auto select-none">
@@ -24,7 +42,11 @@ export default function BankingPage() {
       </div>
 
       <div className="bg-soc-surface border border-soc-border rounded-xl p-4">
-        <Ledger events={sampleEvents} />
+        {status === 'error' ? (
+          <EmptyState title="Ledger unavailable" description="Could not reach the transaction feed." />
+        ) : (
+          <Ledger events={events} />
+        )}
       </div>
     </div>
   );
