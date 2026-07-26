@@ -148,3 +148,41 @@ to set the threshold that minimises total expected loss.
 - **Seed**: 42 for all random operations.
 - **Feature columns (baseline)**: `txn_type_enc, log_amount, orig_balance_delta, dest_balance_delta, orig_balance_ratio, dest_balance_ratio, zero_orig_after, zero_dest_before, velocity_1h, velocity_24h, time_since_last_txn`
 - **Feature columns (fusion)**: `txn_type_enc, log_amount, orig_balance_delta, dest_balance_delta, orig_balance_ratio, dest_balance_ratio, zero_orig_after, zero_dest_before, velocity_1h, velocity_24h, time_since_last_txn, cyber_flag`
+
+---
+
+## Machine-Readable Summary
+
+_Consumed by `api/main.py`'s `/metrics/evaluate` endpoint for the Analytics dashboard. Same fixed-FPR operating point as the tables above._
+
+```json
+{
+  "transaction_only": {
+    "pr_auc": 0.9975603382697279,
+    "precision": 0.9318446150267504,
+    "recall": 0.999002493765586,
+    "f1": 0.9642556264291732,
+    "confusion_matrix": {
+      "TP": 4006,
+      "FP": 293,
+      "TN": 56666,
+      "FN": 4
+    }
+  },
+  "full_fusion": {
+    "pr_auc": 0.9983818171996175,
+    "precision": 0.9333488697273363,
+    "recall": 0.9987531172069826,
+    "f1": 0.9649439826526924,
+    "confusion_matrix": {
+      "TP": 4005,
+      "FP": 286,
+      "TN": 56673,
+      "FN": 5
+    }
+  },
+  "delta": {
+    "fusion_vs_best_single_modality_pr_auc": 0.0008214789298895964
+  }
+}
+```

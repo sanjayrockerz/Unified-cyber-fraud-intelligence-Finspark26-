@@ -39,8 +39,18 @@ from sklearn.metrics import (
     confusion_matrix,
     f1_score,
     precision_recall_curve,
+    precision_score,
     roc_curve,
 )
+
+# Ensure stdout can print the non-ASCII characters used in this file's own report
+# text (—, →, ×, ✓, Δ) even when the console is on a legacy codepage (e.g. Windows
+# cp1252) instead of UTF-8. Without this, printing the rendered report to stdout
+# raises UnicodeEncodeError -- AFTER the report has already been written to disk,
+# so the artifact is fine but the process exits non-zero, which looks like a
+# training failure. This changes only how output is encoded, not any content.
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 # ── project paths ─────────────────────────────────────────────────────────────
 ROOT = Path(__file__).parent.parent
@@ -145,6 +155,7 @@ def evaluate_model(name: str, model: Any, X_test: pd.DataFrame, y_test: pd.Serie
     )
     y_at_fpr = (y_prob >= thresh).astype(int)
     f1_at_fpr = f1_score(y_test, y_at_fpr, zero_division=0)
+    precision_at_fpr = precision_score(y_test, y_at_fpr, zero_division=0)
     cm_at_fpr = confusion_matrix(y_test, y_at_fpr)
 
     tn, fp, fn, tp = cm.ravel() if cm.size == 4 else (0, 0, 0, 0)
@@ -157,6 +168,7 @@ def evaluate_model(name: str, model: Any, X_test: pd.DataFrame, y_test: pd.Serie
         "recall_at_fixed_fpr": float(recall_at_fpr),
         "actual_fpr_achieved": float(actual_fpr),
         "f1_at_fixed_fpr": float(f1_at_fpr),
+        "precision_at_fixed_fpr": float(precision_at_fpr),
         "target_fpr": TARGET_FPR,
         "threshold_at_fpr": float(thresh),
         "confusion_matrix_default": [[int(tn), int(fp)], [int(fn), int(tp)]],
@@ -403,6 +415,59 @@ to set the threshold that minimises total expected loss.
     return report
 
 
+def api_metrics_block(metrics: dict) -> dict:
+    """
+    Build the small machine-readable dict the `/metrics/evaluate` FastAPI endpoint
+    (api/main.py) expects for a single modality (transaction_only or full_fusion).
+
+    All values are taken at the SAME fixed-FPR operating point (TARGET_FPR) used
+    throughout this report, matching CLAUDE.md's stated priority metric ("recall
+    at a fixed low false-positive rate") rather than mixing in default-threshold
+    numbers.
+    """
+    tn, fp = metrics["confusion_matrix_at_fpr"][0]
+    fn, tp = metrics["confusion_matrix_at_fpr"][1]
+    return {
+        "pr_auc": metrics["pr_auc"],
+        "precision": metrics["precision_at_fixed_fpr"],
+        "recall": metrics["recall_at_fixed_fpr"],
+        "f1": metrics["f1_at_fixed_fpr"],
+        "confusion_matrix": {"TP": tp, "FP": fp, "TN": tn, "FN": fn},
+    }
+
+
+def render_api_json_block(baseline_metrics: dict, fusion_metrics: dict) -> str:
+    """
+    Render the ```json fenced block appended to the end of metrics_report.md so
+    that api/main.py's `/metrics/evaluate` endpoint (which parses the file by
+    splitting on a ```json fence) has a machine-readable summary to serve to the
+    Analytics dashboard. Built from the SAME evaluate_model() outputs used to
+    render the human-readable report above -- no numbers are invented here.
+
+    Shape intentionally has only `transaction_only` and `full_fusion` keys (no
+    `cyber_only`): this pipeline never trains a cyber-only model, and the
+    Analytics page (web/src/pages/AnalyticsPage.jsx) never reads evalData.cyber_only
+    either -- only sweepData.cyber_only, which comes from the separate
+    sweep_cache.json file untouched by this script.
+    """
+    api_data = {
+        "transaction_only": api_metrics_block(baseline_metrics),
+        "full_fusion": api_metrics_block(fusion_metrics),
+        "delta": {
+            "fusion_vs_best_single_modality_pr_auc": (
+                fusion_metrics["pr_auc"] - baseline_metrics["pr_auc"]
+            ),
+        },
+    }
+    return (
+        "\n---\n\n"
+        "## Machine-Readable Summary\n\n"
+        "_Consumed by `api/main.py`'s `/metrics/evaluate` endpoint for the "
+        "Analytics dashboard. Same fixed-FPR operating point as the tables above._\n\n"
+        "```json\n" + json.dumps(api_data, indent=2) + "\n```\n"
+    )
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # main training pipeline
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -562,6 +627,19 @@ def main():
     )
     REPORT_PATH.write_text(report_md, encoding="utf-8")
     print(f"[report] Saved → {REPORT_PATH}")
+
+    # ── 10b. Append machine-readable JSON block (consumed by api/main.py) ─────
+    # api/main.py's /metrics/evaluate endpoint parses this file by splitting on a
+    # ```json fence -- append (never replace) one here so the Analytics dashboard
+    # keeps working. Only emitted for a full run (fusion_metrics is not None);
+    # a --baseline-only run has no full_fusion model to report honestly.
+    if fusion_metrics:
+        json_block = render_api_json_block(best_base_metrics, fusion_metrics)
+        with open(REPORT_PATH, "a", encoding="utf-8") as f:
+            f.write(json_block)
+        print(f"[report] Appended machine-readable JSON block → {REPORT_PATH}")
+    else:
+        print("[report] Skipped JSON block (--baseline-only run has no fusion model)")
 
     # ── 11. Print report to stdout ────────────────────────────────────────────
     print("\n" + "=" * 72)
