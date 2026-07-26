@@ -212,7 +212,11 @@ export default function SessionTrustPassportPanel({ sessionId = 'SESS_9921_CRITI
                 PRE-TRANSACTION SESSION PASSPORT #{passport.session_id}
               </span>
               <span className={`text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded border ${
-                monitoring_level === 'CRITICAL' ? 'bg-soc-danger/20 text-soc-danger border-soc-danger/40' : 'bg-soc-success/20 text-soc-success border-soc-success/40'
+                monitoring_level === 'CRITICAL'
+                  ? 'bg-soc-danger/20 text-soc-danger border-soc-danger/40'
+                  : monitoring_level === 'HIGH' || monitoring_level === 'MEDIUM'
+                  ? 'bg-soc-warning/10 text-soc-warning border-soc-warning/30'
+                  : 'bg-soc-success/20 text-soc-success border-soc-success/40'
               }`}>
                 MONITORING: {monitoring_level}
               </span>
