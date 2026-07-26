@@ -134,27 +134,34 @@ export default function InvestigationWorkbench({ caseId = 'CASE-2026-8942' }) {
   };
 
   const handleDownloadCertInReport = async () => {
-    if (!currentTxn || !evaluation) return;
+    // Fall back to the same demo payload every other panel on this page already uses
+    // (activeTxnPayload/activeEvalPayload below) so the button stays live even before
+    // a real transaction has arrived over the replay WebSocket.
+    const txn = currentTxn || activeTxnPayload;
+    const evalResult = evaluation || activeEvalPayload;
+    if (!txn || !evalResult) return;
     try {
       const res = await fetch(`${API_BASE}/report/cert-in`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          txn_id: currentTxn.txn_id || 'txn_demo_999',
-          user_id: currentTxn.user_id || 'usr_abc',
-          amount: currentTxn.amount || 750000.0,
-          reasons: evaluation.reasons || ["High risk transaction"],
-          score: evaluation.score || 94.0
+          txn_id: txn.txn_id || 'txn_demo_999',
+          user_id: txn.user_id || 'usr_abc',
+          amount: txn.amount || 750000.0,
+          reasons: evalResult.reasons || ["High risk transaction"],
+          score: evalResult.score || 94.0
         })
       });
+      if (!res.ok) throw new Error(`Report generation failed (${res.status})`);
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `CERT-In_Report_${currentTxn.txn_id || 'CASE'}.pdf`;
+      a.download = `CERT-In_Report_${txn.txn_id || 'CASE'}.pdf`;
       document.body.appendChild(a);
       a.click();
       a.remove();
+      window.URL.revokeObjectURL(url);
     } catch (e) {
       console.error("CERT-In report download error:", e);
     }

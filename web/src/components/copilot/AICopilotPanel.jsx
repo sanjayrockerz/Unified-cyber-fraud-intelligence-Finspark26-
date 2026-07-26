@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Bot, User, Copy, Check, Send, Sparkles, ShieldAlert, Paperclip, Mic, 
   ArrowRight, ExternalLink, Activity, RefreshCw, Search, Briefcase, 

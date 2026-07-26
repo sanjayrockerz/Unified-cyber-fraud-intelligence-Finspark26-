@@ -36,7 +36,7 @@ export default function LiveThreatMap() {
       // Add a dynamic simulation attack path on the fly
       const newAttack = {
         id: `sim_${Date.now()}`,
-        name: 'Simulated Target',
+        name: 'Simulated Origin, XX',
         x: 480 + (Math.random() * 60 - 30),
         y: 95 + (Math.random() * 60 - 30),
         ip: '109.22.84.155',
@@ -236,7 +236,7 @@ export default function LiveThreatMap() {
               <div className="flex items-center gap-2">
                 <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: origin.color }} />
                 <span className="text-soc-text font-bold">{origin.ip}</span>
-                <span className="text-soc-muted">({origin.name.split(',')[1].trim()})</span>
+                <span className="text-soc-muted">({origin.name.split(',')[1]?.trim() ?? origin.name})</span>
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-soc-muted max-w-[140px] truncate">{origin.type}</span>
