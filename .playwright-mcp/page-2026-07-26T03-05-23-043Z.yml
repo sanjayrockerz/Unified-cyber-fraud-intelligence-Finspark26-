@@ -1,0 +1,783 @@
+- generic [ref=f1e3]:
+  - banner [ref=f1e4]:
+    - generic [ref=f1e12]:
+      - generic [ref=f1e13]: FUSION AI SOC
+      - generic [ref=f1e14]: Command Center
+    - generic [ref=f1e15]:
+      - generic [ref=f1e16]:
+        - generic [ref=f1e17]: Environment
+        - generic [ref=f1e18]: Production
+      - generic [ref=f1e21]:
+        - generic [ref=f1e22]: Engine Status
+        - generic [ref=f1e23]: Healthy
+      - generic [ref=f1e28]:
+        - generic [ref=f1e29]: Data Freshness
+        - generic [ref=f1e30]: 26 sec
+      - generic [ref=f1e35]:
+        - generic [ref=f1e36]: Analysts Online
+        - generic [ref=f1e37]: "14"
+      - generic [ref=f1e44]:
+        - generic [ref=f1e45]: Current Alerts
+        - generic [ref=f1e46]: "8"
+      - generic [ref=f1e50]:
+        - generic [ref=f1e51]: Open Cases
+        - generic [ref=f1e52]: "17"
+    - generic [ref=f1e57]:
+      - button "Search... ⌘K" [ref=f1e58] [cursor=pointer]:
+        - generic [ref=f1e62]: Search...
+        - generic [ref=f1e63]: ⌘K
+      - button "Toggle light or dark theme" [ref=f1e64] [cursor=pointer]
+      - button "Notifications, 2 unread" [ref=f1e71] [cursor=pointer]:
+        - generic [ref=f1e75]: "2"
+      - generic [ref=f1e76]:
+        - generic [ref=f1e77] [cursor=pointer]: A4
+        - generic [ref=f1e79]:
+          - generic [ref=f1e80]: Analyst_04
+          - generic [ref=f1e81]: Tier 2 SOC
+  - generic [ref=f1e82]:
+    - complementary "Primary navigation" [ref=f1e83]:
+      - generic [ref=f1e90]:
+        - generic [ref=f1e91]: FUZEN AI
+        - generic [ref=f1e92]: v2.4.1-prod
+      - link "Overview" [ref=f1e95] [cursor=pointer]:
+        - /url: /
+      - navigation [ref=f1e102]:
+        - generic [ref=f1e103]: Pinned Favorites
+        - generic [ref=f1e107]:
+          - generic [ref=f1e108]:
+            - link "Operations Center" [ref=f1e109] [cursor=pointer]:
+              - /url: /operations
+            - button "Remove from favorites" [ref=f1e113] [cursor=pointer]
+          - generic [ref=f1e116]:
+            - link "Cases" [ref=f1e117] [cursor=pointer]:
+              - /url: /cases
+            - button "Remove from favorites" [ref=f1e122] [cursor=pointer]
+        - generic [ref=f1e125]:
+          - text: Fraud Operations
+          - generic [ref=f1e126]:
+            - generic [ref=f1e127]:
+              - link "Operations Center" [ref=f1e128] [cursor=pointer]:
+                - /url: /operations
+              - button "Remove from favorites" [ref=f1e132] [cursor=pointer]
+            - generic [ref=f1e135]:
+              - link "Cases" [ref=f1e136] [cursor=pointer]:
+                - /url: /cases
+              - button "Remove from favorites" [ref=f1e141] [cursor=pointer]
+            - generic [ref=f1e144]:
+              - link "Customers" [ref=f1e145] [cursor=pointer]:
+                - /url: /customers
+              - button "Pin to favorites" [ref=f1e152] [cursor=pointer]
+            - generic [ref=f1e155]:
+              - link "Investigation" [ref=f1e156] [cursor=pointer]:
+                - /url: /investigation
+              - button "Pin to favorites" [ref=f1e162] [cursor=pointer]
+        - generic [ref=f1e165]:
+          - text: Intelligence
+          - generic [ref=f1e166]:
+            - generic [ref=f1e167]:
+              - link "Analytics" [ref=f1e168] [cursor=pointer]:
+                - /url: /analytics
+              - button "Pin to favorites" [ref=f1e172] [cursor=pointer]
+            - generic [ref=f1e175]:
+              - link "Reports" [ref=f1e176] [cursor=pointer]:
+                - /url: /reports
+              - button "Pin to favorites" [ref=f1e181] [cursor=pointer]
+            - generic [ref=f1e184]:
+              - link "Session Intelligence" [ref=f1e185] [cursor=pointer]:
+                - /url: /sessions
+              - button "Pin to favorites" [ref=f1e193] [cursor=pointer]
+            - generic [ref=f1e196]:
+              - link "Graph Runtime" [ref=f1e197] [cursor=pointer]:
+                - /url: /graph
+              - button "Pin to favorites" [ref=f1e204] [cursor=pointer]
+        - generic [ref=f1e207]:
+          - text: Leadership & Platform
+          - generic [ref=f1e208]:
+            - generic [ref=f1e209]:
+              - link "Executive Command Center" [ref=f1e210] [cursor=pointer]:
+                - /url: /executive
+              - button "Pin to favorites" [ref=f1e217] [cursor=pointer]
+            - generic [ref=f1e220]:
+              - link "Telemetry" [ref=f1e221] [cursor=pointer]:
+                - /url: /telemetry
+              - button "Pin to favorites" [ref=f1e225] [cursor=pointer]
+            - generic [ref=f1e228]:
+              - link "Banking" [ref=f1e229] [cursor=pointer]:
+                - /url: /banking
+              - button "Pin to favorites" [ref=f1e235] [cursor=pointer]
+            - generic [ref=f1e238]:
+              - link "Synthetic Lab" [ref=f1e239] [cursor=pointer]:
+                - /url: /synthetic-lab
+              - button "Pin to favorites" [ref=f1e243] [cursor=pointer]
+            - generic [ref=f1e246]:
+              - link "SDK Runtime" [ref=f1e247] [cursor=pointer]:
+                - /url: /developer
+              - button "Pin to favorites" [ref=f1e253] [cursor=pointer]
+        - generic [ref=f1e256]:
+          - generic [ref=f1e257]: Recent Investigations
+          - generic [ref=f1e262]:
+            - link "CASE-8942 CRITICAL" [ref=f1e263] [cursor=pointer]:
+              - /url: /investigation/CASE-2026-8942
+              - generic [ref=f1e264]: CASE-8942
+              - generic [ref=f1e265]: CRITICAL
+            - link "CASE-2104 HIGH" [ref=f1e266] [cursor=pointer]:
+              - /url: /investigation/CASE-2026-2104
+              - generic [ref=f1e267]: CASE-2104
+              - generic [ref=f1e268]: HIGH
+        - generic [ref=f1e269]:
+          - generic [ref=f1e270]: Simulations
+          - button "Simulate Cyber Event" [ref=f1e275] [cursor=pointer]
+      - generic [ref=f1e279]:
+        - generic [ref=f1e280]:
+          - link "Settings" [ref=f1e281] [cursor=pointer]:
+            - /url: /settings
+          - button "Pin to favorites" [ref=f1e286] [cursor=pointer]
+        - generic [ref=f1e289]: "Shortcuts: ⌘K"
+      - button "Collapse sidebar" [ref=f1e293] [cursor=pointer]:
+        - generic [ref=f1e296]: Collapse Navigation
+    - main [ref=f1e297]:
+      - generic [ref=f1e298]:
+        - generic [ref=f1e300]:
+          - heading "Investigation" [level=1] [ref=f1e301]
+          - paragraph [ref=f1e302]: Follow linked fraud, cyber, and evidence signals through one focused case workspace.
+        - generic [ref=f1e303]:
+          - 'region "Latest decision: BLOCK" [ref=f1e304]':
+            - generic [ref=f1e305]:
+              - generic [ref=f1e311]:
+                - paragraph [ref=f1e312]: Current decision
+                - strong [ref=f1e313]: BLOCK
+              - generic [ref=f1e314]:
+                - paragraph [ref=f1e315]: Risk score
+                - paragraph [ref=f1e316]: 0.0/ 100
+              - generic [ref=f1e317]:
+                - paragraph [ref=f1e318]: Why this decision
+                - paragraph [ref=f1e319]: No explanation available for this decision yet.
+          - generic [ref=f1e320]:
+            - generic [ref=f1e325]:
+              - generic [ref=f1e326]:
+                - generic [ref=f1e327]: "FUSION INVESTIGATION WORKBENCH #CASE-2026-8942"
+                - generic [ref=f1e328]: "Incident SLA: 03m 22s Remaining"
+              - heading "ACCOUNT TAKEOVER & INR 7.5L UPI FRAUD TRANSFER BLOCK (94)" [level=1] [ref=f1e329]:
+                - text: ACCOUNT TAKEOVER & INR 7.5L UPI FRAUD TRANSFER
+                - generic [ref=f1e330]:
+                  - generic [ref=f1e333]: BLOCK
+                  - generic [ref=f1e334]: (94)
+            - generic [ref=f1e335]:
+              - generic [ref=f1e336]:
+                - generic [ref=f1e337]: Target Customer
+                - generic [ref=f1e338]: usr_abc (ACC_ABC_123)
+              - generic [ref=f1e339]:
+                - generic [ref=f1e340]: Assigned SOC Specialist
+                - generic [ref=f1e341]: Analyst_04 (Tier-3)
+              - generic [ref=f1e342]:
+                - button "Restart Replay" [ref=f1e343] [cursor=pointer]
+                - button [ref=f1e347] [cursor=pointer]
+                - generic [ref=f1e351]:
+                  - text: "Replay:"
+                  - strong [ref=f1e352]: 10:00:40 IST
+              - button "CERT-In PDF" [ref=f1e353] [cursor=pointer]
+          - generic [ref=f1e358]:
+            - generic [ref=f1e359]:
+              - heading "Narrative AI Storyteller — Step-by-Step Investigation Story" [level=3] [ref=f1e363]
+              - generic [ref=f1e364]: Human-Readable Explainability
+            - generic [ref=f1e365]:
+              - generic [ref=f1e366]:
+                - generic [ref=f1e367]: Transaction Accepted
+                - generic "TRANSFER of INR 7,50,000" [ref=f1e368]
+              - generic [ref=f1e371]:
+                - generic [ref=f1e372]: Amount Evaluation
+                - generic "High-Value Transfer" [ref=f1e373]
+              - generic [ref=f1e376]:
+                - generic [ref=f1e377]: Behavior Profile
+                - generic "Abnormal User Velocity (3 txns in same step)" [ref=f1e378]
+              - generic [ref=f1e381]:
+                - generic [ref=f1e382]: Cyber SIEM Lookup
+                - generic "Credential Theft & Impossible Travel Login" [ref=f1e383]
+              - generic [ref=f1e386]:
+                - generic [ref=f1e387]: Graph Topology
+                - generic "Beneficiary Matched Mule Ring Cluster" [ref=f1e388]
+              - generic [ref=f1e391]:
+                - generic [ref=f1e392]: AI Risk Engine Verdict
+                - generic "BLOCK (Composite Score 94/100)" [ref=f1e393]
+          - generic [ref=f1e394]:
+            - generic [ref=f1e395]:
+              - generic [ref=f1e401]:
+                - generic [ref=f1e402]:
+                  - heading "Digital Twin Customer Intelligence — Rajesh Kumar (usr_abc)" [level=3] [ref=f1e403]
+                  - generic [ref=f1e404]: LIVE TWIN ACTIVE
+                - generic [ref=f1e405]: "KYC: VERIFIED TIER-3 (BIOMETRIC) â€¢ Segment: Software Principal Engineer â€¢ Primary Acc: ACC_USR_ABC"
+              - generic [ref=f1e406]:
+                - generic [ref=f1e407]:
+                  - generic [ref=f1e411]: "Overall Deviation Index:"
+                  - generic [ref=f1e412]: 50% (MODERATE_DEVIATION)
+                - button "Refresh Digital Twin State" [ref=f1e413] [cursor=pointer]
+            - generic [ref=f1e419]:
+              - button "Expected vs Observed Diffs 50%" [ref=f1e420] [cursor=pointer]:
+                - generic [ref=f1e423]: Expected vs Observed Diffs
+                - generic [ref=f1e424]: 50%
+              - button "Identity & Accounts" [ref=f1e425] [cursor=pointer]
+              - button "Devices & Locations" [ref=f1e430] [cursor=pointer]
+              - button "Graph & Mule Ring" [ref=f1e434] [cursor=pointer]
+              - button "Predictive Intelligence" [ref=f1e440] [cursor=pointer]
+              - button "Audit Timeline 1" [ref=f1e444] [cursor=pointer]:
+                - generic [ref=f1e447]: Audit Timeline
+                - generic [ref=f1e448]: "1"
+            - generic [ref=f1e449]:
+              - generic [ref=f1e450]:
+                - generic [ref=f1e451]:
+                  - generic [ref=f1e452]: device difference
+                  - generic [ref=f1e457]: INSUFFICIENT_HISTORY
+                - generic [ref=f1e458]:
+                  - generic [ref=f1e459]: location difference
+                  - generic [ref=f1e464]: INSUFFICIENT_HISTORY
+                - generic [ref=f1e465]:
+                  - generic [ref=f1e466]: amount difference
+                  - generic [ref=f1e471]: INSUFFICIENT_HISTORY
+                - generic [ref=f1e472]:
+                  - generic [ref=f1e473]: beneficiary difference
+                  - generic [ref=f1e478]: INSUFFICIENT_HISTORY
+                - generic [ref=f1e479]:
+                  - generic [ref=f1e480]: velocity difference
+                  - generic [ref=f1e485]: INSUFFICIENT_HISTORY
+                - generic [ref=f1e486]:
+                  - generic [ref=f1e487]: behavior difference
+                  - generic [ref=f1e492]: INSUFFICIENT_HISTORY
+              - generic [ref=f1e493]:
+                - generic [ref=f1e494]: Sub-Vector Deviation Scores Breakdown
+                - generic [ref=f1e495]:
+                  - generic [ref=f1e497]:
+                    - generic [ref=f1e498]: device
+                    - generic [ref=f1e499]: 50%
+                  - generic [ref=f1e503]:
+                    - generic [ref=f1e504]: location
+                    - generic [ref=f1e505]: 50%
+                  - generic [ref=f1e509]:
+                    - generic [ref=f1e510]: transaction_amount
+                    - generic [ref=f1e511]: 50%
+                  - generic [ref=f1e515]:
+                    - generic [ref=f1e516]: beneficiary
+                    - generic [ref=f1e517]: 50%
+                  - generic [ref=f1e521]:
+                    - generic [ref=f1e522]: cyber_telemetry
+                    - generic [ref=f1e523]: 99%
+                  - generic [ref=f1e527]:
+                    - generic [ref=f1e528]: graph_mule_ring
+                    - generic [ref=f1e529]: 10%
+          - generic [ref=f1e532]:
+            - generic [ref=f1e533]:
+              - generic [ref=f1e539]:
+                - generic [ref=f1e540]:
+                  - generic [ref=f1e541]: "PRE-TRANSACTION SESSION PASSPORT #SESS_9921_CRITICAL"
+                  - generic [ref=f1e542]: "MONITORING: LOW"
+                - 'heading "PRE-TRANSACTION VERDICT: ALLOW | Overall Session Trust: 100%" [level=2] [ref=f1e543]':
+                  - text: "PRE-TRANSACTION VERDICT:"
+                  - generic [ref=f1e544]: ALLOW
+                  - generic [ref=f1e545]:
+                    - text: "| Overall Session Trust:"
+                    - strong [ref=f1e546]: 100%
+              - generic [ref=f1e547]:
+                - generic [ref=f1e548]:
+                  - generic [ref=f1e549]: Passport Expiry
+                  - generic [ref=f1e554]: 25-07-2026, 05:19:39 pm IST
+                - generic [ref=f1e555]:
+                  - generic [ref=f1e556]: Pipeline Latency
+                  - generic [ref=f1e560]: 81.1 ms
+                - button "Recalculate" [ref=f1e561] [cursor=pointer]
+            - generic [ref=f1e568]:
+              - generic [ref=f1e569]:
+                - generic [ref=f1e570]: Pre-Transaction Sequential Pipeline Checkpoints (Click to Expand)
+                - generic [ref=f1e571]: 6 Checkpoints Verified
+              - 'button "Checkpoint 1: Identity Intelligence Component evaluated 100% Trust 12 ms" [ref=f1e573] [cursor=pointer]':
+                - generic [ref=f1e579]:
+                  - text: "Checkpoint 1: Identity Intelligence"
+                  - generic [ref=f1e580]: Component evaluated
+                - generic [ref=f1e582]:
+                  - generic [ref=f1e583]: 100% Trust
+                  - generic [ref=f1e584]: 12 ms
+              - 'button "Checkpoint 2: Device Intelligence Component evaluated 100% Trust 12 ms" [ref=f1e588] [cursor=pointer]':
+                - generic [ref=f1e593]:
+                  - text: "Checkpoint 2: Device Intelligence"
+                  - generic [ref=f1e594]: Component evaluated
+                - generic [ref=f1e596]:
+                  - generic [ref=f1e597]: 100% Trust
+                  - generic [ref=f1e598]: 12 ms
+              - 'button "Checkpoint 3: Session Intelligence Component evaluated 100% Trust 12 ms" [ref=f1e602] [cursor=pointer]':
+                - generic [ref=f1e608]:
+                  - text: "Checkpoint 3: Session Intelligence"
+                  - generic [ref=f1e609]: Component evaluated
+                - generic [ref=f1e611]:
+                  - generic [ref=f1e612]: 100% Trust
+                  - generic [ref=f1e613]: 12 ms
+              - 'button "Checkpoint 4: Behavior Intelligence Component evaluated 100% Trust 12 ms" [ref=f1e617] [cursor=pointer]':
+                - generic [ref=f1e622]:
+                  - text: "Checkpoint 4: Behavior Intelligence"
+                  - generic [ref=f1e623]: Component evaluated
+                - generic [ref=f1e625]:
+                  - generic [ref=f1e626]: 100% Trust
+                  - generic [ref=f1e627]: 12 ms
+              - 'button "Checkpoint 5: Cyber Threat Intelligence (MITRE) Component evaluated 100% Trust 12 ms" [ref=f1e631] [cursor=pointer]':
+                - generic [ref=f1e640]:
+                  - text: "Checkpoint 5: Cyber Threat Intelligence (MITRE)"
+                  - generic [ref=f1e641]: Component evaluated
+                - generic [ref=f1e643]:
+                  - generic [ref=f1e644]: 100% Trust
+                  - generic [ref=f1e645]: 12 ms
+              - generic [ref=f1e648]:
+                - 'button "Checkpoint 6: Graph Intelligence (Neo4j) Component evaluated 100% Trust 12 ms" [active] [ref=f1e649] [cursor=pointer]':
+                  - generic [ref=f1e656]:
+                    - text: "Checkpoint 6: Graph Intelligence (Neo4j)"
+                    - generic [ref=f1e657]: Component evaluated
+                  - generic [ref=f1e659]:
+                    - generic [ref=f1e660]: 100% Trust
+                    - generic [ref=f1e661]: 12 ms
+                - generic [ref=f1e1377]:
+                  - generic [ref=f1e1378]:
+                    - generic [ref=f1e1379]: "Neo4j Graph Relationship Query Result:"
+                    - text: Graph relationships analyzed
+                  - generic [ref=f1e1380]:
+                    - text: "Evaluated Intelligence Signals:"
+                    - list [ref=f1e1381]:
+                      - listitem [ref=f1e1382]:
+                        - generic [ref=f1e1384]: Component evaluated
+          - generic [ref=f1e664]:
+            - generic [ref=f1e665]:
+              - generic [ref=f1e672]:
+                - generic [ref=f1e673]:
+                  - generic [ref=f1e674]: "NETWORK-LEVEL FRAUD INTELLIGENCE BRIEF #CASE-2026-8942"
+                  - generic [ref=f1e675]: "LOSS PREVENTED: INR 750,000.00"
+                - heading "Impossible Travel Account Takeover & Mule Layering" [level=2] [ref=f1e676]
+              - generic [ref=f1e677]:
+                - generic [ref=f1e678]:
+                  - generic [ref=f1e679]: Decision Quality
+                  - generic [ref=f1e680]: 96.5% (HIGH_DECISION_QUALITY)
+                - generic [ref=f1e681]:
+                  - generic [ref=f1e682]: Threat Confidence
+                  - generic [ref=f1e683]: 98.0%
+                - button "Re-Analyze" [ref=f1e684] [cursor=pointer]
+            - generic [ref=f1e691]:
+              - generic [ref=f1e692]:
+                - button "1. Multi-Stage Attack Narrative & Threat Correlation Multi-Vector Account Takeover & Mule Layering Attack Stage 5 Execution Attempt" [ref=f1e693] [cursor=pointer]:
+                  - generic [ref=f1e698]:
+                    - text: 1. Multi-Stage Attack Narrative & Threat Correlation
+                    - generic [ref=f1e699]: Multi-Vector Account Takeover & Mule Layering Attack
+                  - generic [ref=f1e700]: Stage 5 Execution Attempt
+                - generic [ref=f1e704]:
+                  - generic [ref=f1e705]: Correlated Attack Chain Flow
+                  - generic [ref=f1e706]:
+                    - generic [ref=f1e707]:
+                      - generic [ref=f1e708]:
+                        - generic [ref=f1e709]: STAGE 1
+                        - generic [ref=f1e710]: 09:45:00
+                      - generic [ref=f1e711]: Credential Theft
+                      - generic [ref=f1e712]: 500 automated credential stuffing login requests from AS49505 OOO Baxet.
+                    - generic [ref=f1e713]:
+                      - generic [ref=f1e714]:
+                        - generic [ref=f1e715]: STAGE 2
+                        - generic [ref=f1e716]: 10:00:00
+                      - generic [ref=f1e717]: Session Hijack
+                      - generic [ref=f1e718]: Session cookie stolen and replayed from Moscow, RU (4,500 km impossible travel).
+                    - generic [ref=f1e719]:
+                      - generic [ref=f1e720]:
+                        - generic [ref=f1e721]: STAGE 3
+                        - generic [ref=f1e722]: 10:00:20
+                      - generic [ref=f1e723]: Beneficiary Added
+                      - generic [ref=f1e724]: Unverified account ACC_MULE_NEW added as express transfer beneficiary.
+                    - generic [ref=f1e725]:
+                      - generic [ref=f1e726]:
+                        - generic [ref=f1e727]: STAGE 4
+                        - generic [ref=f1e728]: 10:00:30
+                      - generic [ref=f1e729]: Money Mule Ring Link
+                      - generic [ref=f1e730]: ACC_MULE_NEW verified as 1-hop node inside Mule Syndicate Ring Alpha.
+                    - generic [ref=f1e731]:
+                      - generic [ref=f1e732]:
+                        - generic [ref=f1e733]: STAGE 5
+                        - generic [ref=f1e734]: 10:00:40
+                      - generic [ref=f1e735]: Transfer Execution Attempt
+                      - generic [ref=f1e736]: ₹7,50,000.00 transfer initiated attempting full balance drain.
+              - 'button "2. Burst Attack Velocity Detection SYNCHRONIZED_BOTNET_CREDENTIAL_BURST (500 entities in 60s) Severity: CRITICAL" [ref=f1e738] [cursor=pointer]':
+                - generic [ref=f1e747]:
+                  - text: 2. Burst Attack Velocity Detection
+                  - generic [ref=f1e748]: SYNCHRONIZED_BOTNET_CREDENTIAL_BURST (500 entities in 60s)
+                - generic [ref=f1e749]: "Severity: CRITICAL"
+              - 'button "3. Neo4j Graph Mule Ring Discovery Syndicate Alpha Layering Ring (cluster_alpha) Mule Ring Risk: 96.5%" [ref=f1e754] [cursor=pointer]':
+                - generic [ref=f1e761]:
+                  - text: 3. Neo4j Graph Mule Ring Discovery
+                  - generic [ref=f1e762]: Syndicate Alpha Layering Ring (cluster_alpha)
+                - generic [ref=f1e763]: "Mule Ring Risk: 96.5%"
+              - 'button "4. Multi-Vector Decision Quality Score Model Agreement: 98% â€¢ Evidence Completeness: 95% Quality: 96.5%" [ref=f1e768] [cursor=pointer]':
+                - generic [ref=f1e774]:
+                  - text: 4. Multi-Vector Decision Quality Score
+                  - generic [ref=f1e775]: "Model Agreement: 98% â€¢ Evidence Completeness: 95%"
+                - generic [ref=f1e776]: "Quality: 96.5%"
+              - 'button "5. Fusion Investigation Executive Brief Recommended Action: EXECUTE_PRE_TRANSACTION_BLOCK_AND_FREEZE_MULE_RING Executive Brief Ready" [ref=f1e781] [cursor=pointer]':
+                - generic [ref=f1e786]:
+                  - text: 5. Fusion Investigation Executive Brief
+                  - generic [ref=f1e787]: "Recommended Action: EXECUTE_PRE_TRANSACTION_BLOCK_AND_FREEZE_MULE_RING"
+                - generic [ref=f1e788]: Executive Brief Ready
+          - generic [ref=f1e792]:
+            - generic [ref=f1e793]:
+              - generic [ref=f1e799]:
+                - generic [ref=f1e800]:
+                  - generic [ref=f1e801]: FUSION QUANTUM TRUST LAYER (QTL)
+                  - generic [ref=f1e802]: NIST PQC ALIGNED
+                - 'heading "QUANTUM READINESS SCORE: 68% MODERATE" [level=2] [ref=f1e803]':
+                  - text: "QUANTUM READINESS SCORE:"
+                  - generic [ref=f1e804]: 68%
+                  - generic [ref=f1e805]: MODERATE
+              - generic [ref=f1e806]:
+                - generic [ref=f1e807]:
+                  - generic [ref=f1e808]: Crypto Agility
+                  - generic [ref=f1e809]: PARTIALLY_ENABLED
+                - generic [ref=f1e810]:
+                  - generic [ref=f1e811]: PQC Adoption
+                  - generic [ref=f1e812]: 20% Active
+                - button "PQC Audit Export" [ref=f1e813] [cursor=pointer]
+            - generic [ref=f1e818]:
+              - button "Overview" [ref=f1e819] [cursor=pointer]
+              - button "Assessment" [ref=f1e824] [cursor=pointer]
+              - button "Crypto Inventory 5" [ref=f1e829] [cursor=pointer]:
+                - generic [ref=f1e833]: Crypto Inventory
+                - generic [ref=f1e834]: "5"
+              - button "Algorithms" [ref=f1e835] [cursor=pointer]
+              - button "PQC Migration 3" [ref=f1e841] [cursor=pointer]:
+                - generic [ref=f1e844]: PQC Migration
+                - generic [ref=f1e845]: "3"
+              - button "Compliance" [ref=f1e846] [cursor=pointer]
+              - button "Impact Simulator" [ref=f1e851] [cursor=pointer]
+              - button "Audit & Reports" [ref=f1e855] [cursor=pointer]
+            - generic [ref=f1e860]:
+              - generic [ref=f1e861]:
+                - generic [ref=f1e862]:
+                  - text: Total Cryptographic Assets
+                  - generic [ref=f1e863]: 5 Protected Systems
+                - generic [ref=f1e864]:
+                  - text: Quantum Resistant Assets
+                  - generic [ref=f1e865]: 1 (ML-KEM / ML-DSA)
+                - generic [ref=f1e866]:
+                  - text: High Quantum Risk Assets
+                  - generic [ref=f1e867]: 3 (RSA-2048 / ECDSA)
+                - generic [ref=f1e868]:
+                  - text: Certificates Expiring <90d
+                  - generic [ref=f1e869]: 3 Certificates
+              - generic [ref=f1e870]:
+                - text: Active Cryptographic Posture Profile
+                - generic [ref=f1e871]:
+                  - generic [ref=f1e872]:
+                    - generic [ref=f1e873]: "Active TLS Version:"
+                    - generic [ref=f1e874]: TLS 1.3 (Hybrid PQC Enabled)
+                  - generic [ref=f1e875]:
+                    - generic [ref=f1e876]: "Default Key Exchange:"
+                    - generic [ref=f1e877]: ECDHE_RSA-2048 & ML-KEM-768 Dual-Handshake
+                  - generic [ref=f1e878]:
+                    - generic [ref=f1e879]: "Symmetric Encryption:"
+                    - generic [ref=f1e880]: AES-256-GCM (Grover Resistant)
+                  - generic [ref=f1e881]:
+                    - generic [ref=f1e882]: "PQC Provider Library:"
+                    - generic [ref=f1e883]: liboqs v0.9.0 + OpenSSL 3.1.2
+          - generic [ref=f1e884]:
+            - generic [ref=f1e885]:
+              - generic [ref=f1e886]:
+                - generic [ref=f1e887]: 1. SIEM Cyber Telemetry
+                - generic [ref=f1e895]: 0 Alerts
+              - generic [ref=f1e897]:
+                - generic [ref=f1e898]:
+                  - generic [ref=f1e899]:
+                    - generic [ref=f1e900]: 10:00:00
+                    - generic [ref=f1e901]: CRITICAL
+                  - generic [ref=f1e902]: impossible travel login
+                  - generic [ref=f1e903]:
+                    - generic [ref=f1e904]: "User: usr_abc"
+                    - generic [ref=f1e905]: "IP: 185.15.2.22"
+                    - generic [ref=f1e906]: "Impossible Travel: 4500 km"
+                - generic [ref=f1e907]:
+                  - generic [ref=f1e908]:
+                    - generic [ref=f1e909]: 09:58:12
+                    - generic [ref=f1e910]: MEDIUM
+                  - generic [ref=f1e911]: new device mfa cookie reuse
+                  - generic [ref=f1e912]:
+                    - generic [ref=f1e913]: "User: usr_abc"
+                    - generic [ref=f1e914]: "IP: 185.15.2.22"
+            - generic [ref=f1e917]:
+              - generic [ref=f1e918]:
+                - generic [ref=f1e919]:
+                  - generic [ref=f1e924]: Neo4j Threat Graph Visualizer
+                  - generic [ref=f1e925]: DEMO · 100 nodes
+                  - generic [ref=f1e926]: 13 Mule Entities
+                  - generic [ref=f1e927]: 6 Suspicious IPs
+                - generic [ref=f1e928]:
+                  - button "Mule Highlight" [ref=f1e929] [cursor=pointer]
+                  - generic [ref=f1e933]:
+                    - button "Zoom In" [ref=f1e934] [cursor=pointer]
+                    - button "Zoom Out" [ref=f1e938] [cursor=pointer]
+                    - button "Reset Camera" [ref=f1e942] [cursor=pointer]
+              - generic [ref=f1e948]:
+                - generic [ref=f1e949]: "Filter:"
+                - button "All" [ref=f1e950] [cursor=pointer]
+                - button "Users" [ref=f1e951] [cursor=pointer]
+                - button "Accounts" [ref=f1e952] [cursor=pointer]
+                - button "Mules" [ref=f1e953] [cursor=pointer]
+                - button "IPs" [ref=f1e954] [cursor=pointer]
+                - button "Devices" [ref=f1e955] [cursor=pointer]
+                - button "Merchants" [ref=f1e956] [cursor=pointer]
+                - button "VPN Exits" [ref=f1e957] [cursor=pointer]
+              - generic [ref=f1e958]:
+                - generic [ref=f1e962]:
+                  - generic [ref=f1e963]: User
+                  - generic [ref=f1e966]: Account
+                  - generic [ref=f1e969]: Mule
+                  - generic [ref=f1e972]: Cluster
+                  - generic [ref=f1e975]: Susp. IP
+                  - generic [ref=f1e978]: Device
+                  - generic [ref=f1e981]: Merchant
+                  - generic [ref=f1e984]: VPN Exit
+                  - generic [ref=f1e987]: Clean IP
+                - generic [ref=f1e990]:
+                  - generic [ref=f1e991]: 100 nodes · 161 edges
+                  - generic [ref=f1e992]: 13 mule entities
+            - generic [ref=f1e993]:
+              - generic [ref=f1e994]:
+                - generic [ref=f1e995]: 2. Core Banking Ledger
+                - generic [ref=f1e999]: 0 Txns
+              - generic [ref=f1e1002]:
+                - generic [ref=f1e1003]:
+                  - generic [ref=f1e1004]: 10:00:40
+                  - generic [ref=f1e1005]: txn_demo_999
+                - generic [ref=f1e1006]:
+                  - generic [ref=f1e1007]: TRANSFER
+                  - generic [ref=f1e1008]: ₹750,000
+                - generic [ref=f1e1009]:
+                  - generic [ref=f1e1010]: ACC_ABC_123
+                  - generic [ref=f1e1011]: →
+                  - generic [ref=f1e1012]: ACC_MULE_NEW
+          - generic [ref=f1e1013]:
+            - generic [ref=f1e1014]:
+              - generic [ref=f1e1019]:
+                - generic [ref=f1e1020]:
+                  - generic [ref=f1e1021]: FUSION SOAR RESPONSE ORCHESTRATOR
+                  - generic [ref=f1e1022]: "PLAYBOOK: PLAYBOOK_ATO"
+                - 'heading "RECOMMENDED VERDICT: EXECUTE_PRE_TRANSACTION_BLOCK_AND_FREEZE" [level=2] [ref=f1e1023]':
+                  - text: "RECOMMENDED VERDICT:"
+                  - generic [ref=f1e1024]: EXECUTE_PRE_TRANSACTION_BLOCK_AND_FREEZE
+              - generic [ref=f1e1025]:
+                - generic [ref=f1e1026]:
+                  - generic [ref=f1e1027]: SOAR Latency
+                  - generic [ref=f1e1028]: 0.01 ms
+                - button "EXECUTE RESPONSE WORKFLOW" [ref=f1e1029] [cursor=pointer]
+            - generic [ref=f1e1033]:
+              - generic [ref=f1e1034]:
+                - 'button "1. Explainable Response Actions (6 Actions) Approval Rule: AUTOMATIC_EXECUTION" [ref=f1e1035] [cursor=pointer]':
+                  - generic [ref=f1e1040]:
+                    - generic [ref=f1e1041]: 1. Explainable Response Actions (6 Actions)
+                    - generic [ref=f1e1042]: "Approval Rule: AUTOMATIC_EXECUTION"
+                - generic [ref=f1e1046]:
+                  - generic [ref=f1e1047]:
+                    - generic [ref=f1e1048]:
+                      - generic [ref=f1e1049]: FREEZE_ACCOUNT
+                      - generic [ref=f1e1050]: RECOMMENDED
+                    - generic [ref=f1e1051]: Account ACC_ABC_123
+                    - generic [ref=f1e1052]: "Account takeover indicators present: Impossible travel login from Moscow prior to INR 7.5L transfer attempt."
+                  - generic [ref=f1e1053]:
+                    - generic [ref=f1e1054]:
+                      - generic [ref=f1e1055]: FREEZE_BENEFICIARY
+                      - generic [ref=f1e1056]: RECOMMENDED
+                    - generic [ref=f1e1057]: Beneficiary Account ACC_MULE_NEW
+                    - generic [ref=f1e1058]: Recipient account identified as direct 1-hop node in Neo4j Mule Ring Cluster Alpha.
+                  - generic [ref=f1e1059]:
+                    - generic [ref=f1e1060]:
+                      - generic [ref=f1e1061]: TERMINATE_SESSION
+                      - generic [ref=f1e1062]: RECOMMENDED
+                    - generic [ref=f1e1063]: Session SESS_9921_CRITICAL (IP 185.15.2.22)
+                    - generic [ref=f1e1064]: Stolen JWT session token replayed over commercial proxy pool AS49505.
+                  - generic [ref=f1e1065]:
+                    - generic [ref=f1e1066]:
+                      - generic [ref=f1e1067]: BLOCK_DEVICE
+                      - generic [ref=f1e1068]: RECOMMENDED
+                    - generic [ref=f1e1069]: Device Fingerprint dev_9999
+                    - generic [ref=f1e1070]: Unregistered device fingerprint attempting account balance drain.
+                  - generic [ref=f1e1071]:
+                    - generic [ref=f1e1072]:
+                      - generic [ref=f1e1073]: NOTIFY_CUSTOMER
+                      - generic [ref=f1e1074]: RECOMMENDED
+                    - generic [ref=f1e1075]: +91 98200 12345 (Jio 5G SMS & Push)
+                    - generic [ref=f1e1076]: Alert customer of blocked suspicious transfer attempt and trigger biometric password reset.
+                  - generic [ref=f1e1077]:
+                    - generic [ref=f1e1078]:
+                      - generic [ref=f1e1079]: GENERATE_EVIDENCE
+                      - generic [ref=f1e1080]: RECOMMENDED
+                    - generic [ref=f1e1081]: CERT-In PDF Evidence Locker Bundle
+                    - generic [ref=f1e1082]: Cryptographically seal SIEM logs, device fingerprints, and Neo4j graph path for regulator compliance.
+              - button "2. Matched SOAR Playbook — Account Takeover (ATO) Response Playbook Triggered when login credential theft or impossible travel is followed by high-value money transfer." [ref=f1e1084] [cursor=pointer]:
+                - generic [ref=f1e1090]:
+                  - generic [ref=f1e1091]: 2. Matched SOAR Playbook — Account Takeover (ATO) Response Playbook
+                  - generic [ref=f1e1092]: Triggered when login credential theft or impossible travel is followed by high-value money transfer.
+          - generic [ref=f1e1095]:
+            - generic [ref=f1e1096]:
+              - heading "Blast Radius Analysis — Secondary Incident Exposure & Containment" [level=3] [ref=f1e1100]
+              - generic [ref=f1e1101]: SIMULATED — illustrative exposure figures
+            - generic [ref=f1e1102]:
+              - generic [ref=f1e1104]:
+                - text: Potentially Impacted Customers
+                - generic [ref=f1e1105]: 17 Customers
+              - generic [ref=f1e1112]:
+                - text: Total Potential Exposure
+                - generic [ref=f1e1113]: INR 24,500,000.00
+              - generic [ref=f1e1117]:
+                - text: Linked High-Risk Accounts
+                - generic [ref=f1e1118]: 8 Mule Accounts
+              - generic [ref=f1e1126]:
+                - text: Contained Mule Clusters
+                - generic [ref=f1e1127]: Cluster Alpha (6 Nodes)
+            - generic [ref=f1e1132]:
+              - generic [ref=f1e1133]: Incident Propagation Chain
+              - generic [ref=f1e1134]:
+                - generic [ref=f1e1135]:
+                  - generic [ref=f1e1136]: 1. Primary Target
+                  - generic [ref=f1e1137]: usr_abc
+                  - generic [ref=f1e1138]: Compromised
+                - generic [ref=f1e1139]:
+                  - generic [ref=f1e1140]: 2. Shared Device ID
+                  - generic [ref=f1e1141]: dev_9999
+                  - generic [ref=f1e1142]: Flagged (2 Users)
+                - generic [ref=f1e1143]:
+                  - generic [ref=f1e1144]: 3. Shared Proxy IP
+                  - generic [ref=f1e1145]: 185.15.2.22
+                  - generic [ref=f1e1146]: RU Proxy (5 Accounts)
+                - generic [ref=f1e1147]:
+                  - generic [ref=f1e1148]: 4. Linked Beneficiaries
+                  - generic [ref=f1e1149]: ACC_MULE_NEW
+                  - generic [ref=f1e1150]: Mule Ring Target
+                - generic [ref=f1e1151]:
+                  - generic [ref=f1e1152]: 5. Connected Mule Cluster
+                  - generic [ref=f1e1153]: cluster_alpha
+                  - generic [ref=f1e1154]: Isolated
+          - generic [ref=f1e1155]:
+            - heading "Trust Fabric" [level=2] [ref=f1e1158]
+            - generic [ref=f1e1160]:
+              - generic [ref=f1e1161]:
+                - generic [ref=f1e1167]:
+                  - heading "Similar Historical Incident Search" [level=3] [ref=f1e1168]
+                  - text: Learn from historical case precedents and past recovery outcomes
+                - generic [ref=f1e1169]: KNOWLEDGE GRAPH MATCH
+              - generic [ref=f1e1170]:
+                - generic [ref=f1e1171]:
+                  - generic [ref=f1e1172]:
+                    - generic [ref=f1e1173]:
+                      - generic [ref=f1e1174]: CASE-2026-7821
+                      - generic [ref=f1e1175]: 92% Similarity
+                      - generic [ref=f1e1176]:
+                        - generic [ref=f1e1179]: BLOCK
+                        - generic [ref=f1e1180]: (90)
+                    - paragraph [ref=f1e1181]: Impossible travel login followed by mule account transfer
+                    - generic [ref=f1e1182]: Recovered INR 12,000,000.00
+                  - button "Inspect Case" [ref=f1e1183] [cursor=pointer]
+                - generic [ref=f1e1187]:
+                  - generic [ref=f1e1188]:
+                    - generic [ref=f1e1189]:
+                      - generic [ref=f1e1190]: CASE-2026-6145
+                      - generic [ref=f1e1191]: 89% Similarity
+                      - generic [ref=f1e1192]:
+                        - generic [ref=f1e1195]: BLOCK
+                        - generic [ref=f1e1196]: (90)
+                    - paragraph [ref=f1e1197]: Matched Mule Cluster Alpha (6 shared device accounts)
+                    - generic [ref=f1e1198]: Recovered INR 8,000,000.00
+                  - button "Inspect Case" [ref=f1e1199] [cursor=pointer]
+          - generic [ref=f1e1203]:
+            - generic [ref=f1e1205]:
+              - generic [ref=f1e1206]:
+                - generic [ref=f1e1213]:
+                  - heading "Analyst SOC Collaboration Suite" [level=3] [ref=f1e1214]
+                  - text: Team Case Notes, @Mentions, Evidence Pinning & Escalation Log
+                - generic [ref=f1e1215]: 2 Analysts Active
+              - generic [ref=f1e1216]:
+                - generic [ref=f1e1217]:
+                  - generic [ref=f1e1218]:
+                    - generic [ref=f1e1219]: Analyst_04 (Tier-3)
+                    - generic [ref=f1e1220]: 10:01 IST
+                  - paragraph [ref=f1e1221]: "@Analyst_02 Please double-check destination account ACC_MULE_NEW against cluster_alpha ring records."
+                - generic [ref=f1e1222]:
+                  - generic [ref=f1e1223]:
+                    - generic [ref=f1e1224]: Analyst_02 (Tier-2)
+                    - generic [ref=f1e1225]: 10:03 IST
+                  - paragraph [ref=f1e1226]: Confirmed ring match. Shared device ID dev_9999 observed across 6 beneficiary accounts.
+              - generic [ref=f1e1227]:
+                - textbox "Add investigation note or @mention analyst..." [ref=f1e1228]
+                - button "Post" [ref=f1e1229] [cursor=pointer]
+            - generic [ref=f1e1235]:
+              - generic [ref=f1e1236]:
+                - generic [ref=f1e1243]:
+                  - heading "Continuous Model Learning Loop — Closed Case Feedback" [level=3] [ref=f1e1244]
+                  - text: Label closed cases to queue dataset updates for supervised model retraining
+                - generic [ref=f1e1245]: SIMULATED — no retraining queue is wired up
+              - generic [ref=f1e1246]:
+                - generic [ref=f1e1247]:
+                  - generic [ref=f1e1248] [cursor=pointer]:
+                    - radio "Confirmed Fraud (Label True Positive)" [checked] [ref=f1e1249]
+                    - generic [ref=f1e1250]: Confirmed Fraud (Label True Positive)
+                  - generic [ref=f1e1251] [cursor=pointer]:
+                    - radio "False Positive (Label Clean Baseline)" [ref=f1e1252]
+                    - generic [ref=f1e1253]: False Positive (Label Clean Baseline)
+                - button "Submit Feedback to Retraining Queue" [ref=f1e1254] [cursor=pointer]
+          - generic [ref=f1e1259]:
+            - generic [ref=f1e1261]:
+              - generic [ref=f1e1262]:
+                - heading "Explainability Workspace (XAI & Counterfactuals)" [level=3] [ref=f1e1263]
+                - generic [ref=f1e1264]: SHAP TreeExplainer
+              - generic [ref=f1e1265]:
+                - generic [ref=f1e1266]:
+                  - heading "Top Feature Risk Impacts (SHAP Values)" [level=4] [ref=f1e1267]
+                  - generic [ref=f1e1268]:
+                    - generic "log_amount" [ref=f1e1270]
+                    - generic "cyber_flag" [ref=f1e1276]
+                    - generic "dest_balance_ratio" [ref=f1e1282]
+                    - generic "time_since_last_txn" [ref=f1e1288]
+                - generic [ref=f1e1293]:
+                  - heading "Quantum-Aware Counterfactual Reasoning" [level=4] [ref=f1e1294]
+                  - generic [ref=f1e1295]: "\"With no prior cyber compromise, score = 61 -> CHALLENGE, not BLOCK.\""
+            - generic [ref=f1e1297]:
+              - generic [ref=f1e1298]:
+                - generic [ref=f1e1299]:
+                  - heading "Analyst Evidence Locker & Decision Execution" [level=3] [ref=f1e1304]
+                  - generic [ref=f1e1305]: CERT-In 6-Hour Compliance Queue
+                - generic [ref=f1e1306]:
+                  - text: Pinned Case Artifacts
+                  - generic [ref=f1e1307]:
+                    - generic [ref=f1e1308]: "Cyber Alert: Impossible Travel (RU IP: 185.15.2.22)"
+                    - generic [ref=f1e1311]: T-0:40s
+                  - generic [ref=f1e1312]:
+                    - generic [ref=f1e1313]: "CBS Txn: INR 7,500,000.00 (ACC_ABC_123 â†’ ACC_MULE_NEW)"
+                    - generic [ref=f1e1316]: T+0:00s
+                  - generic [ref=f1e1317]:
+                    - generic [ref=f1e1318]: "Neo4j Ring: Mule Cluster Alpha (6 Shared Nodes)"
+                    - generic [ref=f1e1321]: Graph Match
+                - generic [ref=f1e1322]:
+                  - generic [ref=f1e1323]: Analyst Rationale Log
+                  - textbox "Enter analyst justification notes here..." [ref=f1e1327]: "Investigation Note: High-risk correlation confirmed between impossible travel login (4,500km from Mumbai) and immediate ₹7.5L UPI transfer to flagged mule cluster ACC_MULE_NEW."
+              - generic [ref=f1e1329]:
+                - generic [ref=f1e1330]:
+                  - button "CONFIRM BLOCK" [ref=f1e1331] [cursor=pointer]
+                  - button "STEP-UP MFA" [ref=f1e1335] [cursor=pointer]
+                  - button "CERT-In PDF" [ref=f1e1337] [cursor=pointer]
+                - paragraph [ref=f1e1342]: Simulated action — no live enforcement call is made.
+          - generic [ref=f1e1344]:
+            - generic [ref=f1e1345]:
+              - generic [ref=f1e1346]: Chrome DevTools for Fraud — Transaction Inspector
+              - generic [ref=f1e1350]:
+                - button "1. TXN" [ref=f1e1351] [cursor=pointer]
+                - button "2. Timeline" [ref=f1e1352] [cursor=pointer]
+                - button "3. Raw Features" [ref=f1e1353] [cursor=pointer]
+                - button "4. Graph" [ref=f1e1354] [cursor=pointer]
+                - button "5. Risk" [ref=f1e1355] [cursor=pointer]
+                - button "6. SHAP" [ref=f1e1356] [cursor=pointer]
+                - button "7. Counterfactual" [ref=f1e1357] [cursor=pointer]
+                - button "8. Evidence" [ref=f1e1358] [cursor=pointer]
+            - generic [ref=f1e1360]:
+              - text: Incoming Transaction Protocol & Payload
+              - generic [ref=f1e1361]: "{ \"txn_id\": \"txn_demo_999\", \"user_id\": \"usr_abc\", \"nameOrig\": \"ACC_ABC_123\", \"nameDest\": \"ACC_MULE_NEW\", \"amount\": 750000, \"type\": \"TRANSFER\", \"ip\": \"185.15.2.22\", \"device_id\": \"dev_9999\", \"cyber_compromise_in_window\": true, \"dest_mule_cluster_id\": \"cluster_alpha\" }"
+  - generic [ref=f1e1362]:
+    - generic [ref=f1e1363]:
+      - generic [ref=f1e1364]: WebSocket stream connected (port 8001)
+      - generic [ref=f1e1370]: "SLA Target: <50ms"
+    - generic [ref=f1e1371]:
+      - generic [ref=f1e1372]: "FPR Budget: 0.48% / 0.50%"
+      - generic [ref=f1e1373]: "Graph Engine: NetworkX / Neo4j Aura"
+      - generic [ref=f1e1374]: Fuzen AI Enterprise v2.6

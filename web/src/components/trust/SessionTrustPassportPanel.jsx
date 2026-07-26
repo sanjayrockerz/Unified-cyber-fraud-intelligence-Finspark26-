@@ -26,6 +26,10 @@ const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http:/
  * Map TrustPassport (new SQLite-backed session intelligence) to the legacy checkpoint structure
  * expected by SessionTrustPassportPanel UI. This adapter ensures the component works with the
  * authoritative real data from the new system without requiring UI refactoring.
+ *
+ * Uses authoritative policy thresholds from api/session_intelligence/policy.py LIFECYCLE_THRESHOLDS:
+ * - blocked_below: 30.0
+ * - suspicious_below: 70.0
  */
 function mapTrustPassportToCheckpoints(trustPassport) {
   const {
@@ -36,36 +40,25 @@ function mapTrustPassportToCheckpoints(trustPassport) {
     confidence,
   } = trustPassport;
 
-  // Derive decision from current_status (or fallback to overall_trust logic)
+  // Map current_status to decision (authoritative from backend state machine)
   let decision = 'ALLOW';
   if (current_status === 'BLOCKED') {
     decision = 'BLOCK';
-  } else if (current_status === 'CHALLENGED') {
-    decision = 'CHALLENGE';
-  } else if (overall_trust < 45.0) {
-    decision = 'BLOCK';
-  } else if (overall_trust < 75.0) {
+  } else if (current_status === 'CHALLENGED' || current_status === 'SUSPICIOUS') {
     decision = 'CHALLENGE';
   }
 
-  // Derive monitoring level from overall_trust (matching old engine logic)
+  // Derive monitoring_level using authoritative policy thresholds (blocked_below=30, suspicious_below=70)
+  // Aligned with backend's session lifecycle state machine
   let monitoring_level = 'LOW';
-  if (overall_trust >= 75.0) {
+  if (overall_trust >= 70.0) {
     monitoring_level = 'LOW';
-  } else if (overall_trust >= 60.0) {
+  } else if (overall_trust >= 50.0) {
     monitoring_level = 'MEDIUM';
-  } else if (overall_trust >= 45.0) {
+  } else if (overall_trust >= 30.0) {
     monitoring_level = 'HIGH';
   } else {
     monitoring_level = 'CRITICAL';
-  }
-
-  // If cyber or graph trust is very low, escalate to CRITICAL
-  const threatTrust = components.threat?.value ?? 100;
-  const graphTrust = components.graph?.value ?? 100;
-  if (threatTrust < 30.0 || graphTrust < 30.0) {
-    monitoring_level = 'CRITICAL';
-    decision = 'BLOCK';
   }
 
   // Calculate expiry (15 minutes from updated_time, like the old system)
@@ -100,31 +93,23 @@ function mapTrustPassportToCheckpoints(trustPassport) {
         score: Math.round(comp.value),
         confidence: comp.confidence,
         reasons: comp.reasons && comp.reasons.length > 0 ? comp.reasons : ['Component evaluated'],
-        execution_time_ms: 12, // Placeholder; actual timing not available in TrustComponent
+        // Note: execution_time_ms not available from TrustComponent model; omitted to avoid false precision
         ...(componentName === 'threat' && {
           threat_confidence: comp.confidence,
-          threat_category: 'cyber_intelligence',
-          mitre_techniques: [],
+          // Note: MITRE techniques not populated in new TrustComponent schema; omit to avoid fabrication
+          mitre_techniques: null,
         }),
         ...(componentName === 'graph' && {
-          relationship_summary: 'Graph relationships analyzed',
-          mule_ring_distance: 3,
+          // Note: Graph relationship details not available in TrustComponent; omit to avoid fabrication
+          relationship_summary: null,
         }),
       };
     }
   });
 
-  // Placeholder performance metrics
-  const performance_metrics = {
-    identity_engine_ms: 8.5,
-    device_engine_ms: 12.3,
-    session_engine_ms: 11.7,
-    behavior_engine_ms: 9.2,
-    cyber_engine_ms: 15.4,
-    graph_engine_ms: 18.9,
-    fusion_engine_ms: 5.1,
-    total_latency_ms: 81.1,
-  };
+  // Note: actual execution timing not available from TrustComponent model (no per-component timers tracked)
+  // Omitting performance_metrics to avoid fabricating latency values
+  const performance_metrics = null;
 
   return {
     session_id: trustPassport.session_id,
@@ -248,13 +233,15 @@ export default function SessionTrustPassportPanel({ sessionId = 'SESS_9921_CRITI
             <span className="font-bold text-soc-text text-[11px]">{expiry}</span>
           </div>
 
-          <div className="flex flex-col border-r border-soc-border pr-6">
-            <span className="text-[10px] text-soc-dim uppercase flex items-center gap-1">
-              <Zap className="w-3 h-3 text-soc-warning" />
-              <span>Pipeline Latency</span>
-            </span>
-            <span className="font-bold text-soc-warning text-[11px]">{performance_metrics?.total_latency_ms} ms</span>
-          </div>
+          {performance_metrics && (
+            <div className="flex flex-col border-r border-soc-border pr-6">
+              <span className="text-[10px] text-soc-dim uppercase flex items-center gap-1">
+                <Zap className="w-3 h-3 text-soc-warning" />
+                <span>Pipeline Latency</span>
+              </span>
+              <span className="font-bold text-soc-warning text-[11px]">{performance_metrics.total_latency_ms} ms</span>
+            </div>
+          )}
 
           <button 
             onClick={fetchSessionPassport}
@@ -309,7 +296,9 @@ export default function SessionTrustPassportPanel({ sessionId = 'SESS_9921_CRITI
                     <span className={`font-mono font-bold text-xs ${isLowScore ? 'text-soc-danger' : 'text-soc-success'}`}>
                       {score}% Trust
                     </span>
-                    <div className="text-[10px] text-soc-dim">{chk.data?.execution_time_ms} ms</div>
+                    {chk.data?.execution_time_ms !== undefined && (
+                      <div className="text-[10px] text-soc-dim">{chk.data.execution_time_ms} ms</div>
+                    )}
                   </div>
                   {isExpanded ? <ChevronUp className="w-4 h-4 text-soc-dim" /> : <ChevronDown className="w-4 h-4 text-soc-dim" />}
                 </div>
