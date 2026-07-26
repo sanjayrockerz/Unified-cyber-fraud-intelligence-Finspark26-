@@ -105,6 +105,9 @@ export default function SettingsPage() {
             <span>{saveState === 'saved' ? 'Saved' : saveState === 'error' ? 'Error — try again' : 'Save Policy Configuration'}</span>
           </button>
           {saveState === 'error' && <p className="text-xs text-soc-danger">Failed to save settings. Please try again.</p>}
+          <p className="text-[10px] text-soc-dim">
+            Saved for this session — the running risk engine currently uses its own compiled thresholds and does not read these values.
+          </p>
         </div>
       </div>
     </div>

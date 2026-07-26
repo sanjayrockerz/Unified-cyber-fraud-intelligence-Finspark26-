@@ -76,7 +76,7 @@ export default function LiveThreatMap() {
       </div>
 
       {/* SVG Canvas Map */}
-      <div className="relative flex-1 bg-[#090d16] min-h-[260px] overflow-hidden p-2 flex items-center justify-center">
+      <div className="relative flex-1 bg-soc-bg min-h-[260px] overflow-hidden p-2 flex items-center justify-center">
         {/* Grid Overlay Pattern */}
         <div className="absolute inset-0 bg-[linear-gradient(rgba(41,53,72,0.07)_1px,transparent_1px),linear-gradient(90deg,rgba(41,53,72,0.07)_1px,transparent_1px)] bg-[size:16px_16px] pointer-events-none" />
 
@@ -198,7 +198,7 @@ export default function LiveThreatMap() {
 
         {/* Hover Information HUD overlay */}
         {hoveredNode && (
-          <div className="absolute top-3 left-3 z-20 w-52 bg-[#101827]/95 border border-soc-primary/40 p-2.5 rounded shadow-2xl font-mono text-[10px] text-soc-text backdrop-blur-md">
+          <div className="absolute top-3 left-3 z-20 w-52 bg-soc-surface/95 border border-soc-primary/40 p-2.5 rounded shadow-2xl font-mono text-[10px] text-soc-text backdrop-blur-md">
             <div className="flex items-center justify-between border-b border-soc-border pb-1.5 mb-1.5">
               <span className="font-black text-soc-text">{hoveredNode.name}</span>
               <span className="px-1 py-0.2 bg-soc-danger/10 border border-soc-danger/40 text-soc-danger rounded font-bold">
@@ -231,7 +231,7 @@ export default function LiveThreatMap() {
           {activeAttacks.map((origin) => (
             <div
               key={origin.id}
-              className="flex items-center justify-between font-mono text-[10px] bg-[#0c121e]/80 border border-soc-border/50 px-2 py-1.5 hover:border-soc-primary/40 rounded transition-all cursor-pointer"
+              className="flex items-center justify-between font-mono text-[10px] bg-soc-bg/80 border border-soc-border/50 px-2 py-1.5 hover:border-soc-primary/40 rounded transition-all cursor-pointer"
             >
               <div className="flex items-center gap-2">
                 <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: origin.color }} />

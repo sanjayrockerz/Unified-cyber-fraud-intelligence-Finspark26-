@@ -26,17 +26,31 @@ from session_intelligence.models import (
     TrustSnapshot,
 )
 from session_intelligence.repository import SessionTrustRepository
+from session_intelligence.policy import LIFECYCLE_THRESHOLDS
 
 
 def seed_demo_session():
     """
     Seed SESS_9921_CRITICAL with a realistic degraded trust passport.
 
-    This session represents a user with:
-    - Suspicious device behavior (device_trust: 35)
-    - Active threat indicators (threat_trust: 25)
-    - Poor graph reputation (graph_trust: 20)
-    - Overall trust score: 32 (below the 30 threshold, triggers BLOCK)
+    This session represents a user with widespread degradation across nearly
+    every trust component, not just one or two isolated signals:
+    - Suspicious device behavior (device_trust: 18)
+    - Active threat indicators (threat_trust: 12)
+    - Poor graph reputation (graph_trust: 14)
+    - Overall trust score: ~23.6 (genuinely below api/session_intelligence/
+      policy.py's blocked_below: 30.0 threshold, so the platform's own
+      classification logic -- not just this script's hand-set lifecycle
+      field -- agrees this session should be BLOCKED rather than SUSPICIOUS)
+
+    NOTE: an earlier version of this script set component values that summed
+    to overall_trust=42.9 while still forcing current_status=BLOCKED. That
+    was inconsistent with policy.py's own blocked_below=30.0 rule (42.9 would
+    actually classify as SUSPICIOUS/CHALLENGE), so the BLOCK verdict shown on
+    /operations and /investigation didn't match the platform's real logic.
+    The values below were lowered specifically so the computed overall_trust
+    is honestly below 30, preserving the intended BLOCK demo narrative
+    without contradicting the policy the platform actually runs.
     """
 
     repo = SessionTrustRepository()
@@ -62,70 +76,70 @@ def seed_demo_session():
     components = {
         ComponentName.IDENTITY: TrustComponent(
             name=ComponentName.IDENTITY,
-            value=68.0,  # Moderate identity risk
+            value=40.0,  # Severe identity risk
             confidence=0.85,
             previous_value=80.0,
-            difference=-12.0,
+            difference=-40.0,
             trend=TrustTrend.DECLINING,
             reasons=["Account age moderate", "Recent credential reset", "Prior fraud history flagged"],
             updated_at=now,
         ),
         ComponentName.DEVICE: TrustComponent(
             name=ComponentName.DEVICE,
-            value=35.0,  # Significant device risk
+            value=18.0,  # Critical device risk
             confidence=0.9,
             previous_value=85.0,
-            difference=-50.0,
+            difference=-67.0,
             trend=TrustTrend.DECLINING,
             reasons=["Unrecognized device", "Device emulation detected", "Root access indicators"],
             updated_at=now,
         ),
         ComponentName.RUNTIME: TrustComponent(
             name=ComponentName.RUNTIME,
-            value=42.0,  # Runtime compromise suspected
+            value=15.0,  # Critical runtime compromise
             confidence=0.88,
             previous_value=90.0,
-            difference=-48.0,
+            difference=-75.0,
             trend=TrustTrend.DECLINING,
             reasons=["Screen recording active", "Frida instrumentation detected", "Debugger attached"],
             updated_at=now,
         ),
         ComponentName.BEHAVIOUR: TrustComponent(
             name=ComponentName.BEHAVIOUR,
-            value=55.0,  # Behavioral anomalies
+            value=35.0,  # Severe behavioral anomalies
             confidence=0.82,
             previous_value=75.0,
-            difference=-20.0,
+            difference=-40.0,
             trend=TrustTrend.DECLINING,
             reasons=["Unusual transaction amount", "Atypical transfer pattern", "Beneficiary mismatch"],
             updated_at=now,
         ),
         ComponentName.NETWORK: TrustComponent(
             name=ComponentName.NETWORK,
-            value=48.0,  # Network risk present
+            value=22.0,  # Critical network risk
             confidence=0.85,
             previous_value=80.0,
-            difference=-32.0,
+            difference=-58.0,
             trend=TrustTrend.DECLINING,
             reasons=["VPN tunnel active", "Impossible travel detected", "Public WiFi usage"],
             updated_at=now,
         ),
         ComponentName.GEO: TrustComponent(
             name=ComponentName.GEO,
-            value=52.0,  # Geographic anomaly
+            value=30.0,  # Severe geographic anomaly
             confidence=0.80,
             previous_value=85.0,
-            difference=-33.0,
+            difference=-55.0,
             trend=TrustTrend.DECLINING,
             reasons=["GPS spoofing suspected", "Geofence violation", "Inconsistent location history"],
             updated_at=now,
         ),
         ComponentName.THREAT: TrustComponent(
             name=ComponentName.THREAT,
-            value=25.0,  # Critical threat indicators
+            value=12.0,  # Critical threat indicators
             confidence=0.95,
             previous_value=85.0,
-            difference=-60.0,
+            difference=-73.0,
             trend=TrustTrend.DECLINING,
             reasons=[
                 "Banking trojan signatures detected",
@@ -136,10 +150,10 @@ def seed_demo_session():
         ),
         ComponentName.GRAPH: TrustComponent(
             name=ComponentName.GRAPH,
-            value=20.0,  # Severe graph risk
+            value=14.0,  # Critical graph risk
             confidence=0.93,
             previous_value=85.0,
-            difference=-65.0,
+            difference=-71.0,
             trend=TrustTrend.DECLINING,
             reasons=[
                 "Connected to mule ring (distance: 1)",
@@ -150,10 +164,10 @@ def seed_demo_session():
         ),
         ComponentName.TRANSACTION: TrustComponent(
             name=ComponentName.TRANSACTION,
-            value=38.0,  # Transaction risk
+            value=28.0,  # Severe transaction risk
             confidence=0.87,
             previous_value=82.0,
-            difference=-44.0,
+            difference=-54.0,
             trend=TrustTrend.DECLINING,
             reasons=["High transaction amount", "First-time beneficiary", "Weekend anomaly"],
             updated_at=now,
@@ -180,7 +194,22 @@ def seed_demo_session():
     )
     overall_trust = round(overall_trust, 1)
 
-    print(f"Calculated overall_trust: {overall_trust}")
+    # This session is seeded with current_status=BLOCKED below. Guard that the
+    # numbers we hand-picked actually agree with the platform's own policy
+    # (api/session_intelligence/policy.py), rather than just asserting BLOCKED
+    # in the lifecycle field regardless of what the component values compute
+    # to -- that mismatch is exactly what caused this script to previously
+    # seed a 42.9% "BLOCKED" session when the policy's own blocked_below=30.0
+    # rule would have classified it as SUSPICIOUS.
+    blocked_below = LIFECYCLE_THRESHOLDS["blocked_below"]
+    assert overall_trust < blocked_below, (
+        f"Seeded overall_trust={overall_trust} is not below policy.py's "
+        f"blocked_below={blocked_below} -- current_status=BLOCKED below would "
+        "contradict the platform's own real classification logic. Lower the "
+        "component values above until this holds."
+    )
+
+    print(f"Calculated overall_trust: {overall_trust} (blocked_below={blocked_below})")
 
     # Create trust passport
     passport = TrustPassport(

@@ -6,6 +6,7 @@ import MainContent from './MainContent';
 import StatusBar from './StatusBar';
 import UniversalSearch from '../common/UniversalSearch';
 import ErrorBoundary from '../common/ErrorBoundary';
+import RenderCrashTrigger from '../common/RenderCrashTrigger';
 import { useSearch } from '../../context/SearchContext';
 
 function InnerAppLayout({ quantumData }) {
@@ -25,6 +26,7 @@ function InnerAppLayout({ quantumData }) {
         {/* Dynamic Route Content */}
         <MainContent>
           <ErrorBoundary resetKey={location.pathname}>
+            <RenderCrashTrigger />
             <Outlet />
           </ErrorBoundary>
         </MainContent>

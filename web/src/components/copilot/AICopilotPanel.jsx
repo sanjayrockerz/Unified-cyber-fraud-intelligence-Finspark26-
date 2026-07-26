@@ -40,7 +40,7 @@ function InlineMarkdown({ text }) {
     }
     if (part.startsWith('`') && part.endsWith('`')) {
       return (
-        <code key={index} className="bg-[#162337] text-soc-primary px-1.5 py-0.5 rounded font-mono text-[10px] border border-soc-border mx-0.5">
+        <code key={index} className="bg-soc-panel text-soc-primary px-1.5 py-0.5 rounded font-mono text-[10px] border border-soc-border mx-0.5">
           {part.slice(1, -1)}
         </code>
       );
@@ -72,7 +72,7 @@ function InlineMarkdown({ text }) {
           readOnly 
           className="h-3.5 w-3.5 rounded border-soc-border bg-soc-panel text-soc-primary focus:ring-soc-primary cursor-default" 
         />
-        <span className={isChecked ? 'text-soc-muted line-through' : 'text-[#e8eaf0]'}>
+        <span className={isChecked ? 'text-soc-muted line-through' : 'text-soc-text'}>
           {renderedElements}
         </span>
       </div>
@@ -284,14 +284,14 @@ function ExecutiveSummaryCard({ title, blocks }) {
   });
 
   return (
-    <div className="border-l-4 border-soc-primary bg-[#101827] border border-soc-border/60 rounded-r p-4 mb-4 shadow-md">
+    <div className="border-l-4 border-soc-primary bg-soc-surface border border-soc-border/60 rounded-r p-4 mb-4 shadow-md">
       <span className="text-[10px] font-mono font-bold tracking-widest text-soc-primary uppercase block">
         Executive Summary
       </span>
       <div className="w-full h-[1px] bg-soc-border/40 my-2" />
       <ul className="space-y-2 text-xs">
         {listItems.map((item, idx) => (
-          <li key={idx} className="flex items-start gap-2 text-[#e8eaf0]">
+          <li key={idx} className="flex items-start gap-2 text-soc-text">
             <span className="text-soc-primary mt-0.5">•</span>
             <span><InlineMarkdown text={item} /></span>
           </li>
@@ -328,7 +328,7 @@ function RiskScoreCard({ title, blocks }) {
   const otherStats = stats.filter(s => !s.label.toLowerCase().includes('overall risk') && !s.label.toLowerCase().includes('risk score'));
 
   return (
-    <div className="bg-[#101827] border border-soc-border rounded-lg p-4 mb-4 shadow">
+    <div className="bg-soc-surface border border-soc-border rounded-lg p-4 mb-4 shadow">
       <span className="text-[10px] font-mono font-bold tracking-widest text-[#f59e0b] uppercase block">
         Risk Assessment
       </span>
@@ -377,14 +377,14 @@ function EvidenceTable({ title, blocks }) {
   });
 
   return (
-    <div className="bg-[#101827] border border-soc-border rounded-lg p-4 mb-4 shadow">
+    <div className="bg-soc-surface border border-soc-border rounded-lg p-4 mb-4 shadow">
       <span className="text-[10px] font-mono font-bold tracking-widest text-soc-danger uppercase block">
         Evidence Dossier
       </span>
       <div className="w-full h-[1px] bg-soc-border/40 my-2" />
       <div className="space-y-2">
         {items.map((item, idx) => (
-          <div key={idx} className="flex items-start gap-2.5 text-xs text-[#e8eaf0] bg-[#0c121e]/40 p-2 border border-soc-border/40 rounded hover:border-soc-primary transition-all">
+          <div key={idx} className="flex items-start gap-2.5 text-xs text-soc-text bg-soc-bg/40 p-2 border border-soc-border/40 rounded hover:border-soc-primary transition-all">
             <ShieldAlert className="h-3.5 w-3.5 text-soc-danger shrink-0 mt-0.5" />
             <span className="font-mono"><InlineMarkdown text={item} /></span>
           </div>
@@ -410,7 +410,7 @@ function TimelineComponent({ title, blocks }) {
   });
 
   return (
-    <div className="bg-[#101827] border border-soc-border rounded-lg p-4 mb-4 shadow">
+    <div className="bg-soc-surface border border-soc-border rounded-lg p-4 mb-4 shadow">
       <span className="text-[10px] font-mono font-bold tracking-widest text-[#a855f7] uppercase block">
         Investigation Timeline
       </span>
@@ -425,7 +425,7 @@ function TimelineComponent({ title, blocks }) {
             </span>
             <div className="flex flex-col text-xs">
               <span className="text-[9px] text-soc-muted font-bold uppercase">{item.time}</span>
-              <span className="text-[#e8eaf0] mt-0.5 font-sans"><InlineMarkdown text={item.text} /></span>
+              <span className="text-soc-text mt-0.5 font-sans"><InlineMarkdown text={item.text} /></span>
             </div>
           </div>
         ))}
@@ -459,7 +459,7 @@ function ActionButtons({ title, blocks }) {
   };
 
   return (
-    <div className="bg-[#101827] border border-soc-border rounded-lg p-4 mb-4 shadow">
+    <div className="bg-soc-surface border border-soc-border rounded-lg p-4 mb-4 shadow">
       <span className="text-[10px] font-mono font-bold tracking-widest text-[#10b981] uppercase block">
         Recommended Actions
       </span>
@@ -489,7 +489,7 @@ function MITRETechniqueCard({ title, blocks }) {
   });
 
   return (
-    <div className="bg-[#101827] border border-red-500/20 rounded-lg p-4 mb-4 shadow">
+    <div className="bg-soc-surface border border-red-500/20 rounded-lg p-4 mb-4 shadow">
       <span className="text-[10px] font-mono font-bold tracking-widest text-red-500 uppercase block">
         MITRE ATT&CK Mapping
       </span>
@@ -569,7 +569,7 @@ function MarkdownReportRenderer({ content, onSelectCustomer }) {
         // Handle Default Paragraphs
         if (block.type === 'paragraph') {
           return (
-            <p key={idx} className="mb-2 leading-relaxed text-[#e8eaf0]">
+            <p key={idx} className="mb-2 leading-relaxed text-soc-text">
               <InlineMarkdown text={block.text} />
             </p>
           );
@@ -580,7 +580,7 @@ function MarkdownReportRenderer({ content, onSelectCustomer }) {
           return (
             <ul key={idx} className="list-none space-y-1.5 pl-2 mb-3">
               {block.items.map((item, i) => (
-                <li key={i} className="flex items-start gap-2 text-[#e8eaf0]">
+                <li key={i} className="flex items-start gap-2 text-soc-text">
                   <span className="text-soc-primary mt-0.5">•</span>
                   <span><InlineMarkdown text={item} /></span>
                 </li>
@@ -592,7 +592,7 @@ function MarkdownReportRenderer({ content, onSelectCustomer }) {
         // Handle Numbered Lists
         if (block.type === 'num-list') {
           return (
-            <ol key={idx} className="list-decimal space-y-1.5 pl-5 mb-3 text-[#e8eaf0] font-mono">
+            <ol key={idx} className="list-decimal space-y-1.5 pl-5 mb-3 text-soc-text font-mono">
               {block.items.map((item, i) => (
                 <li key={i} className="pl-1">
                   <InlineMarkdown text={item} />
@@ -605,7 +605,7 @@ function MarkdownReportRenderer({ content, onSelectCustomer }) {
         // Handle Blockquotes
         if (block.type === 'blockquote') {
           return (
-            <blockquote key={idx} className="border-l-4 border-soc-primary bg-[#101827]/40 px-3.5 py-2 my-3 italic text-soc-muted rounded-r">
+            <blockquote key={idx} className="border-l-4 border-soc-primary bg-soc-surface/40 px-3.5 py-2 my-3 italic text-soc-muted rounded-r">
               {block.lines.join(' ')}
             </blockquote>
           );
@@ -620,7 +620,7 @@ function MarkdownReportRenderer({ content, onSelectCustomer }) {
         if (block.type === 'code') {
           const codeString = block.codeLines.join('\n');
           return (
-            <div key={idx} className="relative bg-[#0c1017] rounded-lg border border-soc-border/60 overflow-hidden my-3 shadow">
+            <div key={idx} className="relative bg-soc-bg rounded-lg border border-soc-border/60 overflow-hidden my-3 shadow">
               <div className="flex items-center justify-between px-3 py-1.5 bg-soc-panel border-b border-soc-border font-mono text-[9px] text-soc-muted">
                 <span>{block.language || 'text'}</span>
                 <button 
@@ -632,7 +632,7 @@ function MarkdownReportRenderer({ content, onSelectCustomer }) {
                   <span>{copiedCodeIdx === idx ? 'Copied' : 'Copy'}</span>
                 </button>
               </div>
-              <pre className="p-3 overflow-x-auto text-[11px] font-mono text-soc-primary bg-[#080d16] no-scrollbar">
+              <pre className="p-3 overflow-x-auto text-[11px] font-mono text-soc-primary bg-soc-bg no-scrollbar">
                 <code>{codeString}</code>
               </pre>
             </div>
@@ -658,7 +658,7 @@ function MarkdownReportRenderer({ content, onSelectCustomer }) {
           return (
             <div key={idx} className="overflow-x-auto border border-soc-border rounded-lg shadow my-3 no-scrollbar">
               <table className="w-full text-left text-[11px] font-mono border-collapse">
-                <thead className="bg-[#162337] text-soc-muted uppercase text-[9px] font-black tracking-wider border-b border-soc-border">
+                <thead className="bg-soc-panel text-soc-muted uppercase text-[9px] font-black tracking-wider border-b border-soc-border">
                   <tr>
                     {headers.map((h, i) => <th key={i} className="p-2.5 font-bold">{h}</th>)}
                   </tr>
@@ -790,12 +790,12 @@ export default function AICopilotPanel({ activeContext, onSelectCustomer }) {
   };
 
   return (
-    <div className="flex flex-col h-full bg-[#07101C] text-[#e8eaf0] font-sans border-l border-soc-border">
+    <div className="flex flex-col h-full bg-soc-bg text-soc-text font-sans border-l border-soc-border">
       
       {/* Header Bar */}
-      <div className="px-4 py-3 bg-[#101827] border-b border-soc-border flex items-center justify-between shadow-sm">
+      <div className="px-4 py-3 bg-soc-surface border-b border-soc-border flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-2.5">
-          <div className="p-1.5 rounded-lg bg-[#6d5ef8]/10 border border-[#6d5ef8]/30 text-soc-primary">
+          <div className="p-1.5 rounded-lg bg-soc-primary/10 border border-soc-primary/30 text-soc-primary">
             <Bot className="w-4 h-4 text-soc-primary animate-pulse" />
           </div>
           <div>
@@ -828,7 +828,7 @@ export default function AICopilotPanel({ activeContext, onSelectCustomer }) {
               <button
                 key={act.label}
                 onClick={() => sendMessage(act.query)}
-                className="flex items-center justify-center gap-1.5 p-2 rounded bg-[#101827] border border-soc-border hover:border-soc-primary/50 hover:bg-[#162337] text-soc-muted hover:text-soc-text transition-all text-[11px] font-semibold text-center font-mono hover:shadow-inner"
+                className="flex items-center justify-center gap-1.5 p-2 rounded bg-soc-surface border border-soc-border hover:border-soc-primary/50 hover:bg-soc-panel text-soc-muted hover:text-soc-text transition-all text-[11px] font-semibold text-center font-mono hover:shadow-inner"
               >
                 <Icon className={`w-3.5 h-3.5 ${act.tint || 'text-soc-primary'}`} />
                 <span className="truncate">{act.label}</span>
@@ -844,7 +844,7 @@ export default function AICopilotPanel({ activeContext, onSelectCustomer }) {
               {msg.role === 'user' ? (
                 /* User turn (right aligned) */
                 <div className="flex justify-end">
-                  <div className="max-w-[80%] bg-[#101827] border border-soc-border rounded-xl p-3 text-xs text-[#e8eaf0] shadow-md">
+                  <div className="max-w-[80%] bg-soc-surface border border-soc-border rounded-xl p-3 text-xs text-soc-text shadow-md">
                     <div className="flex items-center justify-between gap-4 mb-1 text-[9px] text-soc-muted font-mono">
                       <span className="font-bold">SOC Analyst</span>
                       <span>{msg.timestamp}</span>
@@ -854,12 +854,12 @@ export default function AICopilotPanel({ activeContext, onSelectCustomer }) {
                 </div>
               ) : (
                 /* Copilot turn (AI Report Card Layout) */
-                <div className="flex flex-col bg-[#101827] border border-soc-border rounded-xl overflow-hidden shadow-lg hover:border-soc-primary/50 transition-all duration-300">
+                <div className="flex flex-col bg-soc-surface border border-soc-border rounded-xl overflow-hidden shadow-lg hover:border-soc-primary/50 transition-all duration-300">
                   {/* Glowing Top Accent Border */}
                   <div className="h-[2px] bg-gradient-to-r from-red-500 via-soc-primary to-emerald-500" />
 
                   {/* Top Header Section */}
-                  <div className="px-4 py-2.5 bg-[#162337] border-b border-soc-border flex items-center justify-between font-mono">
+                  <div className="px-4 py-2.5 bg-soc-panel border-b border-soc-border flex items-center justify-between font-mono">
                     <div className="flex items-center gap-2">
                       <span className="text-red-500 animate-pulse text-xs">🔴</span>
                       <span className="text-xs font-black tracking-wide text-soc-text uppercase">AI Investigation Summary</span>
@@ -870,13 +870,13 @@ export default function AICopilotPanel({ activeContext, onSelectCustomer }) {
                   </div>
 
                   {/* Metadata */}
-                  <div className="px-4 py-2 bg-[#0d1521] border-b border-soc-border/60 flex items-center justify-between text-[10px] text-soc-muted font-mono font-bold">
+                  <div className="px-4 py-2 bg-soc-surface border-b border-soc-border/60 flex items-center justify-between text-[10px] text-soc-muted font-mono font-bold">
                     <span>Generated just now</span>
                     <span>{msg.timestamp}</span>
                   </div>
 
                   {/* Content Area */}
-                  <div className="p-4 space-y-3 bg-[#07101C]/20">
+                  <div className="p-4 space-y-3 bg-soc-bg/20">
                     
                     {/* Render custom page tables/stats if this is the initial structured state */}
                     {msg.heading && (
@@ -889,7 +889,7 @@ export default function AICopilotPanel({ activeContext, onSelectCustomer }) {
                     {msg.stats && (
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
                         {msg.stats.map((st) => (
-                          <div key={st.label} className="bg-[#162337] border border-soc-border rounded p-2 flex flex-col justify-between">
+                          <div key={st.label} className="bg-soc-panel border border-soc-border rounded p-2 flex flex-col justify-between">
                             <span className="text-[9px] text-soc-muted uppercase font-mono font-bold">{st.label}</span>
                             <span className={`text-sm font-bold font-mono mt-0.5 ${st.color}`}>{st.value}</span>
                           </div>
@@ -898,9 +898,9 @@ export default function AICopilotPanel({ activeContext, onSelectCustomer }) {
                     )}
 
                     {msg.tableData && (
-                      <div className="overflow-x-auto border border-soc-border rounded-lg bg-[#0c121e] mb-3 no-scrollbar">
+                      <div className="overflow-x-auto border border-soc-border rounded-lg bg-soc-bg mb-3 no-scrollbar">
                         <table className="w-full text-left text-[11px] font-mono border-collapse">
-                          <thead className="bg-[#162337] text-soc-muted uppercase text-[9px] font-bold border-b border-soc-border tracking-wider">
+                          <thead className="bg-soc-panel text-soc-muted uppercase text-[9px] font-bold border-b border-soc-border tracking-wider">
                             <tr>
                               <th className="p-2">Time</th>
                               <th className="p-2">Type</th>
@@ -915,7 +915,7 @@ export default function AICopilotPanel({ activeContext, onSelectCustomer }) {
                               <tr
                                 key={rIdx}
                                 onClick={() => onSelectCustomer && onSelectCustomer(row)}
-                                className="hover:bg-[#162337] cursor-pointer transition-colors"
+                                className="hover:bg-soc-panel cursor-pointer transition-colors"
                               >
                                 <td className="p-2 text-soc-muted font-mono text-[10px]">{row.time}</td>
                                 <td className="p-2 flex items-center gap-1.5">
@@ -928,7 +928,7 @@ export default function AICopilotPanel({ activeContext, onSelectCustomer }) {
                                 </td>
                                 <td className="p-2 text-soc-muted">{row.location}</td>
                                 <td className="p-2">
-                                  <span className="inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded bg-[#162337] border border-soc-border">
+                                  <span className="inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded bg-soc-panel border border-soc-border">
                                     <span className={`w-1.5 h-1.5 rounded-full ${row.statusColor}`} />
                                     <span>{row.status}</span>
                                   </span>
@@ -948,32 +948,32 @@ export default function AICopilotPanel({ activeContext, onSelectCustomer }) {
                   </div>
 
                   {/* Actions footer wrapper */}
-                  <div className="flex items-center gap-2 px-4 py-2.5 bg-[#162337] border-t border-soc-border overflow-x-auto no-scrollbar font-mono text-[10px]">
+                  <div className="flex items-center gap-2 px-4 py-2.5 bg-soc-panel border-t border-soc-border overflow-x-auto no-scrollbar font-mono text-[10px]">
                     <button 
                       type="button" 
                       onClick={() => alert('Investigation dossier initialized.')}
-                      className="px-2 py-1 rounded bg-[#0c121e] border border-soc-border hover:border-soc-primary text-soc-muted hover:text-soc-text transition-all font-bold"
+                      className="px-2 py-1 rounded bg-soc-bg border border-soc-border hover:border-soc-primary text-soc-muted hover:text-soc-text transition-all font-bold"
                     >
                       Open Investigation
                     </button>
                     <button 
                       type="button" 
                       onClick={() => alert('Dispatched customer history timeline request.')}
-                      className="px-2 py-1 rounded bg-[#0c121e] border border-soc-border hover:border-soc-primary text-soc-muted hover:text-soc-text transition-all font-bold"
+                      className="px-2 py-1 rounded bg-soc-bg border border-soc-border hover:border-soc-primary text-soc-muted hover:text-soc-text transition-all font-bold"
                     >
                       Timeline Context
                     </button>
                     <button 
                       type="button" 
                       onClick={() => alert('Graph visualizer focal node updated.')}
-                      className="px-2 py-1 rounded bg-[#0c121e] border border-soc-border hover:border-soc-primary text-soc-muted hover:text-soc-text transition-all font-bold"
+                      className="px-2 py-1 rounded bg-soc-bg border border-soc-border hover:border-soc-primary text-soc-muted hover:text-soc-text transition-all font-bold"
                     >
                       View Graph
                     </button>
                     <button 
                       type="button" 
                       onClick={() => alert('Regulatory summary compiled and printed.')}
-                      className="px-2 py-1 rounded bg-[#0c121e] border border-soc-border hover:border-soc-primary text-soc-muted hover:text-soc-text transition-all font-bold"
+                      className="px-2 py-1 rounded bg-soc-bg border border-soc-border hover:border-soc-primary text-soc-muted hover:text-soc-text transition-all font-bold"
                     >
                       Generate SAR
                     </button>
@@ -985,7 +985,7 @@ export default function AICopilotPanel({ activeContext, onSelectCustomer }) {
           ))}
 
           {loading && (
-            <div className="flex items-center gap-2.5 p-3.5 text-soc-muted text-xs animate-pulse bg-[#101827] border border-soc-border rounded-xl shadow-md">
+            <div className="flex items-center gap-2.5 p-3.5 text-soc-muted text-xs animate-pulse bg-soc-surface border border-soc-border rounded-xl shadow-md">
               <Sparkles className="w-4 h-4 text-soc-primary animate-spin" />
               <span className="font-mono">{loadingMessages[loadingMessageIdx]}</span>
             </div>
@@ -994,8 +994,8 @@ export default function AICopilotPanel({ activeContext, onSelectCustomer }) {
       </div>
 
       {/* Persistent Input Bar (Bottom Pinned) */}
-      <div className="p-3 bg-[#101827] border-t border-soc-border">
-        <div className="flex items-center gap-2 bg-[#0c121e] border border-soc-border focus-within:border-soc-primary rounded-lg px-3 py-2 transition-all">
+      <div className="p-3 bg-soc-surface border-t border-soc-border">
+        <div className="flex items-center gap-2 bg-soc-bg border border-soc-border focus-within:border-soc-primary rounded-lg px-3 py-2 transition-all">
           <Paperclip className="w-4 h-4 text-soc-muted cursor-pointer hover:text-soc-text" />
           <Mic className="w-4 h-4 text-soc-muted cursor-pointer hover:text-soc-text" />
           <input

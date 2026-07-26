@@ -505,7 +505,7 @@ _DEFAULT_POLICY = PolicySettings().model_dump()
 @app.get("/settings/policy")
 async def get_settings_policy():
     saved = store.get("settings", "policy")
-    return saved if saved else _DEFAULT_POLICY
+    return saved if saved is not None else _DEFAULT_POLICY
 
 
 @app.put("/settings/policy")
@@ -1463,21 +1463,6 @@ async def sdk_get_live_events():
 async def sdk_get_error_codes():
     return sdk_engine.get_error_codes()
 
-@app.get("/metrics/evaluate")
-async def get_metrics_evaluate():
-    import json
-    import datetime
-    report_path = ROOT / "ml" / "metrics_report.md"
-    try:
-        content = report_path.read_text()
-        json_str = content.split("```json")[1].split("```")[0].strip()
-        data = json.loads(json_str)
-        mtime = report_path.stat().st_mtime
-        data["computed_at"] = datetime.datetime.fromtimestamp(mtime).isoformat()
-        return data
-    except Exception as e:
-        return {"error": str(e)}
-
 @app.get("/metrics/threshold_sweep")
 async def get_metrics_threshold_sweep():
     import json
@@ -1495,7 +1480,7 @@ async def get_metrics_cost(fn_cost: float = 250000.0, fp_cost: float = 400.0):
     try:
         content = sweep_path.read_text()
         data = json.loads(content)
-        
+
         recomputed = {}
         for config_name, sweep_pts in data.items():
             recomputed[config_name] = []
@@ -1503,7 +1488,7 @@ async def get_metrics_cost(fn_cost: float = 250000.0, fp_cost: float = 400.0):
                 new_pt = dict(pt)
                 new_pt["total_cost"] = (new_pt["FN"] * fn_cost) + (new_pt["FP"] * fp_cost)
                 recomputed[config_name].append(new_pt)
-                
+
         return recomputed
     except Exception as e:
         return {"error": str(e)}
@@ -1546,6 +1531,7 @@ async def simulate_threat_scenario(payload: dict):
         "status": "SIMULATED",
         "result": result.model_dump() if hasattr(result, "model_dump") else result
     }
+
 @app.post("/sdk/request-decision")
 async def sdk_request_decision(req: SDKDecisionRequest, request: Request):
     dec_dict = req.model_dump()

@@ -201,9 +201,9 @@ export default function InvestigationWorkbench({ caseId = 'CASE-2026-8942' }) {
     <div className="flex w-full min-w-0 flex-col gap-4 max-w-[1850px] mx-auto select-none font-sans text-soc-text">
 
       <VerdictHero
-        verdict={evaluation?.action}
-        score={evaluation?.score}
-        reason={evaluation?.counterfactual_sentence || evaluation?.reasons?.[0] || 'No explanation available for this decision yet.'}
+        verdict={activeEvalPayload.action}
+        score={activeEvalPayload.score}
+        reason={activeEvalPayload.counterfactual_sentence || activeEvalPayload.reasons?.[0] || 'No explanation available for this decision yet.'}
         timestamp={currentTxn?.timestamp}
       />
 
