@@ -6,6 +6,8 @@ import {
   Workflow, Pin, Zap, Clock, Keyboard, ShieldCheck, MoreHorizontal
 } from 'lucide-react';
 import { useSidebar } from '../../context/SidebarContext';
+import { useCase } from '../../context/CaseContext';
+import { severityChip } from '../../lib/verdict';
 
 // Five primary destinations carry the core fraud/cyber-fusion story. Everything
 // else stays reachable behind one collapsed "Advanced" group -- reorganised for
@@ -13,11 +15,13 @@ import { useSidebar } from '../../context/SidebarContext';
 const NAV_ITEMS = [
   { to: '/', label: 'Overview', icon: LayoutDashboard, advanced: false },
   { to: '/operations', label: 'Operations Center', icon: Activity, advanced: false },
+  // Cases is primary: it is the queue an investigation is entered from, so the
+  // path Overview -> Cases -> Investigation stays visible without expanding a group.
+  { to: '/cases', label: 'Cases', icon: FileBarChart2, advanced: false },
   { to: '/investigation', label: 'Investigation', icon: Workflow, advanced: false },
   { to: '/analytics', label: 'Analytics', icon: BarChart3, advanced: false },
   { to: '/graph', label: 'Graph Runtime', icon: Network, advanced: false },
 
-  { to: '/cases', label: 'Cases', icon: FileBarChart2, advanced: true },
   { to: '/customers', label: 'Customers', icon: Users, advanced: true },
   { to: '/reports', label: 'Reports', icon: FileBarChart2, advanced: true },
   { to: '/sessions', label: 'Session Intelligence', icon: Radio, advanced: true },
@@ -77,6 +81,7 @@ function DirectNavLink({ to, label, icon: Icon, end = false, collapsed, isPinned
 export default function Sidebar() {
   const { isCollapsed, toggleSidebar, setIsCollapsed } = useSidebar();
   const { pathname } = useLocation();
+  const { recentCases } = useCase();
 
   // Stored state for pinned paths. Defaults to empty so a first-time viewer sees
   // exactly five primary destinations plus one collapsed group -- pinning stays
@@ -263,28 +268,34 @@ export default function Sidebar() {
           </div>
         )}
 
-        {/* Recent Investigations (Expanded only) */}
-        {!isCollapsed && (
+        {/* Recent Investigations -- cases this analyst actually opened. Nothing
+            is listed until one has been, rather than seeding plausible-looking
+            case ids that resolve to nothing. */}
+        {!isCollapsed && recentCases.length > 0 && (
           <div className="pt-4 border-t border-soc-border/50 space-y-2">
             <span className="px-3 flex items-center gap-1.5 text-[10px] tracking-[0.15em] font-mono font-bold text-soc-muted/70 uppercase">
               <Clock className="h-3 w-3" />
               <span>Recent Investigations</span>
             </span>
             <div className="px-3 space-y-1">
-              <NavLink
-                to="/investigation/CASE-2026-8942"
-                className="flex items-center justify-between text-[11px] font-mono text-soc-muted hover:text-soc-text transition-colors"
-              >
-                <span>CASE-8942</span>
-                <span className="px-1 bg-soc-danger/15 text-soc-danger rounded border border-soc-danger/30 text-[9px] font-bold">CRITICAL</span>
-              </NavLink>
-              <NavLink
-                to="/investigation/CASE-2026-2104"
-                className="flex items-center justify-between text-[11px] font-mono text-soc-muted hover:text-soc-text transition-colors"
-              >
-                <span>CASE-2104</span>
-                <span className="px-1 bg-soc-warning/15 text-soc-warning rounded border border-soc-warning/30 text-[9px] font-bold">HIGH</span>
-              </NavLink>
+              {recentCases.map((entry) => (
+                <NavLink
+                  key={entry.caseId}
+                  to={`/investigation/${entry.caseId}`}
+                  className="flex items-center justify-between gap-2 text-[11px] font-mono text-soc-muted hover:text-soc-text transition-colors"
+                >
+                  <span className="truncate">{entry.caseId}</span>
+                  {entry.severity && (
+                    <span
+                      className={`shrink-0 px-1 rounded border text-[9px] font-bold ${
+                        severityChip[entry.severity] || severityChip.LOW
+                      }`}
+                    >
+                      {entry.severity}
+                    </span>
+                  )}
+                </NavLink>
+              ))}
             </div>
           </div>
         )}

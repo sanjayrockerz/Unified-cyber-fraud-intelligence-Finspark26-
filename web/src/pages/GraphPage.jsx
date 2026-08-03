@@ -118,7 +118,12 @@ export default function GraphPage() {
 
       {/* Graph canvas — fills remaining height */}
       <div className="flex-1 min-h-0 bg-soc-surface border border-soc-border rounded-xl overflow-hidden">
-        <Neo4jGraphStudio graphData={{ nodes: runtime.nodes, links: runtime.links }} />
+        {/* Graph Runtime is the exploratory surface, not a case view, so the
+            labelled demo topology is still an acceptable fallback here. */}
+        <Neo4jGraphStudio
+          graphData={{ nodes: runtime.nodes, links: runtime.links }}
+          allowDemoFallback
+        />
       </div>
     </div>
   );

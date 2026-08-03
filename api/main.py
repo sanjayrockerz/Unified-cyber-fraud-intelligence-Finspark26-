@@ -283,15 +283,9 @@ class CertInReportRequest(BaseModel):
     reasons: list[str]
     score: float
 
-@app.post("/evaluate/transaction")
-async def evaluate_transaction(txn: TransactionRequest, request: Request):
-    txn_dict = txn.dict()
-    txn_dict["request_id"] = request.state.request_id
-    txn_dict["session_id"] = txn.session_id or f"TXN_CONTEXT_{txn.txn_id}"
-    txn_dict["event_type"] = "TRANSACTION_EVALUATION"
-    result = await platform_pipeline.process(
-        txn_dict, require_existing_session=False
-    )
+def _evaluation_response(result) -> dict:
+    """Shared decision payload, so a stored transaction and a posted one are
+    evaluated identically and the dashboard never sees two different shapes."""
     return {
         "action": result.decision["decision"],
         "score": result.inference["score"],
@@ -315,6 +309,29 @@ async def evaluate_transaction(txn: TransactionRequest, request: Request):
         "backend_ack": result.event_ack["backend_ack"],
         "timings": result.timings,
     }
+
+
+async def _evaluate_stored_transaction(transaction: dict) -> dict:
+    """Run a transaction already held in the store through the live pipeline."""
+    txn_dict = dict(transaction)
+    txn_dict["session_id"] = (
+        transaction.get("session_id") or f"TXN_CONTEXT_{transaction.get('txn_id', 'unknown')}"
+    )
+    txn_dict["event_type"] = "TRANSACTION_EVALUATION"
+    result = await platform_pipeline.process(txn_dict, require_existing_session=False)
+    return _evaluation_response(result)
+
+
+@app.post("/evaluate/transaction")
+async def evaluate_transaction(txn: TransactionRequest, request: Request):
+    txn_dict = txn.dict()
+    txn_dict["request_id"] = request.state.request_id
+    txn_dict["session_id"] = txn.session_id or f"TXN_CONTEXT_{txn.txn_id}"
+    txn_dict["event_type"] = "TRANSACTION_EVALUATION"
+    result = await platform_pipeline.process(
+        txn_dict, require_existing_session=False
+    )
+    return _evaluation_response(result)
 
 @app.post("/evaluate/transaction/pipeline")
 async def evaluate_transaction_pipeline(txn: TransactionRequest):
@@ -377,6 +394,13 @@ def _persist_universe_collections(universe: dict) -> None:
     """Make explicitly generated synthetic data available to list endpoints."""
     for customer in universe.get("customers", []):
         store.put("customers", customer["customer_id"], customer)
+
+    # Devices are persisted so shared-device linkage can be derived from stored
+    # records rather than estimated. Transactions carry no device_id of their
+    # own, so the customer's primary_device_id is the only real join available.
+    for device in universe.get("devices", []):
+        if device.get("device_id"):
+            store.put("devices", device["device_id"], device)
 
     transactions = universe.get("transactions", [])
     for transaction in transactions:
@@ -481,6 +505,313 @@ async def list_cases(
     severity: str | None = None,
 ):
     return _paginated_collection("cases", page, page_size, sort, q, status, severity)
+
+
+# --- CASE-SCOPED INVESTIGATION ENDPOINTS ---------------------------------------
+# Everything below is derived from records already in the store. Where a value
+# cannot be derived it is omitted or reported as unavailable -- no endpoint here
+# substitutes an illustrative figure for a missing one.
+
+
+def _require_case(case_id: str) -> dict:
+    case = store.get("cases", case_id)
+    if not case:
+        raise HTTPException(status_code=404, detail=f"Case {case_id} not found")
+    return case
+
+
+def _case_transaction(case: dict) -> dict | None:
+    txn_id = case.get("transaction_id")
+    return store.get("transactions", txn_id) if txn_id else None
+
+
+def _current_policy() -> dict:
+    saved = store.get("settings", "policy")
+    return saved if saved is not None else dict(_DEFAULT_POLICY)
+
+
+@app.get("/cases/{case_id}")
+async def get_case(case_id: str):
+    return _require_case(case_id)
+
+
+@app.get("/cases/{case_id}/context")
+async def get_case_context(case_id: str):
+    """Everything the investigation workspace needs to render one case."""
+    case = _require_case(case_id)
+    transaction = _case_transaction(case)
+    customer = store.get("customers", case.get("customer_id")) if case.get("customer_id") else None
+
+    evaluation = None
+    evaluation_error = None
+    if transaction:
+        try:
+            evaluation = await _evaluate_stored_transaction(transaction)
+        except Exception as exc:  # surfaced to the analyst, never silently defaulted
+            evaluation_error = f"{type(exc).__name__}: {exc}"
+    else:
+        evaluation_error = "TRANSACTION_NOT_FOUND"
+
+    return {
+        "case": case,
+        "transaction": transaction,
+        "customer": customer,
+        "evaluation": evaluation,
+        "evaluation_error": evaluation_error,
+        "policy": _current_policy(),
+    }
+
+
+@app.get("/cases/{case_id}/explain")
+async def explain_case(case_id: str):
+    """Exact TreeSHAP attributions and the cyber-signal counterfactual."""
+    case = _require_case(case_id)
+    transaction = _case_transaction(case)
+    if not transaction:
+        return {
+            "status": "UNAVAILABLE",
+            "reason": "TRANSACTION_NOT_FOUND",
+            "case_id": case_id,
+        }
+
+    policy = _current_policy()
+    try:
+        from ml.explain import counterfactual, shap_contributions
+
+        return {
+            "status": "EXECUTED",
+            "case_id": case_id,
+            "attribution": shap_contributions(transaction),
+            "counterfactual": counterfactual(
+                transaction,
+                block_threshold=float(policy.get("block_threshold", 75)),
+                challenge_threshold=float(policy.get("challenge_threshold", 50)),
+            ),
+        }
+    except Exception as exc:
+        return {
+            "status": "UNAVAILABLE",
+            "reason": "EXPLAINER_FAILED",
+            "detail": f"{type(exc).__name__}: {exc}",
+            "case_id": case_id,
+        }
+
+
+@app.get("/cases/{case_id}/similar")
+async def similar_cases(case_id: str, limit: int = Query(5, ge=1, le=25)):
+    """
+    Real precedents from the case store, ranked by how they overlap with this
+    case. Each result states the basis for the match; nothing about outcome or
+    recovery is claimed, because the store does not record either.
+    """
+    case = _require_case(case_id)
+    transaction = _case_transaction(case)
+    cluster = (transaction or {}).get("dest_mule_cluster_id")
+    beneficiary = (transaction or {}).get("nameDest")
+    score = float(case.get("score") or 0)
+
+    matches = []
+    for other in store.list_all("cases"):
+        if other.get("case_id") == case_id:
+            continue
+        other_txn = store.get("transactions", other.get("transaction_id")) if other.get("transaction_id") else None
+        basis = []
+        weight = 0
+
+        if cluster and other_txn and other_txn.get("dest_mule_cluster_id") == cluster:
+            basis.append(f"Same mule cluster ({cluster})")
+            weight += 50
+        if beneficiary and other_txn and other_txn.get("nameDest") == beneficiary:
+            basis.append(f"Same beneficiary account ({beneficiary})")
+            weight += 30
+        if other.get("customer_id") and other.get("customer_id") == case.get("customer_id"):
+            basis.append("Same customer")
+            weight += 25
+        if other.get("severity") == case.get("severity"):
+            basis.append(f"Same severity ({case.get('severity')})")
+            weight += 10
+
+        if not basis:
+            continue
+
+        score_gap = abs(float(other.get("score") or 0) - score)
+        matches.append(
+            {
+                "case_id": other.get("case_id"),
+                "severity": other.get("severity"),
+                "status": other.get("status"),
+                "score": other.get("score"),
+                "amount": other.get("amount"),
+                "created_at": other.get("created_at"),
+                "match_basis": basis,
+                "match_weight": weight,
+                "score_gap": round(score_gap, 2),
+            }
+        )
+
+    matches.sort(key=lambda item: (-item["match_weight"], item["score_gap"]))
+    return {
+        "case_id": case_id,
+        "compared_against": len(store.list_all("cases")) - 1,
+        "matched_on": {"mule_cluster": cluster, "beneficiary": beneficiary},
+        "items": matches[:limit],
+    }
+
+
+@app.get("/cases/{case_id}/blast-radius")
+async def case_blast_radius(case_id: str):
+    """
+    Secondary exposure counted from the transaction store: every transaction
+    sharing this case's beneficiary account or mule cluster. Counts are exact
+    over stored records; they are not projections.
+    """
+    case = _require_case(case_id)
+    transaction = _case_transaction(case)
+    if not transaction:
+        return {
+            "status": "UNAVAILABLE",
+            "reason": "TRANSACTION_NOT_FOUND",
+            "case_id": case_id,
+        }
+
+    beneficiary = transaction.get("nameDest")
+    cluster = transaction.get("dest_mule_cluster_id")
+
+    linked = [
+        txn
+        for txn in store.list_all("transactions")
+        if (beneficiary and txn.get("nameDest") == beneficiary)
+        or (cluster and txn.get("dest_mule_cluster_id") == cluster)
+    ]
+
+    impacted_customers = sorted({txn.get("user_id") for txn in linked if txn.get("user_id")})
+    linked_accounts = sorted({txn.get("nameDest") for txn in linked if txn.get("nameDest")})
+    origin_accounts = sorted({txn.get("nameOrig") for txn in linked if txn.get("nameOrig")})
+    total_exposure = round(sum(float(txn.get("amount") or 0) for txn in linked), 2)
+    compromised = [txn for txn in linked if txn.get("cyber_compromise_in_window")]
+
+    # The only real device join available: transactions carry no device_id, so
+    # shared devices are resolved through the impacted customers' primary device.
+    devices = {}
+    for customer_id in impacted_customers:
+        customer = store.get("customers", customer_id)
+        device_id = (customer or {}).get("primary_device_id")
+        if device_id:
+            devices.setdefault(device_id, []).append(customer_id)
+    shared_devices = {
+        device_id: holders for device_id, holders in devices.items() if len(holders) > 1
+    }
+
+    return {
+        "status": "EXECUTED",
+        "case_id": case_id,
+        "derived_from": {
+            "beneficiary": beneficiary,
+            "mule_cluster": cluster,
+            "linked_transactions": len(linked),
+        },
+        "impacted_customers": {"count": len(impacted_customers), "ids": impacted_customers[:25]},
+        "linked_accounts": {"count": len(linked_accounts), "ids": linked_accounts[:25]},
+        "origin_accounts": {"count": len(origin_accounts)},
+        "total_exposure": total_exposure,
+        "cyber_preceded_transactions": len(compromised),
+        "shared_devices": {
+            "count": len(shared_devices),
+            "devices": [
+                {"device_id": device_id, "customer_ids": holders}
+                for device_id, holders in list(shared_devices.items())[:10]
+            ],
+        },
+        "propagation_chain": [
+            {"step": "Primary customer", "entity": transaction.get("user_id"), "detail": "Case subject"},
+            {"step": "Originating account", "entity": transaction.get("nameOrig"), "detail": "Debited account"},
+            {"step": "Beneficiary account", "entity": beneficiary, "detail": f"{len(linked)} linked transactions"},
+            {"step": "Mule cluster", "entity": cluster, "detail": f"{len(linked_accounts)} accounts in cluster"},
+            {"step": "Impacted customers", "entity": f"{len(impacted_customers)} customers", "detail": f"INR {total_exposure:,.2f} total exposure"},
+        ],
+    }
+
+
+class CaseNoteRequest(BaseModel):
+    author: str = "Analyst"
+    text: str
+    pinned: bool = False
+
+
+@app.get("/cases/{case_id}/notes")
+async def list_case_notes(case_id: str):
+    _require_case(case_id)
+    notes = [
+        note
+        for note in store.list_all("case_notes")
+        if note.get("case_id") == case_id
+    ]
+    notes.sort(key=lambda note: note.get("created_at") or "")
+    return {"case_id": case_id, "items": notes, "total": len(notes)}
+
+
+@app.post("/cases/{case_id}/notes")
+async def create_case_note(case_id: str, req: CaseNoteRequest):
+    _require_case(case_id)
+    if not req.text.strip():
+        raise HTTPException(status_code=422, detail="Note text cannot be empty")
+    existing = [n for n in store.list_all("case_notes") if n.get("case_id") == case_id]
+    note = {
+        "note_id": f"{case_id}:{len(existing) + 1:04d}",
+        "case_id": case_id,
+        "author": req.author,
+        "text": req.text.strip(),
+        "pinned": req.pinned,
+        "created_at": datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds"),
+    }
+    store.put("case_notes", note["note_id"], note)
+    return note
+
+
+class CaseLabelRequest(BaseModel):
+    label: str
+    analyst: str = "Analyst"
+    note: str = ""
+
+
+_VALID_CASE_LABELS = {"CONFIRMED_FRAUD", "FALSE_POSITIVE", "INCONCLUSIVE"}
+
+
+@app.get("/cases/{case_id}/label")
+async def get_case_label(case_id: str):
+    _require_case(case_id)
+    label = store.get("case_labels", case_id)
+    return {
+        "case_id": case_id,
+        "label": label,
+        "queue_depth": len(store.list_all("case_labels")),
+        # Stated plainly: the label is persisted, but nothing consumes it yet.
+        "retraining_wired": False,
+    }
+
+
+@app.post("/cases/{case_id}/label")
+async def put_case_label(case_id: str, req: CaseLabelRequest):
+    _require_case(case_id)
+    if req.label not in _VALID_CASE_LABELS:
+        raise HTTPException(
+            status_code=422,
+            detail=f"label must be one of {sorted(_VALID_CASE_LABELS)}",
+        )
+    record = {
+        "case_id": case_id,
+        "label": req.label,
+        "analyst": req.analyst,
+        "note": req.note,
+        "recorded_at": datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds"),
+    }
+    store.put("case_labels", case_id, record)
+    return {
+        "case_id": case_id,
+        "label": record,
+        "queue_depth": len(store.list_all("case_labels")),
+        "retraining_wired": False,
+    }
 
 
 @app.get("/customers")

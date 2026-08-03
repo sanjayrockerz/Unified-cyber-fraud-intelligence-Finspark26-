@@ -132,14 +132,17 @@ function mapTrustPassportToCheckpoints(trustPassport) {
   };
 }
 
-export default function SessionTrustPassportPanel({ sessionId = 'SESS_9921_CRITICAL', activeTxn = null }) {
+// No default session id. Falling back to a fixed one showed another session's
+// trust checkpoints under the current case's heading.
+export default function SessionTrustPassportPanel({ sessionId, activeTxn = null }) {
   const [passport, setPassport] = useState(null);
   const [expandedCheckpoint, setExpandedCheckpoint] = useState(null); // 'chk1', 'chk2', etc.
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetchSessionPassport();
+    if (sessionId) fetchSessionPassport();
+    else setLoading(false);
   }, [sessionId]);
 
   const fetchSessionPassport = async () => {
@@ -162,6 +165,14 @@ export default function SessionTrustPassportPanel({ sessionId = 'SESS_9921_CRITI
       setLoading(false);
     }
   };
+
+  if (!sessionId) {
+    return (
+      <div className="bg-soc-surface border border-soc-border rounded-xl p-4 shadow-lg font-mono text-xs text-soc-muted">
+        No banking session is linked to this transaction, so no trust passport exists for it.
+      </div>
+    );
+  }
 
   if (error) {
     return (

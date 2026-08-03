@@ -3,7 +3,10 @@ import { Play, CheckCircle2, ShieldAlert, Zap, FileText, ChevronDown, ChevronUp,
 
 const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8000' : '');
 
-export default function ResponseOrchestrator({ activeCase, onDownloadReport }) {
+// `transaction` is the real stored transaction for this case. The panel does
+// not fetch until it has one -- a recommendation built from substituted values
+// would describe a response to a transaction that does not exist.
+export default function ResponseOrchestrator({ caseId, transaction, onDownloadReport }) {
   const [soarData, setSoarData] = useState(null);
   const [executionResult, setExecutionResult] = useState(null);
   const [isExecuting, setIsExecuting] = useState(false);
@@ -11,8 +14,9 @@ export default function ResponseOrchestrator({ activeCase, onDownloadReport }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchSoarRecommendation();
-  }, [activeCase]);
+    if (transaction) fetchSoarRecommendation();
+    else setLoading(false);
+  }, [transaction?.txn_id]);
 
   const fetchSoarRecommendation = async () => {
     setLoading(true);
@@ -21,9 +25,9 @@ export default function ResponseOrchestrator({ activeCase, onDownloadReport }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          user_id: activeCase?.user_id || 'usr_abc',
-          amount: activeCase?.amount || 750000.0,
-          cyber_compromise_in_window: activeCase?.cyber_compromise_in_window ?? true
+          user_id: transaction.user_id,
+          amount: transaction.amount,
+          cyber_compromise_in_window: Boolean(transaction.cyber_compromise_in_window)
         })
       });
       const data = await res.json();
@@ -36,15 +40,16 @@ export default function ResponseOrchestrator({ activeCase, onDownloadReport }) {
   };
 
   const handleExecutePlaybook = async () => {
+    if (!transaction) return;
     setIsExecuting(true);
     try {
       const res = await fetch(`${API_BASE}/response/execute`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          case_id: activeCase?.id || 'CASE-2026-8942',
-          user_id: activeCase?.user_id || 'usr_abc',
-          amount: activeCase?.amount || 750000.0,
+          case_id: caseId,
+          user_id: transaction.user_id,
+          amount: transaction.amount,
           approval_mode: 'AUTOMATIC_EXECUTION'
         })
       });
@@ -75,6 +80,14 @@ export default function ResponseOrchestrator({ activeCase, onDownloadReport }) {
       console.error("SOAR rollback error:", e);
     }
   };
+
+  if (!transaction) {
+    return (
+      <div className="bg-soc-surface border border-soc-border rounded-xl p-4 shadow-lg font-mono text-xs text-soc-muted">
+        No stored transaction for this case, so no response can be recommended.
+      </div>
+    );
+  }
 
   if (loading || !soarData) {
     return (

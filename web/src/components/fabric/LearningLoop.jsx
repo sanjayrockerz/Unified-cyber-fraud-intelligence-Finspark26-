@@ -1,77 +1,139 @@
-﻿import React, { useState } from 'react';
-import { RefreshCw, CheckCircle2, AlertTriangle, Layers } from 'lucide-react';
+import React, { useState } from 'react';
+import { CheckCircle2, Loader2, RefreshCw } from 'lucide-react';
 
+import useResource, { API_BASE } from '../../lib/useResource';
+import PanelState from '../common/PanelState';
+import { formatTimestamp } from '../../lib/verdict';
+
+const LABELS = [
+  { value: 'CONFIRMED_FRAUD', label: 'Confirmed fraud', tone: 'text-soc-danger' },
+  { value: 'FALSE_POSITIVE', label: 'False positive', tone: 'text-soc-warning' },
+  { value: 'INCONCLUSIVE', label: 'Inconclusive', tone: 'text-soc-muted' },
+];
+
+/**
+ * Analyst outcome label, persisted against the case.
+ *
+ * The label is stored for real and survives a reload. What it does NOT do is
+ * trigger retraining -- nothing consumes the queue yet, and the panel says so
+ * rather than implying a pipeline that does not exist.
+ */
 export default function LearningLoop({ caseId }) {
-  const [feedback, setFeedback] = useState('CONFIRMED_FRAUD');
-  const [isQueued, setIsQueued] = useState(false);
+  const labelPath = caseId ? `/cases/${encodeURIComponent(caseId)}/label` : null;
+  const { data, status, error, reload } = useResource(labelPath);
 
-  const handleSubmitFeedback = () => {
-    setIsQueued(true);
+  const [selected, setSelected] = useState('CONFIRMED_FRAUD');
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState(null);
+
+  const recorded = data?.label;
+
+  const submitLabel = async () => {
+    if (!labelPath) return;
+    setIsSaving(true);
+    setSaveError(null);
+    try {
+      const response = await fetch(`${API_BASE}${labelPath}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ label: selected, analyst: 'Analyst_04' }),
+      });
+      if (!response.ok) throw new Error(`Could not record the label (HTTP ${response.status})`);
+      reload();
+    } catch (requestError) {
+      setSaveError(requestError.message);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
-    <div className="bg-soc-panel border border-soc-border rounded-xl p-4 shadow-lg select-none font-mono text-xs">
-      <div className="flex items-center justify-between border-b border-soc-border pb-3 mb-3">
+    <section className="rounded-xl border border-soc-border bg-soc-panel p-4 shadow-lg">
+      <header className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-soc-border pb-3">
         <div className="flex items-center gap-2">
-          <RefreshCw className="w-5 h-5 text-soc-success" />
+          <RefreshCw aria-hidden="true" className="h-4 w-4 text-soc-success" />
           <div>
-            <h3 className="font-bold text-soc-text text-xs uppercase tracking-wider">
-              Continuous Model Learning Loop — Closed Case Feedback
+            <h3 className="text-xs font-bold uppercase tracking-wider text-soc-text">
+              Case outcome label
             </h3>
-            <span className="text-[10px] text-soc-muted">
-              Label closed cases to queue dataset updates for supervised model retraining
-            </span>
+            <p className="text-[11px] text-soc-muted">
+              Recorded for supervised retraining datasets
+            </p>
           </div>
         </div>
-        <span className="text-[10px] px-2 py-0.5 rounded bg-soc-warning/10 text-soc-warning border border-soc-warning/30">
-          SIMULATED — no retraining queue is wired up
+        <span className="rounded border border-soc-warning/30 bg-soc-warning/10 px-2 py-0.5 text-[10px] text-soc-warning">
+          Stored only — no retraining job consumes this queue yet
         </span>
-      </div>
+      </header>
 
-      {!isQueued ? (
-        <div className="space-y-3">
-          <div className="flex items-center gap-4">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="radio"
-                name="feedback"
-                value="CONFIRMED_FRAUD"
-                checked={feedback === 'CONFIRMED_FRAUD'}
-                onChange={(e) => setFeedback(e.target.value)}
-              />
-              <span className="text-soc-danger font-bold">Confirmed Fraud (Label True Positive)</span>
-            </label>
+      <PanelState
+        status={status}
+        error={error}
+        onRetry={reload}
+        loadingLabel="Loading the recorded label…"
+      >
+        {() =>
+          recorded ? (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-soc-success/30 bg-soc-success/10 p-3">
+              <div className="flex items-center gap-2 text-soc-success">
+                <CheckCircle2 aria-hidden="true" className="h-4 w-4 shrink-0" />
+                <div>
+                  <p className="font-mono text-xs font-bold">{recorded.label}</p>
+                  <p className="mt-0.5 text-[10px] text-soc-muted">
+                    {recorded.analyst} · {formatTimestamp(recorded.recorded_at)}
+                  </p>
+                </div>
+              </div>
+              <span className="font-mono text-[10px] text-soc-muted">
+                {data.queue_depth} case{data.queue_depth === 1 ? '' : 's'} labelled
+              </span>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <fieldset>
+                <legend className="sr-only">Case outcome</legend>
+                <div className="flex flex-wrap items-center gap-4">
+                  {LABELS.map((option) => (
+                    <label
+                      key={option.value}
+                      className="flex cursor-pointer items-center gap-2 text-xs"
+                    >
+                      <input
+                        type="radio"
+                        name={`case-label-${caseId}`}
+                        value={option.value}
+                        checked={selected === option.value}
+                        onChange={(event) => setSelected(event.target.value)}
+                      />
+                      <span className={`font-semibold ${option.tone}`}>{option.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
 
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="radio"
-                name="feedback"
-                value="FALSE_POSITIVE"
-                checked={feedback === 'FALSE_POSITIVE'}
-                onChange={(e) => setFeedback(e.target.value)}
-              />
-              <span className="text-soc-warning font-bold">False Positive (Label Clean Baseline)</span>
-            </label>
-          </div>
+              <button
+                type="button"
+                onClick={submitLabel}
+                disabled={isSaving}
+                className="inline-flex items-center gap-1.5 rounded bg-soc-success px-4 py-1.5 text-xs font-bold text-soc-onPrimary shadow transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                {isSaving ? (
+                  <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
+                ) : (
+                  <CheckCircle2 aria-hidden="true" className="h-4 w-4" />
+                )}
+                <span>{isSaving ? 'Recording…' : 'Record outcome'}</span>
+              </button>
 
-          <button
-            onClick={handleSubmitFeedback}
-            className="px-4 py-1.5 bg-soc-success hover:bg-soc-success text-soc-onPrimary rounded font-bold text-xs flex items-center gap-1.5 transition-colors shadow"
-          >
-            <CheckCircle2 className="w-4 h-4" />
-            <span>Submit Feedback to Retraining Queue</span>
-          </button>
-        </div>
-      ) : (
-        <div className="p-3 bg-soc-success/10 border border-soc-success/30 rounded-lg flex items-center justify-between text-soc-success font-bold">
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4" />
-            <span>CASE LABEL RECORDED: QUEUED FOR MODEL RETRAIN REVIEW</span>
-          </div>
-          <span className="text-[10px] text-soc-success">Queue ID: ML_LABEL_8842</span>
-        </div>
-      )}
-    </div>
+              {saveError && (
+                <p role="alert" className="font-mono text-[11px] text-soc-danger">
+                  {saveError}
+                </p>
+              )}
+            </div>
+          )
+        }
+      </PanelState>
+    </section>
   );
 }
-
