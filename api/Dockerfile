@@ -19,6 +19,9 @@ COPY api/ api/
 COPY ml/__init__.py ml/__init__.py
 COPY ml/features.py ml/features.py
 COPY ml/predict.py ml/predict.py
+# Required by GET /cases/{case_id}/explain. Without it the import fails inside
+# the container and the endpoint reports EXPLAINER_FAILED for every case.
+COPY ml/explain.py ml/explain.py
 COPY graph/ graph/
 
 # Expose port (default for local `docker run`; hosts that inject $PORT override it)
