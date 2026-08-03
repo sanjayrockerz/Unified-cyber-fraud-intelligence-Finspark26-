@@ -38,7 +38,7 @@ val defaultPipelineStages = listOf(
     PipelineStage(4, "Behavioral Biometrics Analysis", "Comparing cadence, touch dynamics, and navigation speed", 22),
     PipelineStage(5, "Cyber Threat Correlation", "Correlating recent SIEM events and IP reputation", 19),
     PipelineStage(6, "Graph Mule Cluster Topology", "Traversing graph nodes for mule cluster associations", 25),
-    PipelineStage(7, "Fusion Risk Engine Verdict", "Calculating composite score & final policy decision", 14)
+    PipelineStage(7, "Fuzen AI Engine Verdict", "Calculating composite score & final policy decision", 14)
 )
 
 @Composable

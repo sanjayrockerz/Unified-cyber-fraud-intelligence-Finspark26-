@@ -5,7 +5,7 @@ from typing import Dict, List, Any, Optional
 
 class CyberThreatEngine:
     """
-    Enterprise Cyber Threat Intelligence Engine for Fusion Risk OS (Phase 2).
+    Enterprise Cyber Threat Intelligence Engine for Fuzen AI (Phase 2).
     Evaluates incoming SDK telemetry against a 9-category enterprise taxonomy,
     collects granular evidence, calculates dynamic confidence scores (0-100%),
     correlates isolated threats into multi-stage attack campaigns, and outputs

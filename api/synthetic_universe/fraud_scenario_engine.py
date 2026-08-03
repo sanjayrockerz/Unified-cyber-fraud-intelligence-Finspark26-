@@ -106,7 +106,7 @@ def generate_bank_universe(
     bank_code: str = "FUSB"
 ) -> dict:
     """
-    Generates an enterprise-scale virtual banking ecosystem for Fusion Risk OS.
+    Generates an enterprise-scale virtual banking ecosystem for Fuzen AI.
     Parts 1 through 11 of Digital Banking Universe.
     """
     random.seed(seed)

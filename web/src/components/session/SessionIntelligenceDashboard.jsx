@@ -6,7 +6,7 @@ import TrustComponentHeatmap from './TrustComponentHeatmap';
 import TrustPassportCard from './TrustPassportCard';
 import TrustTimelineChart from './TrustTimelineChart';
 
-const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8001' : '');
+const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8000' : '');
 const WS_BASE = (import.meta.env.VITE_WS_BASE || API_BASE).replace(/^http/, 'ws');
 
 export default function SessionIntelligenceDashboard() {
@@ -138,7 +138,7 @@ export default function SessionIntelligenceDashboard() {
     <div className="space-y-4">
       <div className="grid gap-3 sm:grid-cols-3">
         <Metric label="Live sessions" value={activeCount} icon={ShieldCheck} />
-        <Metric label="Backend latency" value={latency === null ? 'â€”' : `${latency} ms`} icon={Clock3} />
+        <Metric label="Backend latency" value={latency === null ? '—' : `${latency} ms`} icon={Clock3} />
         <Metric label="Trust stream" value={connectionState} icon={connectionState === 'LIVE' ? Wifi : WifiOff} />
       </div>
 

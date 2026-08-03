@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   ShieldCheck, 
   ShieldAlert, 
@@ -20,40 +20,168 @@ import {
   ExternalLink
 } from 'lucide-react';
 
-const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8001' : '');
+const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8000' : '');
 
-export default function SessionTrustPassportPanel({ sessionId = 'SESS_9921_CRITICAL', activeTxn = null }) {
+/**
+ * Map TrustPassport (new SQLite-backed session intelligence) to the legacy checkpoint structure
+ * expected by SessionTrustPassportPanel UI. This adapter ensures the component works with the
+ * authoritative real data from the new system without requiring UI refactoring.
+ *
+ * Uses authoritative policy thresholds from api/session_intelligence/policy.py LIFECYCLE_THRESHOLDS:
+ * - blocked_below: 30.0
+ * - suspicious_below: 70.0
+ */
+function mapTrustPassportToCheckpoints(trustPassport) {
+  const {
+    overall_trust,
+    components,
+    updated_time,
+    current_status,
+    confidence,
+  } = trustPassport;
+
+  // Map current_status to decision (authoritative from backend state machine)
+  let decision = 'ALLOW';
+  if (current_status === 'BLOCKED') {
+    decision = 'BLOCK';
+  } else if (current_status === 'CHALLENGED' || current_status === 'SUSPICIOUS') {
+    decision = 'CHALLENGE';
+  }
+
+  // Derive monitoring_level using authoritative policy thresholds (blocked_below=30, suspicious_below=70)
+  // Aligned with backend's session lifecycle state machine
+  let monitoring_level = 'LOW';
+  if (overall_trust >= 70.0) {
+    monitoring_level = 'LOW';
+  } else if (overall_trust >= 50.0) {
+    monitoring_level = 'MEDIUM';
+  } else if (overall_trust >= 30.0) {
+    monitoring_level = 'HIGH';
+  } else {
+    monitoring_level = 'CRITICAL';
+  }
+
+  // Calculate expiry (15 minutes from updated_time, like the old system)
+  const expiryDate = new Date(updated_time);
+  expiryDate.setMinutes(expiryDate.getMinutes() + 15);
+  const expiry = expiryDate.toLocaleString('en-IN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    timeZone: 'Asia/Kolkata',
+  }).replace(/\//g, '-') + ' IST';
+
+  // Map TrustComponent objects to checkpoint structure
+  const componentMap = {
+    identity: { key: 'checkpoint_1_identity', title: 'Identity Intelligence' },
+    device: { key: 'checkpoint_2_device', title: 'Device Intelligence' },
+    network: { key: 'checkpoint_3_session', title: 'Session Intelligence' },
+    behaviour: { key: 'checkpoint_4_behavior', title: 'Behavior Intelligence' },
+    threat: { key: 'checkpoint_5_cyber', title: 'Cyber Threat Intelligence' },
+    graph: { key: 'checkpoint_6_graph', title: 'Graph Intelligence' },
+  };
+
+  const checkpoints = {};
+  Object.entries(componentMap).forEach(([componentName, { key, title }]) => {
+    const comp = components[componentName];
+    if (comp) {
+      checkpoints[key] = {
+        name: title,
+        score: Math.round(comp.value),
+        confidence: comp.confidence,
+        reasons: comp.reasons && comp.reasons.length > 0 ? comp.reasons : ['Component evaluated'],
+        // Note: execution_time_ms not available from TrustComponent model; omitted to avoid false precision
+        ...(componentName === 'threat' && {
+          threat_confidence: comp.confidence,
+          // Note: MITRE techniques not populated in new TrustComponent schema; omit to avoid fabrication
+          mitre_techniques: null,
+        }),
+        ...(componentName === 'graph' && {
+          // Note: Graph relationship details not available in TrustComponent; omit to avoid fabrication
+          relationship_summary: null,
+        }),
+      };
+    }
+  });
+
+  // Note: actual execution timing not available from TrustComponent model (no per-component timers tracked)
+  // Omitting performance_metrics to avoid fabricating latency values
+  const performance_metrics = null;
+
+  return {
+    session_id: trustPassport.session_id,
+    user_id: trustPassport.user_id,
+    issued_at: new Date(updated_time).toLocaleString('en-IN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      timeZone: 'Asia/Kolkata',
+    }).replace(/\//g, '-') + ' IST',
+    expiry,
+    decision,
+    overall_trust,
+    monitoring_level,
+    checkpoints,
+    performance_metrics,
+  };
+}
+
+// No default session id. Falling back to a fixed one showed another session's
+// trust checkpoints under the current case's heading.
+export default function SessionTrustPassportPanel({ sessionId, activeTxn = null }) {
   const [passport, setPassport] = useState(null);
   const [expandedCheckpoint, setExpandedCheckpoint] = useState(null); // 'chk1', 'chk2', etc.
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetchSessionPassport();
-  }, [sessionId, activeTxn]);
+    if (sessionId) fetchSessionPassport();
+    else setLoading(false);
+  }, [sessionId]);
 
   const fetchSessionPassport = async () => {
     setLoading(true);
+    setError(null);
     try {
-      const res = await fetch(`${API_BASE}/session/analyse`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          session_id: sessionId,
-          user_id: activeTxn?.user_id || 'usr_abc',
-          device_id: activeTxn?.device_id || 'dev_9999',
-          ip: activeTxn?.ip || '185.15.2.22',
-          cyber_compromise_in_window: activeTxn?.cyber_compromise_in_window ?? true,
-          dest_mule_cluster_id: activeTxn?.dest_mule_cluster_id || 'cluster_alpha'
-        })
-      });
-      const data = await res.json();
-      setPassport(data);
+      // Call the new SQLite-backed endpoint instead of the legacy /session/analyse
+      const res = await fetch(`${API_BASE}/trust-passport/${encodeURIComponent(sessionId)}`);
+      if (!res.ok) {
+        throw new Error(`Trust Passport fetch failed: ${res.status}`);
+      }
+      const trustPassportData = await res.json();
+      // Transform the real TrustPassport response to the shape the component expects
+      const mappedPassport = mapTrustPassportToCheckpoints(trustPassportData);
+      setPassport(mappedPassport);
     } catch (e) {
       console.error("Session Trust Passport fetch error:", e);
+      setError(e.message);
     } finally {
       setLoading(false);
     }
   };
+
+  if (!sessionId) {
+    return (
+      <div className="bg-soc-surface border border-soc-border rounded-xl p-4 shadow-lg font-mono text-xs text-soc-muted">
+        No banking session is linked to this transaction, so no trust passport exists for it.
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-soc-surface border border-soc-danger/40 rounded-xl p-4 shadow-lg font-mono text-xs text-soc-danger flex items-center gap-2">
+        <AlertTriangle className="w-4 h-4" />
+        <span>Trust Passport unavailable: {error}</span>
+      </div>
+    );
+  }
 
   if (loading || !passport) {
     return (
@@ -95,7 +223,11 @@ export default function SessionTrustPassportPanel({ sessionId = 'SESS_9921_CRITI
                 PRE-TRANSACTION SESSION PASSPORT #{passport.session_id}
               </span>
               <span className={`text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded border ${
-                monitoring_level === 'CRITICAL' ? 'bg-soc-danger/20 text-soc-danger border-soc-danger/40' : 'bg-soc-success/20 text-soc-success border-soc-success/40'
+                monitoring_level === 'CRITICAL'
+                  ? 'bg-soc-danger/20 text-soc-danger border-soc-danger/40'
+                  : monitoring_level === 'HIGH' || monitoring_level === 'MEDIUM'
+                  ? 'bg-soc-warning/10 text-soc-warning border-soc-warning/30'
+                  : 'bg-soc-success/20 text-soc-success border-soc-success/40'
               }`}>
                 MONITORING: {monitoring_level}
               </span>
@@ -116,13 +248,15 @@ export default function SessionTrustPassportPanel({ sessionId = 'SESS_9921_CRITI
             <span className="font-bold text-soc-text text-[11px]">{expiry}</span>
           </div>
 
-          <div className="flex flex-col border-r border-soc-border pr-6">
-            <span className="text-[10px] text-soc-dim uppercase flex items-center gap-1">
-              <Zap className="w-3 h-3 text-soc-warning" />
-              <span>Pipeline Latency</span>
-            </span>
-            <span className="font-bold text-soc-warning text-[11px]">{performance_metrics?.total_latency_ms} ms</span>
-          </div>
+          {performance_metrics && (
+            <div className="flex flex-col border-r border-soc-border pr-6">
+              <span className="text-[10px] text-soc-dim uppercase flex items-center gap-1">
+                <Zap className="w-3 h-3 text-soc-warning" />
+                <span>Pipeline Latency</span>
+              </span>
+              <span className="font-bold text-soc-warning text-[11px]">{performance_metrics.total_latency_ms} ms</span>
+            </div>
+          )}
 
           <button 
             onClick={fetchSessionPassport}
@@ -177,7 +311,9 @@ export default function SessionTrustPassportPanel({ sessionId = 'SESS_9921_CRITI
                     <span className={`font-mono font-bold text-xs ${isLowScore ? 'text-soc-danger' : 'text-soc-success'}`}>
                       {score}% Trust
                     </span>
-                    <div className="text-[10px] text-soc-dim">{chk.data?.execution_time_ms} ms</div>
+                    {chk.data?.execution_time_ms !== undefined && (
+                      <div className="text-[10px] text-soc-dim">{chk.data.execution_time_ms} ms</div>
+                    )}
                   </div>
                   {isExpanded ? <ChevronUp className="w-4 h-4 text-soc-dim" /> : <ChevronDown className="w-4 h-4 text-soc-dim" />}
                 </div>

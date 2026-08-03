@@ -1,7 +1,7 @@
 ﻿import React, { useState } from 'react';
 import { FlaskConical, Play, Database, Loader2, FileCode, FileSpreadsheet } from 'lucide-react';
 
-const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8001' : '');
+const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8000' : '');
 
 export default function SyntheticLabPage() {
   const [numCustomers, setNumCustomers] = useState(100);
@@ -41,7 +41,15 @@ export default function SyntheticLabPage() {
 
   return (
     <div className="flex flex-col gap-5 max-w-[1600px] mx-auto select-none font-mono text-xs text-soc-text">
-      
+
+      {/* DATASET HONESTY NOTICE */}
+      <div className="bg-soc-warning/10 border border-soc-warning/40 rounded-xl p-3 flex items-start gap-2">
+        <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-soc-warning">Dataset Honesty Notice</span>
+        <p className="text-xs text-soc-muted">
+          Every record generated on this page is synthetic — produced by this repo's own generator, not real bank data. It exists as a controlled evaluation harness for scale/demo testing, not a claim about any real institution's data.
+        </p>
+      </div>
+
       {/* HEADER STRIP */}
       <div className="bg-soc-surface border border-soc-border p-4 rounded-xl flex flex-wrap items-center justify-between gap-4 shadow-lg">
         <div className="flex items-center gap-3">
@@ -229,7 +237,7 @@ export default function SyntheticLabPage() {
                           <td className="py-1.5 px-2 font-bold text-soc-primary">{c.customer_id}</td>
                           <td className="py-1.5 px-2 text-soc-text">{c.full_name}</td>
                           <td className="py-1.5 px-2 text-soc-dim">{c.city}</td>
-                          <td className="py-1.5 px-2 text-soc-success font-bold">â‚¹{c.annual_salary.toLocaleString('en-IN')}</td>
+                          <td className="py-1.5 px-2 text-soc-success font-bold">₹{c.annual_salary.toLocaleString('en-IN')}</td>
                           <td className="py-1.5 px-2 text-soc-danger font-bold">{c.risk_tier}</td>
                         </tr>
                       ))}

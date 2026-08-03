@@ -33,7 +33,7 @@
 *Action: The central verdict badge flashes red, screaming 'BLOCK' with a score of 94/100. The Threat Graph visualizer instantly expands, showing `usr_abc` linked to `ACC_MULE_NEW`, which spiderwebs out to 6 other known mule accounts.*
 
 **Voiceover:**
-> "In under a second, our Fusion Risk Engine intervenes. It doesn't just see a high-value transfer—it fused the cyber context of the compromised login with the transaction itself, jumping the risk score to 94 and blocking the transfer mid-flight. Furthermore, our graph engine instantly mapped the destination account to a known 6-node mule cluster."
+> "In under a second, our Fuzen AI Engine intervenes. It doesn't just see a high-value transfer—it fused the cyber context of the compromised login with the transaction itself, jumping the risk score to 94 and blocking the transfer mid-flight. Furthermore, our graph engine instantly mapped the destination account to a known 6-node mule cluster."
 
 ---
 

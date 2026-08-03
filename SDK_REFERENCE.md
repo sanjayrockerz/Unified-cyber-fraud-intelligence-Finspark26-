@@ -2,7 +2,7 @@
 
 ## Host integration
 
-`FusionBankApp` initializes the singleton with build-specific HTTPS/WSS
+`FuzenAIBankApp` initializes the singleton with build-specific HTTPS/WSS
 endpoints. Release builds contain no development client credentials. The host
 application authenticates only through:
 

@@ -1,4 +1,4 @@
-# Fusion Risk OS Platform Architecture
+# Fuzen AI Platform Architecture
 
 ## Executable production slice
 

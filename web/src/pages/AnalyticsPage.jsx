@@ -20,6 +20,7 @@ import {
   Settings
 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer } from 'recharts';
+import { FLAT_EPSILON, formatF, formatPct, getUplift } from '../lib/metricsFormat';
 
 export default function AnalyticsPage() {
   const [timeRange, setTimeRange] = useState('24h');
@@ -37,7 +38,7 @@ export default function AnalyticsPage() {
   const [selectedConfig, setSelectedConfig] = useState('full_fusion');
 
   useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8001' : '')}/metrics/evaluate`)
+    fetch(`${import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8000' : '')}/metrics/evaluate`)
       .then(r => r.json())
       .then(data => {
         if (data.error) setEvalError(true);
@@ -47,7 +48,7 @@ export default function AnalyticsPage() {
   }, []);
 
   useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8001' : '')}/metrics/cost?fn_cost=${fnCost}&fp_cost=${fpCost}`)
+    fetch(`${import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8000' : '')}/metrics/cost?fn_cost=${fnCost}&fp_cost=${fpCost}`)
       .then(r => r.json())
       .then(data => {
         if (data.error) setSweepError(true);
@@ -56,57 +57,73 @@ export default function AnalyticsPage() {
       .catch(() => setSweepError(true));
   }, [fnCost, fpCost]);
 
-  const formatPct = (val) => `${(val * 100).toFixed(2)}%`;
-  const formatF = (val) => val.toFixed(3);
-  const getUplift = (base, fusion, isPct) => {
-    const diff = fusion - base;
-    return isPct ? `${diff >= 0 ? '+' : ''}${(diff * 100).toFixed(2)}%` : `${diff >= 0 ? '+' : ''}${diff.toFixed(3)}`;
-  };
-
   let computedModelMetrics = [];
   let headlineUplift = "Loading...";
+  let headlineLabel = "Fusion PR-AUC Uplift";
   let recallCompare = "";
+  let headlineIsPositive = true;
 
   if (evalData) {
     computedModelMetrics = [
-      { 
-        metric: 'PR-AUC (Precision-Recall Area)', 
-        baseline: formatF(evalData.transaction_only.pr_auc), 
-        fusion: formatF(evalData.full_fusion.pr_auc), 
-        uplift: getUplift(evalData.transaction_only.pr_auc, evalData.full_fusion.pr_auc, false) 
+      {
+        metric: 'PR-AUC (Precision-Recall Area)',
+        baseline: formatF(evalData.transaction_only.pr_auc),
+        fusion: formatF(evalData.full_fusion.pr_auc),
+        uplift: getUplift(evalData.transaction_only.pr_auc, evalData.full_fusion.pr_auc, false)
       },
-      { 
-        metric: 'Precision', 
-        baseline: formatPct(evalData.transaction_only.precision), 
-        fusion: formatPct(evalData.full_fusion.precision), 
-        uplift: getUplift(evalData.transaction_only.precision, evalData.full_fusion.precision, true) 
+      {
+        metric: 'Precision',
+        baseline: formatPct(evalData.transaction_only.precision),
+        fusion: formatPct(evalData.full_fusion.precision),
+        uplift: getUplift(evalData.transaction_only.precision, evalData.full_fusion.precision, true)
       },
-      { 
-        metric: 'Recall', 
-        baseline: formatPct(evalData.transaction_only.recall), 
-        fusion: formatPct(evalData.full_fusion.recall), 
-        uplift: getUplift(evalData.transaction_only.recall, evalData.full_fusion.recall, true) 
+      {
+        metric: 'Recall',
+        baseline: formatPct(evalData.transaction_only.recall),
+        fusion: formatPct(evalData.full_fusion.recall),
+        uplift: getUplift(evalData.transaction_only.recall, evalData.full_fusion.recall, true)
       },
-      { 
-        metric: 'F1-Score', 
-        baseline: formatF(evalData.transaction_only.f1), 
-        fusion: formatF(evalData.full_fusion.f1), 
-        uplift: getUplift(evalData.transaction_only.f1, evalData.full_fusion.f1, false) 
+      {
+        metric: 'F1-Score',
+        baseline: formatF(evalData.transaction_only.f1),
+        fusion: formatF(evalData.full_fusion.f1),
+        uplift: getUplift(evalData.transaction_only.f1, evalData.full_fusion.f1, false)
       }
     ];
-    headlineUplift = getUplift(evalData.transaction_only.recall, evalData.full_fusion.recall, true);
-    recallCompare = `Recall jumps from ${formatPct(evalData.transaction_only.recall)} to ${formatPct(evalData.full_fusion.recall)}`;
+
+    // Headline number: PR-AUC delta, the metric where fusion genuinely wins
+    // on this test set (recall is already saturated near 99.9% for both
+    // configs, so there's no headroom left for a recall-uplift story --
+    // reporting it as the headline would either be flat or, if it ever
+    // regresses, actively dishonest).
+    const prAucDelta = evalData.full_fusion.pr_auc - evalData.transaction_only.pr_auc;
+    const precisionDelta = evalData.full_fusion.precision - evalData.transaction_only.precision;
+    const recallDelta = evalData.full_fusion.recall - evalData.transaction_only.recall;
+
+    headlineUplift = getUplift(evalData.transaction_only.pr_auc, evalData.full_fusion.pr_auc, false);
+    headlineIsPositive = prAucDelta >= -FLAT_EPSILON;
+    headlineLabel = prAucDelta >= FLAT_EPSILON ? 'Fusion PR-AUC Uplift' : 'Fusion PR-AUC (Δ)';
+
+    // Build the summary sentence entirely from the sign of the actual deltas
+    // -- never a hardcoded direction word.
+    const prAucWord = prAucDelta > FLAT_EPSILON ? 'improves' : (prAucDelta < -FLAT_EPSILON ? 'declines' : 'holds steady');
+    const precisionWord = precisionDelta > FLAT_EPSILON ? 'improves' : (precisionDelta < -FLAT_EPSILON ? 'declines' : 'holds steady');
+    const recallWord = Math.abs(recallDelta) <= FLAT_EPSILON
+      ? `holds steady at ${formatPct(evalData.full_fusion.recall)}`
+      : `${recallDelta > 0 ? 'improves' : 'declines'} from ${formatPct(evalData.transaction_only.recall)} to ${formatPct(evalData.full_fusion.recall)}`;
+
+    recallCompare = `PR-AUC ${prAucWord} from ${evalData.transaction_only.pr_auc.toFixed(4)} to ${evalData.full_fusion.pr_auc.toFixed(4)}, precision ${precisionWord} by ${formatPct(Math.abs(precisionDelta))}, while recall ${recallWord}`;
   } else if (evalError) {
     headlineUplift = "Unavailable";
   }
 
   const kpis = [
     { title: 'Intercepted Attack Invocations', val: '14,892 Attacks', sub: '100% In-Flight Block Rate', color: 'text-soc-success', icon: ShieldAlert },
-    { 
-      title: 'Fusion Model Recall Uplift', 
-      val: headlineUplift, 
-      sub: evalData ? `Recall (${(evalData.full_fusion.recall*100).toFixed(1)}% vs ${(evalData.transaction_only.recall*100).toFixed(1)}%)` : (evalError ? 'Metrics Unavailable' : 'Loading...'), 
-      color: 'text-soc-primary', icon: TrendingUp 
+    {
+      title: 'Fusion Model PR-AUC Uplift',
+      val: headlineUplift,
+      sub: evalData ? `PR-AUC (${formatF(evalData.full_fusion.pr_auc)} vs ${formatF(evalData.transaction_only.pr_auc)})` : (evalError ? 'Metrics Unavailable' : 'Loading...'),
+      color: headlineIsPositive ? 'text-soc-primary' : 'text-soc-warning', icon: TrendingUp
     },
     { title: 'Avg Threat Correlation Latency', val: '12 ms', sub: 'LightGBM + IsoForest + GraphSAGE', color: 'text-soc-warning', icon: Activity },
     { title: 'CERT-In Mandate Compliance', val: '100%', sub: 'Avg Incident Report: 14m < 6h Limit', color: 'text-soc-success', icon: FileCheck2 }
@@ -162,8 +179,12 @@ export default function AnalyticsPage() {
   }
 
   const currentSweepPt = (sweepData && sweepData[selectedConfig]) ? sweepData[selectedConfig][thresholdInt] : null;
-  let totalPos = 101;
-  let totalNeg = 49899;
+  // No fabricated fallback here: totalPos/totalNeg must come from the SAME
+  // honest evalData source as the FP/FN counts rendered below, or the
+  // confusion-matrix panel is hidden entirely rather than mixing a real
+  // sweep with stale/fabricated totals (see CRITICAL 2 fix notes).
+  let totalPos = null;
+  let totalNeg = null;
   if (evalData && evalData.transaction_only) {
     totalPos = evalData.transaction_only.confusion_matrix.TP + evalData.transaction_only.confusion_matrix.FN;
     totalNeg = evalData.transaction_only.confusion_matrix.TN + evalData.transaction_only.confusion_matrix.FP;
@@ -280,8 +301,8 @@ export default function AnalyticsPage() {
 
             {/* UPLIFT SUMMARY BADGE (4/12) */}
             <div className="lg:col-span-4 bg-soc-panel border border-soc-border rounded-xl p-4 space-y-2 text-center">
-              <span className="text-[10px] text-soc-muted uppercase font-bold block">Headline Fusion Uplift</span>
-              <div className="text-3xl font-black text-soc-success font-mono">{headlineUplift}</div>
+              <span className="text-[10px] text-soc-muted uppercase font-bold block">{headlineLabel}</span>
+              <div className={`text-3xl font-black font-mono ${headlineIsPositive ? 'text-soc-success' : 'text-soc-warning'}`}>{headlineUplift}</div>
               <p className="text-[11px] text-soc-muted">
                 {recallCompare} when using the Fusion overlay.
               </p>
@@ -374,18 +395,20 @@ export default function AnalyticsPage() {
                     <span>FN Count:</span> <span className="font-bold text-soc-danger">{currentSweepPt.FN}</span>
                   </div>
                   <div className="flex justify-between text-xs border-t border-soc-border pt-1 mt-1">
-                    <span>Total Cost (INR):</span> <span className="font-bold text-soc-warning">â‚¹{currentSweepPt.total_cost.toLocaleString()}</span>
+                    <span>Total Cost (INR):</span> <span className="font-bold text-soc-warning">₹{currentSweepPt.total_cost.toLocaleString()}</span>
                   </div>
                   
-                  <div className="pt-2">
-                    <div className="text-[10px] text-soc-muted font-bold uppercase mb-1">Confusion Matrix</div>
-                    <div className="grid grid-cols-2 gap-1 text-[10px] text-center font-mono">
-                      <div className="bg-soc-success/10 border border-soc-success/20 p-1 rounded">TN: {totalNeg - currentSweepPt.FP}</div>
-                      <div className="bg-soc-danger/10 border border-soc-danger/20 p-1 rounded">FP: {currentSweepPt.FP}</div>
-                      <div className="bg-soc-danger/10 border border-soc-danger/20 p-1 rounded">FN: {currentSweepPt.FN}</div>
-                      <div className="bg-soc-success/10 border border-soc-success/20 p-1 rounded">TP: {totalPos - currentSweepPt.FN}</div>
+                  {(totalPos != null && totalNeg != null) && (
+                    <div className="pt-2">
+                      <div className="text-[10px] text-soc-muted font-bold uppercase mb-1">Confusion Matrix</div>
+                      <div className="grid grid-cols-2 gap-1 text-[10px] text-center font-mono">
+                        <div className="bg-soc-success/10 border border-soc-success/20 p-1 rounded">TN: {totalNeg - currentSweepPt.FP}</div>
+                        <div className="bg-soc-danger/10 border border-soc-danger/20 p-1 rounded">FP: {currentSweepPt.FP}</div>
+                        <div className="bg-soc-danger/10 border border-soc-danger/20 p-1 rounded">FN: {currentSweepPt.FN}</div>
+                        <div className="bg-soc-success/10 border border-soc-success/20 p-1 rounded">TP: {totalPos - currentSweepPt.FN}</div>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               )}
             </div>
@@ -396,10 +419,10 @@ export default function AnalyticsPage() {
                 <LineChart data={chartData} margin={{ top: 20, right: 20, left: 20, bottom: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#2D3748" />
                   <XAxis dataKey="threshold" stroke="#A0AEC0" tick={{fontSize: 10}} label={{ value: 'Threshold (0-100)', position: 'insideBottom', offset: -10, fill: '#A0AEC0', fontSize: 10 }} />
-                  <YAxis stroke="#A0AEC0" tick={{fontSize: 10}} tickFormatter={(v) => 'â‚¹' + (v/1000).toFixed(0) + 'k'} width={60} />
+                  <YAxis stroke="#A0AEC0" tick={{fontSize: 10}} tickFormatter={(v) => '₹' + (v/1000).toFixed(0) + 'k'} width={60} />
                   <RechartsTooltip 
                     contentStyle={{ backgroundColor: '#1A202C', borderColor: '#2D3748', fontSize: '11px', fontFamily: 'monospace', borderRadius: '8px' }}
-                    formatter={(value, name) => ['â‚¹' + value.toLocaleString(), name]}
+                    formatter={(value, name) => ['₹' + value.toLocaleString(), name]}
                     labelFormatter={(label) => `Threshold: ${label}`}
                   />
                   <Legend verticalAlign="top" height={36} iconType="circle" wrapperStyle={{ fontSize: '11px', fontWeight: 'bold' }}/>

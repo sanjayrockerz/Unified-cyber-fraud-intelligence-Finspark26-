@@ -1,38 +1,61 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { User, DollarSign, Clock, Smartphone, Globe, Layers, GitCommit, Sparkles, AlertTriangle, CheckCircle2, RefreshCw, Gauge } from 'lucide-react';
 
-const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8001' : '');
+const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8000' : '');
 
-export default function DigitalTwinBaseline({ userId = 'usr_abc' }) {
+// The baseline is compared against the transaction actually under review. Both
+// the user and the transaction are required -- comparing a real customer's
+// baseline to a stand-in transfer would report a deviation that never happened.
+export default function DigitalTwinBaseline({ userId, transaction }) {
   const [twinData, setTwinData] = useState(null);
   const [comparison, setComparison] = useState(null);
   const [activeTab, setActiveTab] = useState('diffs'); // diffs | identity | devices | graph | predictions | timeline
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchDigitalTwinData();
-  }, [userId]);
+    if (userId) fetchDigitalTwinData();
+    else setLoading(false);
+  }, [userId, transaction?.txn_id]);
 
   const fetchDigitalTwinData = async () => {
     setLoading(true);
     try {
-      const [twinRes, compRes] = await Promise.all([
-        fetch(`${API_BASE}/digital_twin/${userId}`).then(r => r.json()),
-        fetch(`${API_BASE}/digital_twin/compare`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ user_id: userId, transaction: { amount: 750000.0, nameDest: "ACC_MULE_NEW", cyber_compromise_in_window: true } })
-        }).then(r => r.json())
-      ]);
+      const requests = [fetch(`${API_BASE}/digital_twin/${userId}`).then(r => r.json())];
 
+      if (transaction) {
+        requests.push(
+          fetch(`${API_BASE}/digital_twin/compare`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              user_id: userId,
+              transaction: {
+                amount: transaction.amount,
+                nameDest: transaction.nameDest,
+                cyber_compromise_in_window: Boolean(transaction.cyber_compromise_in_window),
+              },
+            }),
+          }).then(r => r.json()),
+        );
+      }
+
+      const [twinRes, compRes] = await Promise.all(requests);
       setTwinData(twinRes);
-      setComparison(compRes);
+      setComparison(compRes ?? null);
     } catch (e) {
       console.error("Digital Twin fetch error:", e);
     } finally {
       setLoading(false);
     }
   };
+
+  if (!userId) {
+    return (
+      <div className="bg-soc-surface border border-soc-border rounded-xl p-4 shadow-lg font-mono text-xs text-soc-muted">
+        No customer resolved for this case, so no behavioural baseline can be loaded.
+      </div>
+    );
+  }
 
   if (loading || !twinData) {
     return (
@@ -44,8 +67,8 @@ export default function DigitalTwinBaseline({ userId = 'usr_abc' }) {
   }
 
   const { identity, devices, locations, transactions_profile, behavior, graph, risk, predictions, timeline } = twinData;
-  const devIndex = comparison?.overall_deviation_index || 88.5;
-  const isHighDeviation = devIndex > 70.0;
+  const devIndex = comparison?.overall_deviation_index ?? null;
+  const isHighDeviation = devIndex != null && devIndex > 70.0;
 
   return (
     <div className="bg-soc-surface border border-soc-border rounded-xl p-4 shadow-xl select-none font-mono text-xs">
@@ -59,7 +82,7 @@ export default function DigitalTwinBaseline({ userId = 'usr_abc' }) {
           <div>
             <div className="flex items-center gap-2">
               <h3 className="font-bold text-soc-text text-xs uppercase tracking-wider">
-                Digital Twin Customer Intelligence â€” {identity.full_name} ({userId})
+                Digital Twin Customer Intelligence — {identity.full_name} ({userId})
               </h3>
               <span className="text-[9px] font-bold px-2 py-0.5 rounded bg-soc-success/10 text-soc-success border border-soc-success/30">
                 LIVE TWIN ACTIVE
@@ -75,8 +98,14 @@ export default function DigitalTwinBaseline({ userId = 'usr_abc' }) {
           <div className="flex items-center gap-2 bg-soc-panel border border-soc-border px-3 py-1.5 rounded-lg">
             <Gauge className="w-4 h-4 text-soc-primary" />
             <span className="text-[10px] text-soc-dim uppercase">Overall Deviation Index:</span>
-            <span className={`font-black ${isHighDeviation ? 'text-soc-danger' : 'text-soc-success'}`}>
-              {devIndex}% ({comparison?.verdict || 'CRITICAL_DEVIATION'})
+            <span
+              className={`font-black ${
+                devIndex == null ? 'text-soc-muted' : isHighDeviation ? 'text-soc-danger' : 'text-soc-success'
+              }`}
+            >
+              {devIndex == null
+                ? 'Not compared — no transaction in context'
+                : `${devIndex}% (${comparison?.verdict ?? 'UNCLASSIFIED'})`}
             </span>
           </div>
 
@@ -93,7 +122,7 @@ export default function DigitalTwinBaseline({ userId = 'usr_abc' }) {
       {/* 2. SUB-NAVIGATION TABS */}
       <div className="flex items-center gap-1 border-b border-soc-border pb-2 mb-3 overflow-x-auto text-[11px]">
         {[
-          { id: 'diffs', label: 'Expected vs Observed Diffs', icon: AlertTriangle, badge: `${devIndex}%` },
+          { id: 'diffs', label: 'Expected vs Observed Diffs', icon: AlertTriangle, badge: devIndex == null ? '—' : `${devIndex}%` },
           { id: 'identity', label: 'Identity & Accounts', icon: User },
           { id: 'devices', label: 'Devices & Locations', icon: Smartphone },
           { id: 'graph', label: 'Graph & Mule Ring', icon: Layers },

@@ -7,7 +7,7 @@ from datetime import datetime
 from fastapi import APIRouter, Request, HTTPException, Header
 from typing import Optional
 
-from api.platform.pipeline import platform_pipeline
+from api.core_platform.pipeline import platform_pipeline
 from api.store import put
 
 router = APIRouter(prefix="/gateway", tags=["Gateway Integration"])

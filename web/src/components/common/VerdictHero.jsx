@@ -7,8 +7,15 @@ const verdictConfig = {
   BLOCK: { icon: ShieldX, label: 'BLOCK', hero: 'border-soc-danger/50 bg-soc-danger/10', tone: 'text-soc-danger' },
 };
 
-export default function VerdictHero({ verdict = 'BLOCK', score = 0, reason, timestamp, transactionId }) {
-  const config = verdictConfig[verdict] || verdictConfig.BLOCK;
+// A genuinely-undefined (or unrecognized) verdict must never silently default
+// to the most severe outcome (BLOCK) -- that renders a fabricated
+// high-severity decision with no backing data. Render a neutral "awaiting"
+// state instead; real BLOCK/CHALLENGE/ALLOW styling only ever applies when a
+// real verdict string is actually passed in.
+const AWAITING_CONFIG = { icon: Clock3, label: 'AWAITING DECISION', hero: 'border-soc-border bg-soc-panel/40', tone: 'text-soc-muted' };
+
+export default function VerdictHero({ verdict, score, reason, timestamp, transactionId }) {
+  const config = verdict ? (verdictConfig[verdict] || AWAITING_CONFIG) : AWAITING_CONFIG;
   const Icon = config.icon;
   const numericScore = Number(score);
   const formattedScore = Number.isFinite(numericScore) ? numericScore.toFixed(1) : '—';

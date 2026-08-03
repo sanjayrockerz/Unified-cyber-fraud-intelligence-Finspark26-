@@ -2,7 +2,7 @@
 
 ## 1. Executive Summary & Architecture Overview
 
-Phase 2 builds the **Enterprise Cyber Threat Intelligence Engine** for **Fusion Risk OS**. 
+Phase 2 builds the **Enterprise Cyber Threat Intelligence Engine** for **Fuzen AI**. 
 
 While Phase 1 established the Android Reference Banking Application (`fusion-reference-bank`), embedded Fusion Adaptive Trust SDK (`FAT-SDK`), live FastAPI backend, and Cyber Attack Simulator, Phase 2 implements the automated backend intelligence pipeline that converts raw incoming SDK events into structured, evidence-backed, correlated **Cyber Threat Objects**.
 

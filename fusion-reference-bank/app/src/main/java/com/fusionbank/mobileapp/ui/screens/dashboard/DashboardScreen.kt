@@ -64,7 +64,7 @@ fun DashboardScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            // Persistent Live Fusion Risk OS Status Card
+            // Persistent Live Fuzen AI Status Card
             LiveStatusCard(onOpenTrustPassport = { onNavigate("trust_passport") })
 
             LazyColumn(

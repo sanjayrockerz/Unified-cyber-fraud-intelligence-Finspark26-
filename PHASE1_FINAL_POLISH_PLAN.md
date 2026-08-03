@@ -27,7 +27,7 @@ When submitting a transfer or transaction decision request:
   - **Stage 4**: Behavioral Biometrics Evaluation (`22ms`)
   - **Stage 5**: Cyber Threat Correlation (`19ms`)
   - **Stage 6**: Graph Mule Cluster Analysis (`25ms`)
-  - **Stage 7**: Fusion Risk Engine Final Verdict (`ALLOW` / `CHALLENGE` / `BLOCK`)
+  - **Stage 7**: Fuzen AI Engine Final Verdict (`ALLOW` / `CHALLENGE` / `BLOCK`)
 - Features step-by-step animated checking spinners, live stage latencies, and final explainable verdict card.
 
 ---
@@ -57,8 +57,8 @@ Display exact Android hardware & security attestation data:
 ## 3. Proposed File Modifications
 
 ### [NEW] Component
-- [NEW] [DecisionPipelineDialog.kt](file:///c:/Users/motis/Downloads/fastapi/Unified-Cyber-Fraud-Intelligence-Platform/fusion-reference-bank/app/src/main/java/com/fusionbank/mobileapp/ui/components/DecisionPipelineDialog.kt) — Animated multi-stage transaction verification pipeline.
+- [NEW] [DecisionPipelineDialog.kt](file:///c:/Users/motis/Downloads/fastapi/Unified-Cyber-Fraud-Intelligence-Platform/fusion-reference-bank/app/src/main/java/com/fuzenbank/mobileapp/ui/components/DecisionPipelineDialog.kt) — Animated multi-stage transaction verification pipeline.
 
 ### [MODIFY] Existing Views
-- [MODIFY] [ProfileScreen.kt](file:///c:/Users/motis/Downloads/fastapi/Unified-Cyber-Fraud-Intelligence-Platform/fusion-reference-bank/app/src/main/java/com/fusionbank/mobileapp/ui/screens/profile/ProfileScreen.kt) — Add "Coming Next" roadmap placeholders & real device information card.
-- [MODIFY] [TransferScreen.kt](file:///c:/Users/motis/Downloads/fastapi/Unified-Cyber-Fraud-Intelligence-Platform/fusion-reference-bank/app/src/main/java/com/fusionbank/mobileapp/ui/screens/transfer/TransferScreen.kt) — Integrate animated decision pipeline dialog.
+- [MODIFY] [ProfileScreen.kt](file:///c:/Users/motis/Downloads/fastapi/Unified-Cyber-Fraud-Intelligence-Platform/fusion-reference-bank/app/src/main/java/com/fuzenbank/mobileapp/ui/screens/profile/ProfileScreen.kt) — Add "Coming Next" roadmap placeholders & real device information card.
+- [MODIFY] [TransferScreen.kt](file:///c:/Users/motis/Downloads/fastapi/Unified-Cyber-Fraud-Intelligence-Platform/fusion-reference-bank/app/src/main/java/com/fuzenbank/mobileapp/ui/screens/transfer/TransferScreen.kt) — Integrate animated decision pipeline dialog.

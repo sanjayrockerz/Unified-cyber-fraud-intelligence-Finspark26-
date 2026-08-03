@@ -105,7 +105,7 @@ fun QrPaymentScreen(
             onDismissRequest = { viewModel.reset(); onBack() },
             containerColor = SurfaceDark,
             title = { Text("QR Payment Successful", color = StatusGreen, fontWeight = FontWeight.Bold) },
-            text = { Text("Payment processed. Telemetry event QR_PAYMENT streamed to Fusion Risk OS.", color = TextPrimaryDark) },
+            text = { Text("Payment processed. Telemetry event QR_PAYMENT streamed to Fuzen AI.", color = TextPrimaryDark) },
             confirmButton = {
                 Button(onClick = { viewModel.reset(); onBack() }) {
                     Text("OK")

@@ -45,9 +45,16 @@ Thumbs.db
 .vscode/
 .idea/
 
+# --- browser testing artifacts (Playwright, screenshots, etc.) ---
+.playwright-mcp/
+*-snapshot.yml
+*-snapshot.png
+*-full.png
+
 # --- generated reports and local databases ---
 *.pdf
 !Docs/source/*.pdf
 *.db
 *.db-shm
 *.db-wal
+web/test-results/

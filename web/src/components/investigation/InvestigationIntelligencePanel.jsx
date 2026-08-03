@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   ShieldAlert, 
   Layers, 
@@ -19,16 +19,19 @@ import {
   DollarSign
 } from 'lucide-react';
 
-const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8001' : '');
+const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8000' : '');
 
-export default function InvestigationIntelligencePanel({ caseId = 'CASE-2026-8942', activeTxn = null }) {
+// The brief is built from the case's real transaction. Without one there is
+// nothing to analyse, so the panel says so instead of analysing a stand-in.
+export default function InvestigationIntelligencePanel({ caseId, activeTxn = null }) {
   const [brief, setBrief] = useState(null);
   const [expandedSection, setExpandedSection] = useState('narrative'); // narrative | burst | mule | quality | summary
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchInvestigationBrief();
-  }, [caseId, activeTxn]);
+    if (caseId && activeTxn) fetchInvestigationBrief();
+    else setLoading(false);
+  }, [caseId, activeTxn?.user_id, activeTxn?.txn_id, activeTxn?.amount]);
 
   const fetchInvestigationBrief = async () => {
     setLoading(true);
@@ -38,10 +41,10 @@ export default function InvestigationIntelligencePanel({ caseId = 'CASE-2026-894
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           case_id: caseId,
-          user_id: activeTxn?.user_id || 'usr_abc',
-          amount: activeTxn?.amount || 750000.0,
-          cyber_compromise_in_window: activeTxn?.cyber_compromise_in_window ?? true,
-          dest_mule_cluster_id: activeTxn?.dest_mule_cluster_id || 'cluster_alpha'
+          user_id: activeTxn.user_id,
+          amount: activeTxn.amount,
+          cyber_compromise_in_window: Boolean(activeTxn.cyber_compromise_in_window),
+          dest_mule_cluster_id: activeTxn.dest_mule_cluster_id || null
         })
       });
       const data = await res.json();
@@ -52,6 +55,14 @@ export default function InvestigationIntelligencePanel({ caseId = 'CASE-2026-894
       setLoading(false);
     }
   };
+
+  if (!caseId || !activeTxn) {
+    return (
+      <div className="bg-soc-surface border border-soc-border rounded-xl p-4 shadow-lg font-mono text-xs text-soc-muted">
+        No stored transaction for this case, so no intelligence brief can be generated.
+      </div>
+    );
+  }
 
   if (loading || !brief) {
     return (

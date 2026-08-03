@@ -24,7 +24,9 @@ uvicorn[standard]==0.32.1
 websockets==14.1
 python-dotenv==1.0.1
 pydantic==2.10.3
+email-validator==2.2.0
 geoip2
+google-generativeai>=0.8.0
 # --- reporting ---
 reportlab==4.2.5
 
@@ -37,3 +39,5 @@ httpx>=0.28.0
 pytest-asyncio>=0.24.0
 
 cryptography
+
+supabase>=2.3.0

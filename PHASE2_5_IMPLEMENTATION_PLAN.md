@@ -1,4 +1,4 @@
-# Fusion Risk OS — Phase 2.5 Implementation Plan
+# Fuzen AI — Phase 2.5 Implementation Plan
 
 ## Purpose and scope boundary
 

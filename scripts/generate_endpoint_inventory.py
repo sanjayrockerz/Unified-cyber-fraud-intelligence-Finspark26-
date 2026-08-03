@@ -60,7 +60,7 @@ def main() -> None:
             )
     rows.sort(key=lambda row: (row[1], row[0]))
     lines = [
-        "# Fusion Risk OS API Reference",
+        "# Fuzen AI API Reference",
         "",
         "Generated from the executable FastAPI route table. Every authenticated REST response includes "
         "`X-Request-ID` and `X-Response-Time-Ms`. Pipeline responses additionally contain request, "

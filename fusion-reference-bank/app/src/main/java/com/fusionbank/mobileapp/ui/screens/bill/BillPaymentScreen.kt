@@ -99,7 +99,7 @@ fun BillPaymentScreen(
             onDismissRequest = { viewModel.reset(); onBack() },
             containerColor = SurfaceDark,
             title = { Text("Bill Payment Complete", color = StatusGreen, fontWeight = FontWeight.Bold) },
-            text = { Text("Bill payment successful. Telemetry event BILL_PAYMENT streamed to Fusion Risk OS.", color = TextPrimaryDark) },
+            text = { Text("Bill payment successful. Telemetry event BILL_PAYMENT streamed to Fuzen AI.", color = TextPrimaryDark) },
             confirmButton = {
                 Button(onClick = { viewModel.reset(); onBack() }) {
                     Text("OK")

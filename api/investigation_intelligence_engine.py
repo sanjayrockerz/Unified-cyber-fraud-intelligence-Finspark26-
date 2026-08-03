@@ -5,7 +5,7 @@ from typing import Dict, List, Any
 
 class InvestigationIntelligenceEngine:
     """
-    Investigation Intelligence Layer for Fusion Risk OS.
+    Investigation Intelligence Layer for Fuzen AI.
     Executes network-level fraud intelligence analysis after pre-transaction session evaluation:
     1. Burst Attack Detection
     2. Graph Mule Discovery (Neo4j)
@@ -297,8 +297,31 @@ class InvestigationIntelligenceEngine:
         }
 
     def get_cached_investigation(self, case_id: str) -> dict:
+        """
+        Return the cached brief, or build one from the real stored case.
+
+        A cache miss must never fabricate a subject. If the case is not in the
+        store there is nothing honest to analyse, so the caller is told so.
+        """
         if case_id in self.investigation_cache:
             return self.investigation_cache[case_id]
-        return self.analyse_investigation({"case_id": case_id, "user_id": "usr_abc", "amount": 750000.0, "cyber_compromise_in_window": True})
+
+        from api import store
+
+        case = store.get("cases", case_id)
+        if not case:
+            return {"status": "UNAVAILABLE", "reason": "CASE_NOT_FOUND", "case_id": case_id}
+
+        transaction = store.get("transactions", case.get("transaction_id")) or {}
+        return self.analyse_investigation(
+            {
+                "case_id": case_id,
+                "user_id": case.get("customer_id") or transaction.get("user_id", ""),
+                "amount": float(case.get("amount") or transaction.get("amount") or 0.0),
+                "cyber_compromise_in_window": bool(
+                    transaction.get("cyber_compromise_in_window")
+                ),
+            }
+        )
 
 investigation_engine = InvestigationIntelligenceEngine()

@@ -1,10 +1,10 @@
 # api/Dockerfile
-FROM python:3.10-slim
+FROM python:3.11-slim
 
 WORKDIR /app
 
 # libgomp1 provides libgomp.so.1 (GNU OpenMP), required at import time by the
-# compiled lightgbm/xgboost shared libraries. python:3.10-slim doesn't ship it.
+# compiled lightgbm/xgboost shared libraries. python:3.11-slim doesn't ship it.
 RUN apt-get update && apt-get install -y --no-install-recommends libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
@@ -12,7 +12,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends libgomp1 \
 # training-only and never imported at request-serving time — see
 # requirements-render.txt for why. Keeps the image inside Render's free tier.)
 COPY requirements-render.txt .
-RUN pip install --no-cache-dir -r requirements-render.txt
+RUN pip install --upgrade pip && pip install --no-cache-dir -r requirements-render.txt
 
 # Copy API source
 COPY api/ api/

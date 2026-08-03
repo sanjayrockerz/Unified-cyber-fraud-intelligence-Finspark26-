@@ -1,4 +1,4 @@
-# Fusion Risk OS Production Integration Plan
+# Fuzen AI Production Integration Plan
 
 ## Scope and completion rule
 

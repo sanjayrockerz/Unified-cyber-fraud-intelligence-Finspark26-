@@ -10,6 +10,7 @@ import { CustomerProvider } from './context/CustomerContext';
 import { CaseProvider } from './context/CaseContext';
 import { ReplayProvider } from './context/ReplayContext';
 
+const OverviewPage = lazy(() => import('./pages/OverviewPage'));
 const ThreatDashboard = lazy(() => import('./pages/CyberThreatIntelligencePage'));
 const OperationsCenterPage = lazy(() => import('./pages/OperationsCenterPage'));
 const CasesPage = lazy(() => import('./pages/CasesPage'));
@@ -25,6 +26,7 @@ const BankingPage = lazy(() => import('./pages/BankingPage'));
 const SyntheticLabPage = lazy(() => import('./pages/SyntheticLabPage'));
 const DeveloperPlatformPage = lazy(() => import('./pages/DeveloperPlatformPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
+const QuantumTrustPage = lazy(() => import('./pages/QuantumTrustPage'));
 
 function Loading() {
   return <div className="p-6 text-soc-muted">Loading platform view…</div>;
@@ -52,10 +54,10 @@ export default function App() {
                     <Suspense fallback={<Loading />}>
                       <Routes>
                         <Route path="/" element={<AppLayout quantumData={null} />}>
-                          <Route index element={<ThreatDashboard />} />
-                          <Route path="dashboard" element={<Navigate to="/operations" replace />} />
-                          <Route path="threats" element={<Navigate to="/" replace />} />
-                          <Route path="operations" element={<RouteSurface title="Operations Center" description="Monitor the live pre-transaction protection workflow and take action on the riskiest decision."><OperationsCenterPage /></RouteSurface>} />
+                          <Route index element={<OverviewPage />} />
+                          <Route path="threats" element={<ThreatDashboard />} />
+                          <Route path="copilot" element={<Navigate to="/operations" replace />} />
+                          <Route path="operations" element={<OperationsCenterPage />} />
                           <Route path="cases" element={<CasesPage />} />
                           <Route path="customers" element={<CustomersPage />} />
                           <Route path="investigation/:caseId?" element={<RouteSurface title="Investigation" description="Follow linked fraud, cyber, and evidence signals through one focused case workspace."><InvestigationPage /></RouteSurface>} />
@@ -68,6 +70,7 @@ export default function App() {
                           <Route path="banking" element={<RouteSurface title="Banking" description="Inspect transaction context and beneficiary relationships before release."><BankingPage /></RouteSurface>} />
                           <Route path="synthetic-lab" element={<RouteSurface title="Synthetic Lab" description="Generate reproducible banking universes for demonstration and scale testing."><SyntheticLabPage /></RouteSurface>} />
                           <Route path="developer" element={<RouteSurface title="SDK Runtime" description="Connect devices and observe authenticated integration events."><DeveloperPlatformPage /></RouteSurface>} />
+                          <Route path="quantum" element={<RouteSurface title="Quantum Trust" description="Review post-quantum cryptographic posture and harvest-now-decrypt-later exposure."><QuantumTrustPage /></RouteSurface>} />
                           <Route path="settings" element={<RouteSurface title="Settings" description="Tune the presentation-layer operating thresholds for the demo environment."><SettingsPage /></RouteSurface>} />
                           <Route path="*" element={<Navigate to="/" replace />} />
                         </Route>

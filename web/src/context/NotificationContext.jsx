@@ -8,11 +8,9 @@ const NotificationContext = createContext({
 });
 
 export function NotificationProvider({ children }) {
-  const [notifications, setNotifications] = useState([
-    { id: 1, title: 'Critical Alert', message: 'Impossible travel login detected for usr_abc', time: '10:00:00', read: false },
-    { id: 2, title: 'Mule Ring Alert', message: 'ACC_MULE_NEW matched cluster_alpha', time: '10:00:40', read: false },
-    { id: 3, title: 'TLS Posture Warning', message: 'ECDHE cipher flagged HNDL risk', time: '09:50:00', read: true }
-  ]);
+  // Starts empty. The seeded alerts described entities that do not exist in the
+  // store, and an unread badge on a fabricated alert is worse than no badge.
+  const [notifications, setNotifications] = useState([]);
 
   const unreadCount = notifications.filter(n => !n.read).length;
 

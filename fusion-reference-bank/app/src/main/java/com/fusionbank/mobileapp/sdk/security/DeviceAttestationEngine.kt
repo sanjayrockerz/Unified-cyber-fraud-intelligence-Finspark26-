@@ -3,11 +3,19 @@ package com.fusionbank.mobileapp.sdk.security
 import android.content.Context
 import android.os.Build
 import android.os.Debug
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import com.fusionbank.mobileapp.sdk.models.SDKDeviceRequest
 import java.io.File
 import java.util.*
 
 class DeviceAttestationEngine(private val context: Context) {
+
+    fun isVpnActive(): Boolean {
+        val manager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager ?: return false
+        val network = manager.activeNetwork ?: return false
+        return manager.getNetworkCapabilities(network)?.hasTransport(NetworkCapabilities.TRANSPORT_VPN) == true
+    }
 
     fun generateDeviceProfile(deviceId: String): SDKDeviceRequest {
         val rootDetected = checkRoot()

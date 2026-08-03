@@ -9,6 +9,11 @@ import retrofit2.http.POST
 import retrofit2.http.Query
 
 interface FusionApiService {
+    @POST("identity/register")
+    suspend fun registerIdentity(
+        @Body request: IdentityRegistrationRequest
+    ): Response<IdentityRegistrationResponse>
+
     @POST("device/register")
     suspend fun registerPairedDevice(
         @Body request: PairingRegistrationRequest

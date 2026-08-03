@@ -1,4 +1,4 @@
-# Fusion Risk OS API Reference
+# Fuzen AI API Reference
 
 Generated from the executable FastAPI route table. Every authenticated REST response includes `X-Request-ID` and `X-Response-Time-Ms`. Pipeline responses additionally contain request, correlation, pipeline, acknowledgement, dependency status, and stage timing fields.
 

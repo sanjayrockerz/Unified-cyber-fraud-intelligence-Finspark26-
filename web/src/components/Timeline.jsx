@@ -1,11 +1,12 @@
 ﻿import React from 'react';
 
-export default function Timeline({ events }) {
-  if (!events.length) return <div className="text-sm text-soc-muted text-center mt-10">Listening for cyber events...</div>;
+export default function Timeline({ events = [] }) {
+  const safeEvents = events ?? [];
+  if (!safeEvents.length) return <div className="text-sm text-soc-muted text-center mt-10">Listening for cyber events...</div>;
 
   return (
     <div className="flex flex-col gap-3">
-      {events.map((evt, i) => (
+      {safeEvents.map((evt, i) => (
         <div key={i} className={`p-3 rounded-lg border-l-4 ${evt.severity === 'critical' ? 'border-soc-danger bg-soc-danger/10' : evt.severity === 'medium' ? 'border-soc-warning bg-soc-warning/10' : 'border-soc-primary bg-soc-primary/10'}`}>
           <div className="flex justify-between items-start mb-1">
             <span className="text-xs font-mono text-soc-muted">{evt.timestamp.split(' ')[1]}</span>

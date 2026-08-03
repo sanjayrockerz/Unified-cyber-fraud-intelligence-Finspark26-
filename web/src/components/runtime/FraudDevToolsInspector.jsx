@@ -30,7 +30,7 @@ export default function FraudDevToolsInspector({ activeTxn, evaluation }) {
         <div className="flex items-center gap-2">
           <Terminal className="w-4 h-4 text-soc-primary" />
           <span className="font-bold text-soc-text text-xs uppercase tracking-wider">
-            Chrome DevTools for Fraud â€” Transaction Inspector
+            Chrome DevTools for Fraud — Transaction Inspector
           </span>
         </div>
 
@@ -68,12 +68,28 @@ export default function FraudDevToolsInspector({ activeTxn, evaluation }) {
           <div className="space-y-2">
             <span className="text-[10px] text-soc-dim uppercase font-semibold">Event Precursor Timeline</span>
             <div className="space-y-2">
-              <div className="p-2.5 bg-soc-danger/10 border border-soc-danger/30 rounded-lg text-soc-danger">
-                <div className="font-bold">[T-0:40s] Impossible Travel Login Detected</div>
-                <div className="text-[11px] text-soc-muted">IP: 185.15.2.22 (RU) | User: {activeTxn.user_id} | 4,500 km Anomaly</div>
-              </div>
+              {/* Precursors are the threats the engine actually raised for this
+                  transaction, not a fixed narrative. */}
+              {(evaluation?.threats ?? []).map((threat) => (
+                <div
+                  key={threat.threat_id}
+                  className="p-2.5 bg-soc-danger/10 border border-soc-danger/30 rounded-lg text-soc-danger"
+                >
+                  <div className="font-bold">[precursor] {threat.threat_name}</div>
+                  <div className="text-[11px] text-soc-muted">
+                    {threat.severity} | {threat.threat_category} | User: {activeTxn.user_id}
+                  </div>
+                </div>
+              ))}
+              {(evaluation?.threats ?? []).length === 0 && (
+                <div className="p-2.5 bg-soc-panel border border-soc-border rounded-lg text-[11px] text-soc-muted">
+                  No precursor threats were raised for this transaction.
+                </div>
+              )}
               <div className="p-2.5 bg-soc-panel border border-soc-border rounded-lg">
-                <div className="font-bold text-soc-text">[T+0:00s] Transaction Transfer Initiated</div>
+                <div className="font-bold text-soc-text">
+                  [{activeTxn.timestamp || 'T+0:00s'}] Transaction Transfer Initiated
+                </div>
                 <div className="text-[11px] text-soc-muted">Amount: INR {activeTxn.amount?.toLocaleString('en-IN')} | To: {activeTxn.nameDest}</div>
               </div>
             </div>
@@ -108,14 +124,18 @@ export default function FraudDevToolsInspector({ activeTxn, evaluation }) {
         {/* Tab 5: Risk Calculation */}
         {activeTab === 'risk' && (
           <div className="space-y-2">
-            <span className="text-[10px] text-soc-dim uppercase font-semibold">Composite Risk Blending Breakdown</span>
+            <span className="text-[10px] text-soc-dim uppercase font-semibold">Composite Risk Blending — Contributing Reasons</span>
             <div className="p-3 bg-soc-surface border border-soc-border rounded-lg space-y-1.5">
-              <div className="flex justify-between"><span>Tabular Model Score (0-60):</span> <strong>+49.2 pts</strong></div>
-              <div className="flex justify-between"><span>Isolation Forest Penalty (0-20):</span> <strong>+18.0 pts</strong></div>
-              <div className="flex justify-between"><span>Cyber Precursor Window (+15):</span> <strong>+15.0 pts</strong></div>
-              <div className="flex justify-between"><span>Mule Cluster Flag (+10):</span> <strong>+10.0 pts</strong></div>
+              {(evaluation?.reasons?.length ? evaluation.reasons : ['No reason codes available for this transaction.']).map((reason, idx) => (
+                <div key={idx} className="flex justify-between gap-3">
+                  <span>{reason}</span>
+                </div>
+              ))}
               <div className="border-t border-soc-border pt-1.5 flex justify-between font-bold text-soc-danger">
-                <span>TOTAL COMPOSITE RISK SCORE:</span> <span>94.0 / 100 [BLOCK]</span>
+                <span>TOTAL COMPOSITE RISK SCORE:</span>
+                <span className="tabular-nums">
+                  {evaluation?.score != null ? `${Number(evaluation.score).toFixed(1)} / 100 [${evaluation?.action || 'UNKNOWN'}]` : 'No live evaluation for this transaction'}
+                </span>
               </div>
             </div>
           </div>

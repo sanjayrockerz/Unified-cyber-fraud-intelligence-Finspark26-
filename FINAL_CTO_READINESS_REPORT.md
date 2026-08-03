@@ -1,4 +1,4 @@
-# Fusion Risk OS CTO Readiness Audit
+# Fuzen AI CTO Readiness Audit
 
 Audit date: 2026-07-24
 

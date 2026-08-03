@@ -7,7 +7,7 @@ import com.fusionbank.mobileapp.sdk.security.SecureStorage
 import dagger.hilt.android.HiltAndroidApp
 
 @HiltAndroidApp
-class FusionBankApp : Application() {
+class FuzenAIBankApp : Application() {
     override fun onCreate() {
         super.onCreate()
         val secure = SecureStorage(this)

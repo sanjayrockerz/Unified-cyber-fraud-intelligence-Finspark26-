@@ -19,7 +19,7 @@ export default function NarrativeAIStoryteller({ activeTxn, evaluation }) {
         <div className="flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-soc-primary" />
           <h3 className="text-xs font-mono font-bold text-soc-text uppercase tracking-wider">
-            Narrative AI Storyteller â€” Step-by-Step Investigation Story
+            Narrative AI Storyteller — Step-by-Step Investigation Story
           </h3>
         </div>
         <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-soc-surface text-soc-muted border border-soc-border">

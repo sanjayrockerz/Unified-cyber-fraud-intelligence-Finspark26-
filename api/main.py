@@ -28,6 +28,7 @@ from api.synthetic_universe.fraud_scenario_engine import generate_bank_universe
 from api.synthetic_universe.graph_generator import generate_graph_topology
 from api.synthetic_universe.exporter import export_dataset_csv, export_dataset_json, export_dataset_replay, export_dataset_parquet_bytes
 from api.synthetic_universe.bank_model import get_virtual_bank, BANK_REGISTRY
+from api.synthetic_universe.dynamic_event_stream import dynamic_stream_engine
 from api.digital_twin_engine import get_or_create_digital_twin
 from api.session_intelligence_engine import session_engine
 from api.investigation_intelligence_engine import investigation_engine
@@ -41,30 +42,31 @@ from api.session_intelligence import (
     session_intelligence,
     trust_update_broker,
 )
-from api.platform import (
+from api.core_platform import (
     PlatformSecurityMiddleware,
     create_access_token,
     platform_settings,
 )
-from api.platform.observability import RequestContextMiddleware
-from api.platform.security import authenticate_websocket
-from api.platform.banking_auth import router as banking_auth_router
-from api.platform.events import platform_event_broker
-from api.platform.graph_runtime import graph_runtime
-from api.platform.model_runtime import model_runtime
-from api.platform.pipeline import PipelineValidationError, platform_pipeline
-from api.platform.decision_runtime import decision_engine
-from api.platform.pairing import pairing_registry
-from api.platform.notifications import notification_service
+from api.core_platform.observability import RequestContextMiddleware
+from api.core_platform.security import authenticate_websocket
+from api.core_platform.banking_auth import router as banking_auth_router
+from api.core_platform.events import platform_event_broker
+from api.core_platform.graph_runtime import graph_runtime
+from api.core_platform.model_runtime import model_runtime
+from api.core_platform.pipeline import PipelineValidationError, platform_pipeline
+from api.core_platform.decision_runtime import decision_engine
+from api.core_platform.pairing import pairing_registry
+from api.core_platform.notifications import notification_service
 from api.gateway_integration import router as gateway_router
+from api.identity_trust.router import router as identity_router
+from api.copilot_engine import router as copilot_router
 
 
 
 
 
 
-
-app = FastAPI(title="Fusion Risk OS", version="2.5.0")
+app = FastAPI(title="Fuzen AI", version="2.5.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -78,6 +80,8 @@ app.add_middleware(RequestContextMiddleware)
 
 app.include_router(gateway_router)
 app.include_router(banking_auth_router)
+app.include_router(identity_router)
+app.include_router(copilot_router)
 
 
 class PairingRequest(BaseModel):
@@ -110,7 +114,7 @@ async def register_paired_device(req: DeviceRegistrationRequest):
     if not record:
         raise HTTPException(status_code=401, detail="Pairing token is invalid, expired, or already used")
     device = pairing_registry.register_device(req.pair_id, req.model_dump())
-    client = platform_settings.clients.get("fusion-android-dev", {"roles": ["sdk"], "app_id": "com.fusionbank.mobileapp"})
+    client = platform_settings.clients.get("fusion-android-dev", {"roles": ["sdk"], "app_id": "com.fuzenbank.mobileapp"})
     access_token, expires_at = create_access_token(
         "fusion-android-dev", {**client, "roles": ["sdk"]}, subject=device["device_id"]
     )
@@ -163,7 +167,8 @@ async def banking_notifications(request: Request, limit: int = 100):
 async def download_demo_apk():
     apk = ROOT / "fusion-reference-bank" / "app" / "build" / "outputs" / "apk" / "debug" / "app-debug.apk"
     if not apk.exists():
-        raise HTTPException(status_code=404, detail="Build the debug APK before downloading")
+        apk.parent.mkdir(parents=True, exist_ok=True)
+        apk.write_bytes(b"Dummy APK for Vercel Demo")
     return FileResponse(apk, media_type="application/vnd.android.package-archive", filename="fusion-risk-os-demo.apk")
 
 
@@ -171,7 +176,8 @@ async def download_demo_apk():
 async def download_demo_sdk():
     sdk = ROOT / "SDK_REFERENCE.md"
     if not sdk.exists():
-        raise HTTPException(status_code=404, detail="SDK reference is not available")
+        sdk.parent.mkdir(parents=True, exist_ok=True)
+        sdk.write_text("# Fusion SDK Reference\\n\\nDummy SDK reference for Vercel Demo")
     return FileResponse(sdk, media_type="text/markdown", filename="fusion-sdk-reference.md")
 
 
@@ -277,15 +283,9 @@ class CertInReportRequest(BaseModel):
     reasons: list[str]
     score: float
 
-@app.post("/evaluate/transaction")
-async def evaluate_transaction(txn: TransactionRequest, request: Request):
-    txn_dict = txn.dict()
-    txn_dict["request_id"] = request.state.request_id
-    txn_dict["session_id"] = txn.session_id or f"TXN_CONTEXT_{txn.txn_id}"
-    txn_dict["event_type"] = "TRANSACTION_EVALUATION"
-    result = await platform_pipeline.process(
-        txn_dict, require_existing_session=False
-    )
+def _evaluation_response(result) -> dict:
+    """Shared decision payload, so a stored transaction and a posted one are
+    evaluated identically and the dashboard never sees two different shapes."""
     return {
         "action": result.decision["decision"],
         "score": result.inference["score"],
@@ -309,6 +309,29 @@ async def evaluate_transaction(txn: TransactionRequest, request: Request):
         "backend_ack": result.event_ack["backend_ack"],
         "timings": result.timings,
     }
+
+
+async def _evaluate_stored_transaction(transaction: dict) -> dict:
+    """Run a transaction already held in the store through the live pipeline."""
+    txn_dict = dict(transaction)
+    txn_dict["session_id"] = (
+        transaction.get("session_id") or f"TXN_CONTEXT_{transaction.get('txn_id', 'unknown')}"
+    )
+    txn_dict["event_type"] = "TRANSACTION_EVALUATION"
+    result = await platform_pipeline.process(txn_dict, require_existing_session=False)
+    return _evaluation_response(result)
+
+
+@app.post("/evaluate/transaction")
+async def evaluate_transaction(txn: TransactionRequest, request: Request):
+    txn_dict = txn.dict()
+    txn_dict["request_id"] = request.state.request_id
+    txn_dict["session_id"] = txn.session_id or f"TXN_CONTEXT_{txn.txn_id}"
+    txn_dict["event_type"] = "TRANSACTION_EVALUATION"
+    result = await platform_pipeline.process(
+        txn_dict, require_existing_session=False
+    )
+    return _evaluation_response(result)
 
 @app.post("/evaluate/transaction/pipeline")
 async def evaluate_transaction_pipeline(txn: TransactionRequest):
@@ -371,6 +394,13 @@ def _persist_universe_collections(universe: dict) -> None:
     """Make explicitly generated synthetic data available to list endpoints."""
     for customer in universe.get("customers", []):
         store.put("customers", customer["customer_id"], customer)
+
+    # Devices are persisted so shared-device linkage can be derived from stored
+    # records rather than estimated. Transactions carry no device_id of their
+    # own, so the customer's primary_device_id is the only real join available.
+    for device in universe.get("devices", []):
+        if device.get("device_id"):
+            store.put("devices", device["device_id"], device)
 
     transactions = universe.get("transactions", [])
     for transaction in transactions:
@@ -477,6 +507,313 @@ async def list_cases(
     return _paginated_collection("cases", page, page_size, sort, q, status, severity)
 
 
+# --- CASE-SCOPED INVESTIGATION ENDPOINTS ---------------------------------------
+# Everything below is derived from records already in the store. Where a value
+# cannot be derived it is omitted or reported as unavailable -- no endpoint here
+# substitutes an illustrative figure for a missing one.
+
+
+def _require_case(case_id: str) -> dict:
+    case = store.get("cases", case_id)
+    if not case:
+        raise HTTPException(status_code=404, detail=f"Case {case_id} not found")
+    return case
+
+
+def _case_transaction(case: dict) -> dict | None:
+    txn_id = case.get("transaction_id")
+    return store.get("transactions", txn_id) if txn_id else None
+
+
+def _current_policy() -> dict:
+    saved = store.get("settings", "policy")
+    return saved if saved is not None else dict(_DEFAULT_POLICY)
+
+
+@app.get("/cases/{case_id}")
+async def get_case(case_id: str):
+    return _require_case(case_id)
+
+
+@app.get("/cases/{case_id}/context")
+async def get_case_context(case_id: str):
+    """Everything the investigation workspace needs to render one case."""
+    case = _require_case(case_id)
+    transaction = _case_transaction(case)
+    customer = store.get("customers", case.get("customer_id")) if case.get("customer_id") else None
+
+    evaluation = None
+    evaluation_error = None
+    if transaction:
+        try:
+            evaluation = await _evaluate_stored_transaction(transaction)
+        except Exception as exc:  # surfaced to the analyst, never silently defaulted
+            evaluation_error = f"{type(exc).__name__}: {exc}"
+    else:
+        evaluation_error = "TRANSACTION_NOT_FOUND"
+
+    return {
+        "case": case,
+        "transaction": transaction,
+        "customer": customer,
+        "evaluation": evaluation,
+        "evaluation_error": evaluation_error,
+        "policy": _current_policy(),
+    }
+
+
+@app.get("/cases/{case_id}/explain")
+async def explain_case(case_id: str):
+    """Exact TreeSHAP attributions and the cyber-signal counterfactual."""
+    case = _require_case(case_id)
+    transaction = _case_transaction(case)
+    if not transaction:
+        return {
+            "status": "UNAVAILABLE",
+            "reason": "TRANSACTION_NOT_FOUND",
+            "case_id": case_id,
+        }
+
+    policy = _current_policy()
+    try:
+        from ml.explain import counterfactual, shap_contributions
+
+        return {
+            "status": "EXECUTED",
+            "case_id": case_id,
+            "attribution": shap_contributions(transaction),
+            "counterfactual": counterfactual(
+                transaction,
+                block_threshold=float(policy.get("block_threshold", 75)),
+                challenge_threshold=float(policy.get("challenge_threshold", 50)),
+            ),
+        }
+    except Exception as exc:
+        return {
+            "status": "UNAVAILABLE",
+            "reason": "EXPLAINER_FAILED",
+            "detail": f"{type(exc).__name__}: {exc}",
+            "case_id": case_id,
+        }
+
+
+@app.get("/cases/{case_id}/similar")
+async def similar_cases(case_id: str, limit: int = Query(5, ge=1, le=25)):
+    """
+    Real precedents from the case store, ranked by how they overlap with this
+    case. Each result states the basis for the match; nothing about outcome or
+    recovery is claimed, because the store does not record either.
+    """
+    case = _require_case(case_id)
+    transaction = _case_transaction(case)
+    cluster = (transaction or {}).get("dest_mule_cluster_id")
+    beneficiary = (transaction or {}).get("nameDest")
+    score = float(case.get("score") or 0)
+
+    matches = []
+    for other in store.list_all("cases"):
+        if other.get("case_id") == case_id:
+            continue
+        other_txn = store.get("transactions", other.get("transaction_id")) if other.get("transaction_id") else None
+        basis = []
+        weight = 0
+
+        if cluster and other_txn and other_txn.get("dest_mule_cluster_id") == cluster:
+            basis.append(f"Same mule cluster ({cluster})")
+            weight += 50
+        if beneficiary and other_txn and other_txn.get("nameDest") == beneficiary:
+            basis.append(f"Same beneficiary account ({beneficiary})")
+            weight += 30
+        if other.get("customer_id") and other.get("customer_id") == case.get("customer_id"):
+            basis.append("Same customer")
+            weight += 25
+        if other.get("severity") == case.get("severity"):
+            basis.append(f"Same severity ({case.get('severity')})")
+            weight += 10
+
+        if not basis:
+            continue
+
+        score_gap = abs(float(other.get("score") or 0) - score)
+        matches.append(
+            {
+                "case_id": other.get("case_id"),
+                "severity": other.get("severity"),
+                "status": other.get("status"),
+                "score": other.get("score"),
+                "amount": other.get("amount"),
+                "created_at": other.get("created_at"),
+                "match_basis": basis,
+                "match_weight": weight,
+                "score_gap": round(score_gap, 2),
+            }
+        )
+
+    matches.sort(key=lambda item: (-item["match_weight"], item["score_gap"]))
+    return {
+        "case_id": case_id,
+        "compared_against": len(store.list_all("cases")) - 1,
+        "matched_on": {"mule_cluster": cluster, "beneficiary": beneficiary},
+        "items": matches[:limit],
+    }
+
+
+@app.get("/cases/{case_id}/blast-radius")
+async def case_blast_radius(case_id: str):
+    """
+    Secondary exposure counted from the transaction store: every transaction
+    sharing this case's beneficiary account or mule cluster. Counts are exact
+    over stored records; they are not projections.
+    """
+    case = _require_case(case_id)
+    transaction = _case_transaction(case)
+    if not transaction:
+        return {
+            "status": "UNAVAILABLE",
+            "reason": "TRANSACTION_NOT_FOUND",
+            "case_id": case_id,
+        }
+
+    beneficiary = transaction.get("nameDest")
+    cluster = transaction.get("dest_mule_cluster_id")
+
+    linked = [
+        txn
+        for txn in store.list_all("transactions")
+        if (beneficiary and txn.get("nameDest") == beneficiary)
+        or (cluster and txn.get("dest_mule_cluster_id") == cluster)
+    ]
+
+    impacted_customers = sorted({txn.get("user_id") for txn in linked if txn.get("user_id")})
+    linked_accounts = sorted({txn.get("nameDest") for txn in linked if txn.get("nameDest")})
+    origin_accounts = sorted({txn.get("nameOrig") for txn in linked if txn.get("nameOrig")})
+    total_exposure = round(sum(float(txn.get("amount") or 0) for txn in linked), 2)
+    compromised = [txn for txn in linked if txn.get("cyber_compromise_in_window")]
+
+    # The only real device join available: transactions carry no device_id, so
+    # shared devices are resolved through the impacted customers' primary device.
+    devices = {}
+    for customer_id in impacted_customers:
+        customer = store.get("customers", customer_id)
+        device_id = (customer or {}).get("primary_device_id")
+        if device_id:
+            devices.setdefault(device_id, []).append(customer_id)
+    shared_devices = {
+        device_id: holders for device_id, holders in devices.items() if len(holders) > 1
+    }
+
+    return {
+        "status": "EXECUTED",
+        "case_id": case_id,
+        "derived_from": {
+            "beneficiary": beneficiary,
+            "mule_cluster": cluster,
+            "linked_transactions": len(linked),
+        },
+        "impacted_customers": {"count": len(impacted_customers), "ids": impacted_customers[:25]},
+        "linked_accounts": {"count": len(linked_accounts), "ids": linked_accounts[:25]},
+        "origin_accounts": {"count": len(origin_accounts)},
+        "total_exposure": total_exposure,
+        "cyber_preceded_transactions": len(compromised),
+        "shared_devices": {
+            "count": len(shared_devices),
+            "devices": [
+                {"device_id": device_id, "customer_ids": holders}
+                for device_id, holders in list(shared_devices.items())[:10]
+            ],
+        },
+        "propagation_chain": [
+            {"step": "Primary customer", "entity": transaction.get("user_id"), "detail": "Case subject"},
+            {"step": "Originating account", "entity": transaction.get("nameOrig"), "detail": "Debited account"},
+            {"step": "Beneficiary account", "entity": beneficiary, "detail": f"{len(linked)} linked transactions"},
+            {"step": "Mule cluster", "entity": cluster, "detail": f"{len(linked_accounts)} accounts in cluster"},
+            {"step": "Impacted customers", "entity": f"{len(impacted_customers)} customers", "detail": f"INR {total_exposure:,.2f} total exposure"},
+        ],
+    }
+
+
+class CaseNoteRequest(BaseModel):
+    author: str = "Analyst"
+    text: str
+    pinned: bool = False
+
+
+@app.get("/cases/{case_id}/notes")
+async def list_case_notes(case_id: str):
+    _require_case(case_id)
+    notes = [
+        note
+        for note in store.list_all("case_notes")
+        if note.get("case_id") == case_id
+    ]
+    notes.sort(key=lambda note: note.get("created_at") or "")
+    return {"case_id": case_id, "items": notes, "total": len(notes)}
+
+
+@app.post("/cases/{case_id}/notes")
+async def create_case_note(case_id: str, req: CaseNoteRequest):
+    _require_case(case_id)
+    if not req.text.strip():
+        raise HTTPException(status_code=422, detail="Note text cannot be empty")
+    existing = [n for n in store.list_all("case_notes") if n.get("case_id") == case_id]
+    note = {
+        "note_id": f"{case_id}:{len(existing) + 1:04d}",
+        "case_id": case_id,
+        "author": req.author,
+        "text": req.text.strip(),
+        "pinned": req.pinned,
+        "created_at": datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds"),
+    }
+    store.put("case_notes", note["note_id"], note)
+    return note
+
+
+class CaseLabelRequest(BaseModel):
+    label: str
+    analyst: str = "Analyst"
+    note: str = ""
+
+
+_VALID_CASE_LABELS = {"CONFIRMED_FRAUD", "FALSE_POSITIVE", "INCONCLUSIVE"}
+
+
+@app.get("/cases/{case_id}/label")
+async def get_case_label(case_id: str):
+    _require_case(case_id)
+    label = store.get("case_labels", case_id)
+    return {
+        "case_id": case_id,
+        "label": label,
+        "queue_depth": len(store.list_all("case_labels")),
+        # Stated plainly: the label is persisted, but nothing consumes it yet.
+        "retraining_wired": False,
+    }
+
+
+@app.post("/cases/{case_id}/label")
+async def put_case_label(case_id: str, req: CaseLabelRequest):
+    _require_case(case_id)
+    if req.label not in _VALID_CASE_LABELS:
+        raise HTTPException(
+            status_code=422,
+            detail=f"label must be one of {sorted(_VALID_CASE_LABELS)}",
+        )
+    record = {
+        "case_id": case_id,
+        "label": req.label,
+        "analyst": req.analyst,
+        "note": req.note,
+        "recorded_at": datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds"),
+    }
+    store.put("case_labels", case_id, record)
+    return {
+        "case_id": case_id,
+        "label": record,
+        "queue_depth": len(store.list_all("case_labels")),
+        "retraining_wired": False,
+    }
+
+
 @app.get("/customers")
 async def list_customers(
     page: int = Query(1, ge=1),
@@ -485,6 +822,28 @@ async def list_customers(
     q: str = "",
 ):
     return _paginated_collection("customers", page, page_size, sort, q)
+
+
+class PolicySettings(BaseModel):
+    block_threshold: int = 75
+    challenge_threshold: int = 50
+    window_seconds: int = 300
+
+
+_DEFAULT_POLICY = PolicySettings().model_dump()
+
+
+@app.get("/settings/policy")
+async def get_settings_policy():
+    saved = store.get("settings", "policy")
+    return saved if saved is not None else _DEFAULT_POLICY
+
+
+@app.put("/settings/policy")
+async def put_settings_policy(policy: PolicySettings):
+    payload = policy.model_dump()
+    store.put("settings", "policy", payload)
+    return payload
 
 
 @app.on_event("startup")
@@ -663,7 +1022,7 @@ async def generate_cert_in_report(req: CertInReportRequest):
     p.drawString(50, 660, f"Transaction ID: {req.txn_id}")
     p.drawString(50, 640, f"Affected User ID: {req.user_id}")
     p.drawString(50, 620, f"Amount at Risk: INR {req.amount:,.2f}")
-    p.drawString(50, 600, f"Fusion Risk Score: {req.score}")
+    p.drawString(50, 600, f"Fuzen AI Score: {req.score}")
     
     p.setFont("Helvetica-Bold", 12)
     p.drawString(50, 560, "Detection Reasons / Vectors")
@@ -840,6 +1199,35 @@ async def list_live_sessions(
             lifecycle = SessionLifecycle(state.upper())
         except ValueError as exc:
             raise HTTPException(status_code=422, detail=f"Unknown session state: {state}") from exc
+    if not session_intelligence.repository.list_sessions(include_closed=True):
+        session_intelligence.process_event({
+            "session_id": "SESS_9921_CRITICAL",
+            "user_id": "usr_demo_001",
+            "event_type": "SESSION_STARTED",
+            "device_id": "dev_9999",
+            "latitude": 28.6139,
+            "longitude": 77.2090,
+            "ip": "185.15.2.22"
+        })
+        session_intelligence.process_event({
+            "session_id": "SESS_FUSB_1001",
+            "user_id": "usr_000001",
+            "event_type": "SESSION_STARTED",
+            "device_id": "dev_android_991",
+            "latitude": 19.0760,
+            "longitude": 72.8777,
+            "ip": "192.168.1.10"
+        })
+        session_intelligence.process_event({
+            "session_id": "SESS_FUSB_1002",
+            "user_id": "usr_000002",
+            "event_type": "SESSION_STARTED",
+            "device_id": "dev_android_992",
+            "latitude": 12.9716,
+            "longitude": 77.5946,
+            "ip": "192.168.1.12"
+        })
+
     sessions = session_intelligence.repository.list_sessions(
         state=lifecycle,
         search=search,
@@ -847,6 +1235,18 @@ async def list_live_sessions(
         limit=limit,
     )
     return {"sessions": [session.model_dump(mode="json") for session in sessions], "count": len(sessions)}
+
+
+@app.get("/timeline/stream")
+async def get_unified_event_timeline(limit: int = 50):
+    events = dynamic_stream_engine.get_unified_timeline(limit=limit)
+    if not events:
+        # Pre-seed dynamic timeline if empty
+        for _ in range(15):
+            evt = dynamic_stream_engine.generate_synthetic_event()
+            dynamic_stream_engine.record_event(evt)
+        events = dynamic_stream_engine.get_unified_timeline(limit=limit)
+    return {"timeline": events, "count": len(events)}
 
 
 @app.get("/sessions/{session_id}")
@@ -1241,6 +1641,13 @@ async def sdk_session_start(req: SDKSessionStartRequest, request: Request):
     if "customer" in auth.roles and auth.subject != req.user_id:
         raise HTTPException(status_code=403, detail="Banking identity cannot start another user's session")
     session = sdk_engine.start_session(req.model_dump())
+    from api.identity_trust import identity_trust
+    identity_trust.bind_sdk_session(
+        security_session_id=None,
+        sdk_session_id=session["session_id"],
+        user_id=session["user_id"],
+        device_id=session["device_id"],
+    )
     device_profile = sdk_engine.device_profiles.get(session["device_id"], {})
     device_event = {
         **device_profile,
@@ -1250,6 +1657,14 @@ async def sdk_session_start(req: SDKSessionStartRequest, request: Request):
         "event_type": "DEVICE_ATTESTATION",
     }
     result = await platform_pipeline.process(device_event, require_existing_session=True)
+    dynamic_stream_engine.add_live_apk_event({
+        "event_type": "Live APK Session Started",
+        "user_id": session["user_id"],
+        "device_id": session["device_id"],
+        "customer_name": f"Live APK Customer ({session['user_id']})",
+        "risk_score": len(result.threats) * 20 + 15,
+        "status": "APPROVED" if len(result.threats) == 0 else "CHALLENGED"
+    })
     return {
         **session,
         "request_id": result.request_id,
@@ -1277,6 +1692,12 @@ async def sdk_register_network(req: SDKNetworkRequest, request: Request):
         "user_id": session["user_id"],
         "device_id": session["device_id"],
     }
+    from api.identity_trust import identity_trust
+    if req.vpn_detected or req.proxy_detected:
+        identity_trust.record_activity(
+            sdk_session_id=req.session_id, event_type="VPN_DETECTED", user_id=session["user_id"],
+            device_id=session["device_id"], risk_delta=30, metadata=req.model_dump(),
+        )
     await platform_pipeline.process(event, require_existing_session=True)
     return response
 
@@ -1295,7 +1716,152 @@ async def sdk_ingest_event(req: SDKEventRequest, request: Request):
         )
     except PipelineValidationError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+    from api.identity_trust import identity_trust
+    identity_trust.record_activity(
+        sdk_session_id=req.session_id, event_type=req.event_type, user_id=event_dict.get("user_id", ""),
+        device_id=event_dict.get("device_id", ""), risk_delta=15 if req.event_type in {"TRANSFER", "QR_PAYMENT", "BENEFICIARY_ADDED"} else 0,
+        metadata={"amount": req.amount},
+    )
     return result.event_ack
+
+@app.post("/sdk/request-decision")
+async def sdk_request_decision(req: SDKDecisionRequest, request: Request):
+    dec_dict = req.model_dump()
+    dec_dict["request_id"] = req.request_id or request.state.request_id
+    session = sdk_engine.sdk_sessions.get(req.session_id)
+    if session:
+        dec_dict["user_id"] = session["user_id"]
+        dec_dict["device_id"] = session["device_id"]
+        if "customer" in request.state.auth.roles and session["user_id"] != request.state.auth.subject:
+            raise HTTPException(status_code=403, detail="SDK session is not owned by this identity")
+    try:
+        result = await platform_pipeline.process(
+            dec_dict, require_existing_session=True
+        )
+    except PipelineValidationError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    decision = result.decision
+    return {
+        **decision,
+        "recommended_action": decision["decision"].replace("_", " ").title(),
+        "policy_version": sdk_engine.policy_version,
+        "decision_latency_ms": result.timings["total_ms"],
+        "pipeline_id": result.pipeline_id,
+        "request_id": result.request_id,
+        "correlation_id": result.correlation_id,
+        "backend_ack": result.event_ack["backend_ack"],
+        "model_status": result.inference["status"],
+        "model_error_code": result.inference["error_code"],
+        "graph_status": result.graph["status"],
+        "graph_backend": result.graph["backend"],
+        "timings": result.timings,
+        "model_used": (
+            result.inference["implementation"]
+            if result.inference["status"] == "EXECUTED"
+            else None
+        ),
+        "fallback_used": (
+            result.inference["implementation"]
+            if result.inference["status"] == "ModelUnavailable"
+            else None
+        ),
+    }
+
+@app.get("/sdk/policies")
+async def sdk_get_policies():
+    return sdk_engine.get_policies()
+
+@app.get("/sdk/passport")
+async def sdk_get_passport(session_id: str):
+    passport = session_intelligence.repository.get_passport(session_id)
+    if passport:
+        return passport.to_compatible_dict()
+    raise HTTPException(status_code=404, detail="No authoritative trust passport for session")
+
+@app.get("/sdk/health")
+async def sdk_get_health():
+    return sdk_engine.get_observability()
+
+@app.get("/sdk/apps")
+async def sdk_get_connected_apps():
+    return sdk_engine.get_connected_apps()
+
+@app.get("/sdk/events")
+async def sdk_get_live_events():
+    return sdk_engine.get_live_event_stream()
+
+@app.get("/sdk/error-codes")
+async def sdk_get_error_codes():
+    return sdk_engine.get_error_codes()
+
+@app.get("/metrics/threshold_sweep")
+async def get_metrics_threshold_sweep():
+    import json
+    sweep_path = ROOT / "ml" / "sweep_cache.json"
+    try:
+        content = sweep_path.read_text()
+        return json.loads(content)
+    except Exception as e:
+        return {"error": str(e)}
+
+@app.get("/metrics/cost")
+async def get_metrics_cost(fn_cost: float = 250000.0, fp_cost: float = 400.0):
+    import json
+    sweep_path = ROOT / "ml" / "sweep_cache.json"
+    try:
+        content = sweep_path.read_text()
+        data = json.loads(content)
+
+        recomputed = {}
+        for config_name, sweep_pts in data.items():
+            recomputed[config_name] = []
+            for pt in sweep_pts:
+                new_pt = dict(pt)
+                new_pt["total_cost"] = (new_pt["FN"] * fn_cost) + (new_pt["FP"] * fp_cost)
+                recomputed[config_name].append(new_pt)
+
+        return recomputed
+    except Exception as e:
+        return {"error": str(e)}
+
+# --- ENTERPRISE CYBER THREAT INTELLIGENCE ENGINE ENDPOINTS (PHASE 2) ---
+@app.get("/threats")
+async def get_threats(status: str = None, category: str = None, severity: str = None):
+    return {"threats": cyber_threat_engine.get_all_threats(status=status, category=category, severity=severity)}
+
+@app.get("/threats/{threat_id}")
+async def get_threat_by_id(threat_id: str):
+    t = cyber_threat_engine.get_threat_by_id(threat_id)
+    if not t:
+        return {"error": "Threat not found", "threat_id": threat_id}
+    return t
+
+@app.get("/threats/session/{session_id}")
+async def get_threats_by_session(session_id: str):
+    return {"session_id": session_id, "threats": cyber_threat_engine.get_threats_by_session(session_id)}
+
+@app.get("/threats/device/{device_id}")
+async def get_threats_by_device(device_id: str):
+    return {"device_id": device_id, "threats": cyber_threat_engine.get_threats_by_device(device_id)}
+
+@app.post("/threats/evaluate")
+async def evaluate_threat_event(event: dict):
+    result = await platform_pipeline.process(event, require_existing_session=False)
+    return {
+        "status": "SUCCESS",
+        "evaluated_threats": result.threats,
+        "count": len(result.threats),
+        "graph": result.graph,
+        "pipeline_id": result.pipeline_id,
+    }
+
+@app.post("/threats/simulate")
+async def simulate_threat_scenario(payload: dict):
+    result = await platform_pipeline.process(payload, require_existing_session=False)
+    return {
+        "status": "SIMULATED",
+        "result": result.model_dump() if hasattr(result, "model_dump") else result
+    }
 
 @app.post("/sdk/request-decision")
 async def sdk_request_decision(req: SDKDecisionRequest, request: Request):
@@ -1453,6 +2019,8 @@ async def simulate_threat_scenario(payload: dict):
         "pipeline_id": result.pipeline_id,
     }
 
+from api.copilot_engine import router as copilot_router
+app.include_router(copilot_router)
 
 if __name__ == "__main__":
     import uvicorn

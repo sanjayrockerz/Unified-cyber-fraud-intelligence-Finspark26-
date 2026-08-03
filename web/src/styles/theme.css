@@ -1,28 +1,28 @@
 :root {
   /* Dark SOC theme — every UI colour resolves through these semantic tokens. */
-  --soc-bg-primary: 7 10 16;
-  --soc-bg-surface: 15 20 32;
-  --soc-bg-panel: 21 28 44;
-  --soc-bg-elevated: 27 36 56;
-  --soc-border-subtle: 30 41 59;
-  --soc-border-default: 42 52 71;
-  --soc-border-hover: 59 72 97;
+  --soc-bg-primary: 7 16 28;      /* #07101C */
+  --soc-bg-surface: 16 24 39;     /* #101827 */
+  --soc-bg-panel: 22 35 55;       /* #162337 */
+  --soc-bg-elevated: 28 43 65;    /* Slightly higher elevation */
+  --soc-border-subtle: 41 53 72;  /* #293548 */
+  --soc-border-default: 49 63 86;
+  --soc-border-hover: 109 94 248; /* #6D5EF8 */
   --soc-text-primary: 243 244 246;
   --soc-text-secondary: 156 163 175;
   --soc-text-muted: 107 114 128;
-  --soc-text-inverse: 7 10 16;
+  --soc-text-inverse: 7 16 28;
   --soc-text-on-primary: 255 255 255;
   --soc-text-on-warning: 15 23 42;
-  --soc-brand-primary: 59 130 246;
-  --soc-brand-hover: 37 99 235;
-  --soc-status-success: 16 185 129;
-  --soc-status-warning: 245 158 11;
-  --soc-status-danger: 239 68 68;
+  --soc-brand-primary: 109 94 248; /* #6D5EF8 */
+  --soc-brand-hover: 86 73 247;
+  --soc-status-success: 16 185 129; /* #10B981 */
+  --soc-status-warning: 245 158 11; /* #F59E0B */
+  --soc-status-danger: 239 68 68;  /* #EF4444 */
   --soc-status-info: 6 182 212;
   --soc-status-quantum: 139 92 246;
   --soc-overlay: 0 0 0;
-  --soc-selection-bg: 59 130 246;
-  --soc-font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --soc-selection-bg: 109 94 248;
+  --soc-font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --soc-font-mono: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
 }
 

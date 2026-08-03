@@ -1,4 +1,4 @@
-# Fusion Risk OS — Phase 3 Implementation Plan
+# Fuzen AI — Phase 3 Implementation Plan
 
 ## Purpose and constraints
 
@@ -167,7 +167,7 @@ Transitions use observed event/threat state and trust posture. Lifecycle state r
 
 ### Android
 
-- `fusion-reference-bank/app/src/main/java/com/fusionbank/mobileapp/ui/screens/trust/TrustPassportScreen.kt`
+- `fusion-reference-bank/app/src/main/java/com/fuzenbank/mobileapp/ui/screens/trust/TrustPassportScreen.kt`
 
 ### Documentation
 

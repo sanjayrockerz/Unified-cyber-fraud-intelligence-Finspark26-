@@ -15,7 +15,7 @@ export default function StatusBar() {
       <div className="hidden items-center gap-4 lg:flex">
         <span>FPR Budget: 0.48% / 0.50%</span>
         <span>Graph Engine: NetworkX / Neo4j Aura</span>
-        <span className="text-soc-muted">Fusion Risk OS Enterprise v2.6</span>
+        <span className="text-soc-muted">Fuzen AI Enterprise v2.6</span>
       </div>
     </div>
   );

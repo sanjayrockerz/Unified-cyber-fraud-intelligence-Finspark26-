@@ -80,7 +80,7 @@ fun SimulatorScreen(
                 item {
                     SimulatorCard(title = "11. Threat Campaign Library (1-Click Demonstrations)", icon = Icons.Default.FlashOn, iconTint = StatusYellow) {
                         Text(
-                            "Trigger realistic multi-stage cyber campaigns that flow through Fusion Risk OS:",
+                            "Trigger realistic multi-stage cyber campaigns that flow through Fuzen AI:",
                             style = MaterialTheme.typography.labelSmall,
                             color = TextSecondaryDark
                         )

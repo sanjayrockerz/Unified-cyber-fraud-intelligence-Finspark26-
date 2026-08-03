@@ -320,7 +320,7 @@ export default function RealTimeProcessingPipeline({ activeTxn, evaluation, webs
           >
             {SAMPLE_TRANSACTIONS.map(t => (
               <option key={t.txn_id} value={t.txn_id}>
-                Payload: {t.txn_id} â€” INR {t.amount.toLocaleString('en-IN')}
+                Payload: {t.txn_id} — INR {t.amount.toLocaleString('en-IN')}
               </option>
             ))}
           </select>

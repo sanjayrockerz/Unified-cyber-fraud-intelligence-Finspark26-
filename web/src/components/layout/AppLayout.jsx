@@ -1,14 +1,17 @@
 import React from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import TopBar from './TopBar';
 import Sidebar from './Sidebar';
 import MainContent from './MainContent';
 import StatusBar from './StatusBar';
 import UniversalSearch from '../common/UniversalSearch';
+import ErrorBoundary from '../common/ErrorBoundary';
+import RenderCrashTrigger from '../common/RenderCrashTrigger';
 import { useSearch } from '../../context/SearchContext';
 
 function InnerAppLayout({ quantumData }) {
   const { isSearchOpen, closeSearch } = useSearch();
+  const location = useLocation();
 
   return (
     <div className="flex flex-col h-screen w-screen bg-soc-bg text-soc-text overflow-hidden font-sans">
@@ -22,7 +25,10 @@ function InnerAppLayout({ quantumData }) {
 
         {/* Dynamic Route Content */}
         <MainContent>
-          <Outlet />
+          <ErrorBoundary resetKey={location.pathname}>
+            <RenderCrashTrigger />
+            <Outlet />
+          </ErrorBoundary>
         </MainContent>
       </div>
 

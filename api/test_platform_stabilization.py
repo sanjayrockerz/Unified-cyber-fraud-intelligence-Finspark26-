@@ -7,8 +7,8 @@ import pytest
 from fastapi.testclient import TestClient
 
 from api.main import app
-from api.platform.graph_runtime import GraphRuntime, NetworkXGraphRepository
-from api.platform.model_runtime import ModelRuntime
+from api.core_platform.graph_runtime import GraphRuntime, NetworkXGraphRepository
+from api.core_platform.model_runtime import ModelRuntime
 
 
 client = TestClient(app)
@@ -44,11 +44,11 @@ def test_authoritative_sdk_pipeline_reports_explicit_model_and_graph_state(
 ):
     # Force ModelRuntime to see an empty directory so the policy-fallback path
     # is always exercised regardless of whether ml/models/ has been trained.
-    from api.platform import model_runtime as mr_module
-    from api.platform.model_runtime import ModelRuntime
+    from api.core_platform import model_runtime as mr_module
+    from api.core_platform.model_runtime import ModelRuntime
     empty_runtime = ModelRuntime(tmp_path)
     monkeypatch.setattr(mr_module, "model_runtime", empty_runtime)
-    from api.platform import pipeline as pipe_module
+    from api.core_platform import pipeline as pipe_module
     monkeypatch.setattr(pipe_module.platform_pipeline, "model_runtime", empty_runtime)
 
     sdk_token = token("fusion-android-dev", "fusion-android-local-only")
@@ -80,7 +80,7 @@ def test_authoritative_sdk_pipeline_reports_explicit_model_and_graph_state(
         "/sdk/session/start",
         headers=headers,
         json={
-            "app_id": "com.fusionbank.mobileapp",
+            "app_id": "com.fuzenbank.mobileapp",
             "tenant_id": "TENANT_FUSB_001",
             "sdk_version": "FAT-SDK v2.4.1",
             "user_id": "platform-test-user",

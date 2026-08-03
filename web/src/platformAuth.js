@@ -1,5 +1,5 @@
 const API_BASE = import.meta.env.VITE_API_BASE
-  || (import.meta.env.DEV ? 'http://localhost:8001' : '');
+  || (import.meta.env.DEV ? 'http://localhost:8000' : '');
 const rawFetch = window.fetch.bind(window);
 let accessToken = window.__FUSION_CONFIG__?.accessToken || '';
 let expiresAt = 0;

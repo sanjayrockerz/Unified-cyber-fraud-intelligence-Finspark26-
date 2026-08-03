@@ -40,6 +40,8 @@ object Fusion {
     val activeSession: StateFlow<SDKSessionResponse?> = _activeSession.asStateFlow()
     private val _bankingProfile = MutableStateFlow<BankingProfile?>(null)
     val bankingProfile: StateFlow<BankingProfile?> = _bankingProfile.asStateFlow()
+    private val _lastLoginSecurity = MutableStateFlow<LoginSecurityAssessment?>(null)
+    val lastLoginSecurity: StateFlow<LoginSecurityAssessment?> = _lastLoginSecurity.asStateFlow()
     private val _trustPassport = MutableStateFlow<SDKTrustPassportResponse?>(null)
     val trustPassport: StateFlow<SDKTrustPassportResponse?> = _trustPassport.asStateFlow()
     private val _trustHistory = MutableStateFlow<List<SDKTrustSnapshot>>(emptyList())
@@ -69,6 +71,9 @@ object Fusion {
                 val builder = chain.request().newBuilder()
                 accessToken?.takeIf { it.isNotBlank() }?.let {
                     builder.header("Authorization", "Bearer $it")
+                }
+                if (::attestationEngine.isInitialized) {
+                    builder.header("X-Fusion-VPN-Detected", attestationEngine.isVpnActive().toString())
                 }
                 chain.proceed(builder.build())
             }
@@ -165,7 +170,36 @@ object Fusion {
                     throw IllegalStateException("Authentication failed: HTTP ${response.code()}")
                 }
                 persistAuthentication(auth)
+                _lastLoginSecurity.value = auth.security
                 startSessionInternal(auth.profile.userId, onResult)
+            } catch (exception: Exception) {
+                deliver(onResult, Result.failure(exception))
+            }
+        }
+    }
+
+    fun registerCustomer(
+        fullName: String,
+        email: String,
+        mobileNumber: String,
+        password: String,
+        onResult: (Result<IdentityRegistrationResponse>) -> Unit,
+    ) {
+        checkInitialized()
+        scope.launch {
+            try {
+                val profile = attestationEngine.generateDeviceProfile(getOrCreateDeviceId())
+                val response = apiService.registerIdentity(
+                    IdentityRegistrationRequest(
+                        fullName = fullName.trim(), email = email.trim(), mobileNumber = mobileNumber.trim(), password = password,
+                        deviceUuid = profile.deviceId, deviceFingerprint = Build.FINGERPRINT,
+                        deviceModel = profile.model, deviceManufacturer = profile.manufacturer,
+                        androidVersion = profile.androidVersion, sdkVersion = config.sdkVersion, appVersion = BuildConfig.VERSION_NAME,
+                    )
+                )
+                val body = response.body()
+                if (!response.isSuccessful || body == null) throw IllegalStateException("Registration failed: HTTP ${response.code()}")
+                deliver(onResult, Result.success(body))
             } catch (exception: Exception) {
                 deliver(onResult, Result.failure(exception))
             }
@@ -464,6 +498,8 @@ object Fusion {
     private suspend fun <T> deliver(callback: (Result<T>) -> Unit, result: Result<T>) {
         withContext(Dispatchers.Main) { callback(result) }
     }
+
+    fun getBaseUrl(): String = if (isInitialized) config.baseUrl else BuildConfig.FUSION_BASE_URL
 
     private fun checkInitialized() {
         check(isInitialized) { "Fusion SDK is not initialized" }
