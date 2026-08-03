@@ -5,8 +5,27 @@ from typing import List, Optional, Dict, Any
 from fastapi import APIRouter, HTTPException, Depends, Request
 from pydantic import BaseModel
 from dotenv import load_dotenv
-import google.generativeai as genai
-from google.api_core.exceptions import Unauthenticated, GoogleAPIError
+
+# The Gemini SDK is an optional runtime dependency: it is deliberately not in
+# requirements-render.txt, which is trimmed for the 512MB free tier. Importing
+# it at module scope took the whole API down on deploy, because api/main.py
+# imports this module -- uvicorn died with ModuleNotFoundError before serving a
+# single request. The copilot already has a grounded fallback for a missing API
+# key, so a missing library now takes that same path instead of being fatal.
+try:
+    import google.generativeai as genai
+    from google.api_core.exceptions import Unauthenticated, GoogleAPIError
+
+    GENAI_AVAILABLE = True
+except ImportError:  # pragma: no cover - exercised only in trimmed deployments
+    genai = None
+    GENAI_AVAILABLE = False
+
+    class Unauthenticated(Exception):
+        """Placeholder so the except clauses below stay valid without the SDK."""
+
+    class GoogleAPIError(Exception):
+        """Placeholder so the except clauses below stay valid without the SDK."""
 
 from api.store import list_all
 from api.core_platform.graph_runtime import graph_runtime
@@ -350,7 +369,7 @@ async def chat_with_copilot(request: ChatRequest):
     full_prompt = f"{system_prompt}\n\nUser Question:\n{user_prompt}"
     last_err = None
 
-    if api_key:
+    if api_key and GENAI_AVAILABLE:
         try:
             genai.configure(api_key=api_key)
             history = []
@@ -373,6 +392,8 @@ async def chat_with_copilot(request: ChatRequest):
             last_err = "Authentication Failed: Your GEMINI_API_KEY is unauthorized or restricted."
         except Exception as e:
             last_err = str(e)
+    elif not GENAI_AVAILABLE:
+        last_err = "google-generativeai is not installed in this deployment"
     else:
         last_err = "GEMINI_API_KEY not set in .env"
 
