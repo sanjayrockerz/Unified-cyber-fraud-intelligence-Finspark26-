@@ -16,6 +16,11 @@ RUN pip install --upgrade pip && pip install --no-cache-dir -r requirements-rend
 
 # Copy API source
 COPY api/ api/
+# DB_PATH defaults to ./finspark.db, i.e. /app/finspark.db given WORKDIR above --
+# a top-level file, not api/finspark.db. Without this the container starts with
+# no file at that path, SQLite creates an empty one, and every list endpoint
+# silently returns zero rows.
+COPY finspark.db finspark.db
 COPY ml/__init__.py ml/__init__.py
 COPY ml/features.py ml/features.py
 COPY ml/predict.py ml/predict.py
