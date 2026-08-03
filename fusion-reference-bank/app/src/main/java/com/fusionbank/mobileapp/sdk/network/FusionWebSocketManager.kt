@@ -10,8 +10,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import okhttp3.*
 import java.util.concurrent.TimeUnit
-import java.net.URLEncoder
-import java.nio.charset.StandardCharsets
 
 class FusionWebSocketManager(
     private val wsUrl: String,
@@ -48,13 +46,12 @@ class FusionWebSocketManager(
             .pingInterval(10, TimeUnit.SECONDS)
             .build()
 
-        val encodedSessionId = URLEncoder.encode(sessionId, StandardCharsets.UTF_8.toString())
-        val scopedUrl = "$wsUrl${if (wsUrl.contains("?")) "&" else "?"}session_id=$encodedSessionId"
+        val scopedUrl = "$wsUrl${if (wsUrl.contains("?")) "&" else "?"}session_id=$sessionId"
         val request = Request.Builder()
             .url(scopedUrl)
             .apply {
                 accessTokenProvider()?.takeIf { it.isNotBlank() }?.let {
-                    header("Authorization", "Bearer $it")
+                    header("Sec-WebSocket-Protocol", "Bearer.$it")
                 }
             }
             .build()

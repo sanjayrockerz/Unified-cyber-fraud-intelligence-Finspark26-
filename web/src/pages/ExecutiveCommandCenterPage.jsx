@@ -7,6 +7,7 @@ const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http:/
 
 export default function ExecutiveCommandCenterPage() {
   const [quantumData, setQuantumData] = useState(null);
+  const [analyticsData, setAnalyticsData] = useState(null);
 
   useEffect(() => {
     fetch(`${API_BASE}/quantum/posture`)
@@ -15,16 +16,20 @@ export default function ExecutiveCommandCenterPage() {
       .catch(e => console.error("Quantum error:", e));
   }, []);
 
+  useEffect(() => {
+    fetch(`${API_BASE}/analytics/summary?period=monthly`).then((r) => r.json()).then((body) => setAnalyticsData(body.data || body)).catch(() => setAnalyticsData(null));
+  }, []);
+
   return (
     <PageContainer>
       <div className="flex flex-col gap-5 select-none font-mono">
         
         {/* Executive KPI Header Matrix */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <MetricCard title="Today's Prevented Loss" value="INR 8,700,000.00" subtext="100% In-Flight Interception" icon={DollarSign} color="success" />
-          <MetricCard title="Estimated Exposure Avoided" value="INR 24,500,000.00" subtext="Multi-account containment" icon={TrendingUp} color="primary" />
-          <MetricCard title="Avg Incident SLA Latency" value="48 ms" subtext="FastAPI + Graph SLA Target" icon={Activity} color="warning" />
-          <MetricCard title="CERT-In Compliance SLA" value="100% Compliant" subtext="6-Hour Mandate Filings" icon={FileCheck2} color="quantum" />
+          <MetricCard title="Today's Prevented Loss" value={analyticsData ? `INR ${analyticsData.totals.blocked_amount.toLocaleString('en-IN')}` : 'Waiting for telemetry'} subtext="Backend blocked transaction total" icon={DollarSign} color="success" />
+          <MetricCard title="Observed Transaction Value" value={analyticsData ? `INR ${analyticsData.totals.amount.toLocaleString('en-IN')}` : 'Waiting for telemetry'} subtext="Tenant-scoped backend amount" icon={TrendingUp} color="primary" />
+          <MetricCard title="Decision Volume" value={analyticsData ? analyticsData.totals.decisions : 'Waiting for telemetry'} subtext="Authoritative pipeline decisions" icon={Activity} color="warning" />
+          <MetricCard title="Threat Telemetry" value={analyticsData ? analyticsData.totals.threats : 'Waiting for telemetry'} subtext="Threat engine observations" icon={FileCheck2} color="quantum" />
         </div>
 
         {/* CISO Security Strategy Overview */}
@@ -37,37 +42,7 @@ export default function ExecutiveCommandCenterPage() {
               <span className="text-[10px] text-soc-muted">Live Telemetry</span>
             </h3>
 
-            <div className="space-y-3 text-xs">
-              <div className="space-y-1">
-                <div className="flex justify-between font-bold">
-                  <span>1. Account Takeover (Impossible Travel + MFA Cookie Reuse)</span>
-                  <span className="text-soc-danger">45% of Interceptions</span>
-                </div>
-                <div className="w-full bg-soc-bg h-2 rounded overflow-hidden">
-                  <div className="bg-soc-danger h-full rounded" style={{ width: '45%' }}></div>
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <div className="flex justify-between font-bold">
-                  <span>2. Mule Account Rings (Shared IP & Device Clusters)</span>
-                  <span className="text-soc-warning">30% of Interceptions</span>
-                </div>
-                <div className="w-full bg-soc-bg h-2 rounded overflow-hidden">
-                  <div className="bg-soc-warning h-full rounded" style={{ width: '30%' }}></div>
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <div className="flex justify-between font-bold">
-                  <span>3. Credential Stuffing Attacks</span>
-                  <span className="text-soc-primary">25% of Interceptions</span>
-                </div>
-                <div className="w-full bg-soc-bg h-2 rounded overflow-hidden">
-                  <div className="bg-soc-primary h-full rounded" style={{ width: '25%' }}></div>
-                </div>
-              </div>
-            </div>
+            <div className="space-y-3 text-xs">{!analyticsData?.threat_vectors?.length && <p className="text-soc-muted">Waiting for backend threat telemetry.</p>}{analyticsData?.threat_vectors?.slice(0, 5).map((vector, index) => <div key={vector.type} className="space-y-1"><div className="flex justify-between font-bold"><span>{index + 1}. {vector.type}</span><span className="text-soc-primary">{vector.percent?.toFixed(1) ?? '—'}%</span></div><div className="h-2 w-full overflow-hidden rounded bg-soc-bg"><div className="h-full rounded bg-soc-primary" style={{ width: `${vector.percent || 0}%` }} /></div></div>)}</div>
           </div>
 
           {/* Post-Quantum TLS Posture Card (5/12) */}

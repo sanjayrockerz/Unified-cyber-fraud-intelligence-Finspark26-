@@ -17,7 +17,7 @@ class IdentitySettings:
 
     @property
     def supabase_enabled(self) -> bool:
-        return bool(self.supabase_url and self.supabase_service_role_key)
+        return bool(self.supabase_url and (self.supabase_service_role_key or self.supabase_anon_key))
 
 
 identity_settings = IdentitySettings()

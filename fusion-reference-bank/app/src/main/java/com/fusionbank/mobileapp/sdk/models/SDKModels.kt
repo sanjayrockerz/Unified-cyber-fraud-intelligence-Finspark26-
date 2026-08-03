@@ -332,3 +332,86 @@ enum class FusionConnectionState {
     SYNCING,
     DISCONNECTED
 }
+
+data class TypingRhythmSample(
+    @SerializedName("sample_count") val sampleCount: Int,
+    @SerializedName("mean_inter_key_interval_ms") val meanInterKeyIntervalMs: Long,
+    @SerializedName("std_dev_inter_key_interval_ms") val stdDevInterKeyIntervalMs: Double,
+    @SerializedName("mean_dwell_time_ms") val meanDwellTimeMs: Long,
+    @SerializedName("std_dev_dwell_time_ms") val stdDevDwellTimeMs: Double,
+    @SerializedName("min_inter_key_ms") val minInterKeyMs: Long,
+    @SerializedName("max_inter_key_ms") val maxInterKeyMs: Long,
+    @SerializedName("is_calibrating") val isCalibrating: Boolean
+)
+
+data class TouchPressureSample(
+    @SerializedName("sample_count") val sampleCount: Int,
+    @SerializedName("mean_pressure") val meanPressure: Float,
+    @SerializedName("std_dev_pressure") val stdDevPressure: Float,
+    @SerializedName("mean_touch_size") val meanTouchSize: Float,
+    @SerializedName("min_pressure") val minPressure: Float,
+    @SerializedName("max_pressure") val maxPressure: Float,
+    @SerializedName("is_calibrating") val isCalibrating: Boolean
+)
+
+data class MotionSignatureSample(
+    @SerializedName("sample_count") val sampleCount: Int,
+    @SerializedName("accel_mean_x") val accelMeanX: Float,
+    @SerializedName("accel_mean_y") val accelMeanY: Float,
+    @SerializedName("accel_mean_z") val accelMeanZ: Float,
+    @SerializedName("accel_std_x") val accelStdX: Float,
+    @SerializedName("accel_std_y") val accelStdY: Float,
+    @SerializedName("accel_std_z") val accelStdZ: Float,
+    @SerializedName("gyro_mean_x") val gyroMeanX: Float,
+    @SerializedName("gyro_mean_y") val gyroMeanY: Float,
+    @SerializedName("gyro_mean_z") val gyroMeanZ: Float,
+    @SerializedName("is_calibrating") val isCalibrating: Boolean
+)
+
+data class BehavioralBiometricsRequest(
+    @SerializedName("session_id") val sessionId: String,
+    @SerializedName("device_id") val deviceId: String,
+    @SerializedName("typing_rhythm") val typingRhythm: TypingRhythmSample?,
+    @SerializedName("touch_pressure") val touchPressure: TouchPressureSample?,
+    @SerializedName("motion_signature") val motionSignature: MotionSignatureSample?,
+    @SerializedName("captured_at") val capturedAt: Long,
+    @SerializedName("request_id") val requestId: String,
+    @SerializedName("correlation_id") val correlationId: String
+)
+
+data class BehaviorAckResponse(
+    @SerializedName("status") val status: String,
+    @SerializedName("message") val message: String,
+    @SerializedName("behaviour_trust") val behaviourTrust: Float? = null,
+    @SerializedName("backend_ack") val backendAck: Boolean = true
+)
+
+data class SDKTelemetryRequest(
+    @SerializedName("session_id") val sessionId: String,
+    @SerializedName("device_id") val deviceId: String,
+    @SerializedName("cpu_usage") val cpuUsage: Float,
+    @SerializedName("memory_usage") val memoryUsage: Float,
+    @SerializedName("battery_level") val batteryLevel: Float,
+    @SerializedName("foreground_app") val foregroundApp: String,
+    @SerializedName("network_type") val networkType: String,
+    @SerializedName("vpn_active") val vpnActive: Boolean,
+    @SerializedName("proxy_active") val proxyActive: Boolean,
+    @SerializedName("location") val location: String,
+    
+    // RASP Sensors
+    @SerializedName("root_detected") val rootDetected: Boolean,
+    @SerializedName("debugger_attached") val debuggerAttached: Boolean,
+    @SerializedName("frida_detected") val fridaDetected: Boolean,
+    @SerializedName("magisk_detected") val magiskDetected: Boolean,
+    @SerializedName("emulator_detected") val emulatorDetected: Boolean,
+    @SerializedName("accessibility_active") val accessibilityActive: Boolean,
+    @SerializedName("overlay_active") val overlayActive: Boolean,
+    @SerializedName("mitm_active") val mitmActive: Boolean,
+    @SerializedName("ssl_pinning_ok") val sslPinningOk: Boolean,
+    @SerializedName("app_signature_ok") val appSignatureOk: Boolean,
+    @SerializedName("apk_tampered") val apkTampered: Boolean,
+    @SerializedName("screen_capture_active") val screenCaptureActive: Boolean,
+    @SerializedName("developer_options_active") val developerOptionsActive: Boolean,
+    @SerializedName("captured_at") val capturedAt: Long
+)
+

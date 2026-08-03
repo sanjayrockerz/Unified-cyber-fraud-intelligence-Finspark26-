@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, lazy } from 'react';
-import { authenticatedWebSocketUrl } from '../platformAuth';
+import { authenticatedWebSocketUrl, authenticatedWebSocketProtocols } from '../platformAuth';
 import { useNavigate } from 'react-router-dom';
 import {
   Bot, BookOpen, ExternalLink, Fingerprint, Landmark, Radio, RefreshCw, Search, ShieldAlert,
@@ -43,11 +43,12 @@ export default function OperationsCenterPage() {
 
   const [apiLatency, setApiLatency] = useState(null);
   const [wsConnected, setWsConnected] = useState(false);
-  const [blockedValue, setBlockedValue] = useState(0);
+  const [blockedValue, setBlockedValue] = useState(null);
 
   const wsRef = useRef(null);
 
   useEffect(() => {
+    fetch(`${API_BASE}/analytics/summary?period=24h`).then((response) => response.json()).then((body) => setBlockedValue((body.data || body).totals?.blocked_amount ?? null)).catch(() => setBlockedValue(null));
     connectWebSocket();
     return () => {
       if (wsRef.current) wsRef.current.close();
@@ -56,7 +57,7 @@ export default function OperationsCenterPage() {
 
   const connectWebSocket = () => {
     if (wsRef.current) wsRef.current.close();
-    wsRef.current = new WebSocket(authenticatedWebSocketUrl(`${WS_BASE}/ws/stream`));
+    wsRef.current = new WebSocket(authenticatedWebSocketUrl(`${WS_BASE}/ws/stream`), authenticatedWebSocketProtocols());
 
     wsRef.current.onopen = () => setWsConnected(true);
     wsRef.current.onclose = () => setWsConnected(false);
@@ -103,7 +104,7 @@ export default function OperationsCenterPage() {
           });
 
           if (verdict === 'BLOCK') {
-            setBlockedValue((prev) => prev + Number(data.amount || 0));
+            fetch(`${API_BASE}/analytics/summary?period=24h`).then((response) => response.json()).then((body) => setBlockedValue((body.data || body).totals?.blocked_amount ?? null)).catch(() => setBlockedValue(null));
             // A live block takes focus, but the reason is stated in the UI so
             // nobody has to guess why the view moved.
             setSelection({ id: decision.id, source: 'auto' });
@@ -174,7 +175,7 @@ export default function OperationsCenterPage() {
           <div className="border-l border-soc-border pl-5 text-right">
             <span className="block text-[10px] uppercase text-soc-dim">Blocked this session</span>
             <span className="font-bold tabular-nums text-soc-success">
-              {formatAmount(blockedValue)}
+              {blockedValue == null ? 'Waiting for telemetry' : formatAmount(blockedValue)}
             </span>
           </div>
 

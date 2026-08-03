@@ -22,7 +22,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.fusionbank.mobileapp.sdk.Fusion
-import com.fusionbank.mobileapp.sdk.SecureStorage
+import com.fusionbank.mobileapp.sdk.security.SecureStorage
 import com.fusionbank.mobileapp.ui.theme.*
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions

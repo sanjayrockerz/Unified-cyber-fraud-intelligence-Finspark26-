@@ -1,4 +1,5 @@
 import random
+import datetime
 from api.synthetic_universe.bank_model import default_bank, get_virtual_bank
 from api.synthetic_universe.customer_generator import generate_customers_batch
 from api.synthetic_universe.device_location_generator import generate_device_profile, generate_location_telemetry
@@ -125,11 +126,15 @@ def generate_bank_universe(
         loans.extend(c.get("loans", []))
         
     # 2. Devices & Geolocation
-    devices = [generate_device_profile(c["customer_id"], is_compromised=(c["customer_id"]=="usr_abc")) for c in customers]
-    locations = [generate_location_telemetry("Moscow" if c["customer_id"]=="usr_abc" else c["city"], baseline_city=c["city"]) for c in customers]
+    devices = [generate_device_profile(c["customer_id"], is_compromised=False) for c in customers]
+    locations = [generate_location_telemetry(c["city"], baseline_city=c["city"]) for c in customers]
     
     # 3. Behavioral Transactions Generation
     transactions = generate_transaction_universe(customers, total_txns=num_txns, anomaly_pct=0.03, seed=seed)
+    base_time = datetime.datetime.now(datetime.timezone.utc)
+    for index, transaction in enumerate(transactions):
+        transaction.setdefault("session_id", f"SYN_SESSION_{seed}_{index:06d}")
+        transaction.setdefault("timestamp", (base_time + datetime.timedelta(seconds=index)).isoformat())
     
     # 4. Cyber SIEM Events
     cyber_events = generate_cyber_telemetry_batch(customers, count=max(10, int(num_customers * 0.2)))
@@ -148,6 +153,9 @@ def generate_bank_universe(
         "km_from_baseline": 4500,
         "description": "Impossible Travel Login from Moscow, RU 40s prior to ₹7.5L transfer"
     })
+
+    # Never expose scripted/demo telemetry; only generated records are returned.
+    cyber_events = [event for event in cyber_events if event.get("event_id") != "EVT-CYBER-8819"]
 
     return {
         "bank_metadata": bank_meta,

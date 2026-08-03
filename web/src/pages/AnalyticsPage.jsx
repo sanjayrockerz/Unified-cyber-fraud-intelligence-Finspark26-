@@ -30,12 +30,19 @@ export default function AnalyticsPage() {
   const [evalError, setEvalError] = useState(false);
   const [sweepData, setSweepData] = useState(null);
   const [sweepError, setSweepError] = useState(false);
+  const [summaryData, setSummaryData] = useState(null);
+  const [summaryError, setSummaryError] = useState(false);
 
   // Sweep controls
   const [fnCost, setFnCost] = useState(250000);
   const [fpCost, setFpCost] = useState(400);
   const [thresholdInt, setThresholdInt] = useState(50);
   const [selectedConfig, setSelectedConfig] = useState('full_fusion');
+
+  useEffect(() => {
+    const apiBase = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8000' : '');
+    fetch(`${apiBase}/analytics/summary?period=${timeRange}`).then((r) => r.json()).then((body) => setSummaryData(body.data || body)).catch(() => setSummaryError(true));
+  }, [timeRange]);
 
   useEffect(() => {
     fetch(`${import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8000' : '')}/metrics/evaluate`)
@@ -118,49 +125,24 @@ export default function AnalyticsPage() {
   }
 
   const kpis = [
-    { title: 'Intercepted Attack Invocations', val: '14,892 Attacks', sub: '100% In-Flight Block Rate', color: 'text-soc-success', icon: ShieldAlert },
+    { title: 'Observed Transactions', val: summaryData ? summaryData.totals.transactions : 'Waiting', sub: summaryData ? `${summaryData.totals.blocked} blocked decisions` : 'Backend analytics unavailable', color: 'text-soc-success', icon: ShieldAlert },
     {
       title: 'Fusion Model PR-AUC Uplift',
       val: headlineUplift,
       sub: evalData ? `PR-AUC (${formatF(evalData.full_fusion.pr_auc)} vs ${formatF(evalData.transaction_only.pr_auc)})` : (evalError ? 'Metrics Unavailable' : 'Loading...'),
       color: headlineIsPositive ? 'text-soc-primary' : 'text-soc-warning', icon: TrendingUp
     },
-    { title: 'Avg Threat Correlation Latency', val: '12 ms', sub: 'LightGBM + IsoForest + GraphSAGE', color: 'text-soc-warning', icon: Activity },
-    { title: 'CERT-In Mandate Compliance', val: '100%', sub: 'Avg Incident Report: 14m < 6h Limit', color: 'text-soc-success', icon: FileCheck2 }
+    { title: 'Blocked Amount', val: summaryData ? `INR ${summaryData.totals.blocked_amount.toLocaleString('en-IN')}` : 'Waiting', sub: 'Tenant-scoped backend total', color: 'text-soc-warning', icon: Activity },
+    { title: 'Observed Threats', val: summaryData ? summaryData.totals.threats : 'Waiting', sub: summaryError ? 'Analytics unavailable' : 'Threat engine telemetry', color: 'text-soc-success', icon: FileCheck2 }
   ];
 
-  const threatVectors = [
-    { type: 'Impossible Travel Login', pct: 42, count: 6254, severity: 'CRITICAL', color: 'bg-soc-danger' },
-    { type: 'Credential Stuffing Botnet', pct: 28, count: 4170, severity: 'CRITICAL', color: 'bg-soc-danger' },
-    { type: 'Mule Ring Layering Network', pct: 18, count: 2680, severity: 'HIGH', color: 'bg-soc-warning' },
-    { type: 'SIM Swap Interception', pct: 8, count: 1191, severity: 'HIGH', color: 'bg-soc-warning' },
-    { type: 'MFA Cookie Reuse', pct: 4, count: 597, severity: 'MEDIUM', color: 'bg-soc-primary' }
-  ];
+  const threatVectors = (summaryData?.threat_vectors || []).map((item) => ({ ...item, pct: item.percent, severity: 'OBSERVED', color: 'bg-soc-primary' }));
 
-  const hourlyVelocities = [
-    { hour: '00:00', attacks: 120 }, { hour: '02:00', attacks: 840 },
-    { hour: '04:00', attacks: 1420 }, { hour: '06:00', attacks: 650 },
-    { hour: '08:00', attacks: 320 }, { hour: '10:00', attacks: 980 },
-    { hour: '12:00', attacks: 450 }, { hour: '14:00', attacks: 290 },
-    { hour: '16:00', attacks: 380 }, { hour: '18:00', attacks: 710 },
-    { hour: '20:00', attacks: 1100 }, { hour: '22:00', attacks: 590 }
-  ];
+  const hourlyVelocities = (summaryData?.hourly || []).map((item) => ({ hour: item.hour, attacks: item.transactions }));
 
-  const topOriginGeos = [
-    { country: 'Russia (RU)', share: '38.2%', count: 5689, risk: 'CRITICAL' },
-    { country: 'Romania (RO)', share: '24.1%', count: 3589, risk: 'HIGH' },
-    { country: 'Vietnam (VN)', share: '18.4%', count: 2740, risk: 'HIGH' },
-    { country: 'Netherlands (NL)', share: '12.3%', count: 1831, risk: 'MEDIUM' },
-    { country: 'Other International', share: '7.0%', count: 1043, risk: 'LOW' }
-  ];
+  const topOriginGeos = [];
 
-  const shapDrivers = [
-    { feature: 'cyber_compromise_in_window', impact: '+2.10', desc: 'Preceding impossible travel login event' },
-    { feature: 'log_amount', impact: '+1.24', desc: 'Transaction size relative to account balance' },
-    { feature: 'dest_mule_cluster_id', impact: '+0.85', desc: 'Beneficiary linked to known mule ring' },
-    { feature: 'orig_balance_drain_ratio', impact: '+0.62', desc: '100% originator account balance drain' },
-    { feature: 'impossible_travel_km', impact: '+0.48', desc: 'Distance anomaly from baseline location' }
-  ];
+  const shapDrivers = [];
 
   const handleExportAnalyticsReport = () => {
     alert("Exporting CERT-In Cyber Security Incident Analytics Report (PDF format)...");
@@ -446,7 +428,7 @@ export default function AnalyticsPage() {
               <Radio className="w-4 h-4 text-soc-danger animate-pulse" />
               <span>SIEM Threat Vector Distribution</span>
             </h3>
-            <span className="text-[10px] text-soc-muted">14,892 Events</span>
+            <span className="text-[10px] text-soc-muted">{summaryData ? `${summaryData.totals.transactions} Events` : 'Waiting for telemetry'}</span>
           </div>
 
           <div className="space-y-3">

@@ -90,16 +90,16 @@ class DynamicEventStreamEngine:
             "id": f"APK_EVT_{int(time.time()*1000)}_{random.randint(100, 999)}",
             "timestamp": now_str,
             "event_type": apk_payload.get("event_type", "Mobile APK Activity"),
-            "customer_id": apk_payload.get("user_id", apk_payload.get("customer_id", "CUST_APK_USER")),
-            "customer_name": apk_payload.get("customer_name", "Live Mobile Customer"),
-            "device_uuid": apk_payload.get("device_id", apk_payload.get("device_uuid", "DEV_APK_MOBILE")),
+            "customer_id": apk_payload.get("user_id", apk_payload.get("customer_id", "")),
+            "customer_name": apk_payload.get("customer_name", ""),
+            "device_uuid": apk_payload.get("device_id", apk_payload.get("device_uuid", "")),
             "amount": float(apk_payload.get("amount", 0.0)),
-            "risk_score": int(apk_payload.get("risk_score", random.randint(15, 65))),
-            "confidence": float(apk_payload.get("confidence", 0.91)),
-            "status": apk_payload.get("status", "APPROVED"),
+            "risk_score": int(apk_payload.get("risk_score", 0)),
+            "confidence": float(apk_payload.get("confidence", 0.0)),
+            "status": apk_payload.get("status", "OBSERVED"),
             "vpn_detected": bool(apk_payload.get("vpn_detected", False)),
             "unknown_device": bool(apk_payload.get("unknown_device", False)),
-            "ip_address": apk_payload.get("ip_address", "192.168.1.100"),
+            "ip_address": apk_payload.get("ip_address", ""),
             "source": "LIVE_APK"
         }
         self.unified_timeline.insert(0, event)
@@ -112,7 +112,10 @@ class DynamicEventStreamEngine:
         if len(self.unified_timeline) > self.max_timeline_size:
             self.unified_timeline.pop()
 
-    def get_unified_timeline(self, limit: int = 50) -> List[Dict[str, Any]]:
-        return self.unified_timeline[:limit]
+    def get_unified_timeline(self, limit: int = 50, tenant_id: str | None = None) -> List[Dict[str, Any]]:
+        events = self.unified_timeline
+        if tenant_id:
+            events = [event for event in events if event.get("tenant_id") == tenant_id]
+        return sorted(events, key=lambda event: str(event.get("timestamp", "")), reverse=True)[:max(1, min(limit, 500))]
 
 dynamic_stream_engine = DynamicEventStreamEngine()

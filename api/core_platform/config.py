@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import os
-import secrets
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -18,24 +17,7 @@ def _clients(mode: str) -> dict[str, dict[str, Any]]:
         if not isinstance(parsed, dict):
             raise RuntimeError("FUSION_AUTH_CLIENTS_JSON must contain a JSON object")
         return parsed
-    if mode == "production":
-        return {}
-    return {
-        "fusion-dashboard-dev": {
-            "secret": "fusion-dashboard-local-only",
-            "roles": ["analyst", "operator", "developer"],
-        },
-        "fusion-android-dev": {
-            "secret": "fusion-android-local-only",
-            "roles": ["sdk"],
-            "tenant_id": "TENANT_FUSB_001",
-            "app_id": "com.fuzenbank.mobileapp",
-        },
-        "fusion-test": {
-            "secret": "fusion-test-local-only",
-            "roles": ["admin", "analyst", "operator", "developer", "sdk"],
-        },
-    }
+    return {}
 
 
 @dataclass(frozen=True)
@@ -47,7 +29,7 @@ class PlatformSettings:
     jwt_issuer: str = field(default_factory=lambda: os.getenv("JWT_ISSUER", "fusion-risk-os"))
     jwt_audience: str = field(default_factory=lambda: os.getenv("JWT_AUDIENCE", "fusion-platform"))
     jwt_ttl_seconds: int = field(default_factory=lambda: int(os.getenv("JWT_TTL_SECONDS", "900")))
-    jwt_secret: str = field(default_factory=lambda: os.getenv("JWT_SECRET") or secrets.token_urlsafe(48))
+    jwt_secret: str = field(default_factory=lambda: os.getenv("JWT_SECRET_KEY", ""))
     cors_origins: tuple[str, ...] = field(
         default_factory=lambda: _csv(
             "CORS_ORIGINS",
@@ -68,13 +50,39 @@ class PlatformSettings:
             raise RuntimeError("FUSION_SECURITY_MODE must be development or production")
         if self.security_mode == "production":
             if len(self.jwt_secret.encode("utf-8")) < 32:
-                raise RuntimeError("JWT_SECRET must contain at least 32 bytes in production")
+                raise RuntimeError("JWT_SECRET_KEY must contain at least 32 bytes in production")
             if not self.clients:
                 raise RuntimeError("FUSION_AUTH_CLIENTS_JSON is required in production")
             if not self.cors_origins:
                 raise RuntimeError("CORS_ORIGINS is required in production")
             if any(origin == "*" for origin in self.cors_origins):
                 raise RuntimeError("Wildcard CORS is forbidden in production")
+
+
+def validate_environment() -> None:
+    """Fail closed when security-critical runtime configuration is absent."""
+    required = ("JWT_SECRET_KEY", "DATABASE_URL", "FUSION_BANK_USERS_JSON")
+    missing = [name for name in required if not os.getenv(name, "").strip()]
+    jwt_secret = os.getenv("JWT_SECRET_KEY", "")
+    if jwt_secret == "change_me_in_production":
+        missing.append("JWT_SECRET_KEY must not use the default value")
+    if jwt_secret and len(jwt_secret.encode("utf-8")) < 32:
+        missing.append("JWT_SECRET_KEY must contain at least 32 bytes")
+    try:
+        users = json.loads(os.getenv("FUSION_BANK_USERS_JSON", "{}"))
+        if not isinstance(users, dict) or not users:
+            missing.append("FUSION_BANK_USERS_JSON must contain at least one user")
+        elif any(
+            not isinstance(value, dict)
+            or not str(value.get("password") or value.get("password_hash") or "").strip()
+            or value.get("password") == "PLACEHOLDER"
+            for value in users.values()
+        ):
+            missing.append("FUSION_BANK_USERS_JSON contains a blank or placeholder password")
+    except json.JSONDecodeError:
+        missing.append("FUSION_BANK_USERS_JSON must be valid JSON")
+    if missing:
+        raise RuntimeError("Invalid security environment: " + "; ".join(missing))
 
 
 platform_settings = PlatformSettings()

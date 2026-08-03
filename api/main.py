@@ -7,11 +7,13 @@ import io
 import datetime
 import hmac
 import secrets
+import logging
+import uuid
 from pathlib import Path
 from fastapi import FastAPI, HTTPException, Query, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, FileResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 # PDF Generation
 from reportlab.lib.pagesizes import letter
@@ -49,7 +51,17 @@ from api.core_platform import (
 )
 from api.core_platform.observability import RequestContextMiddleware
 from api.core_platform.security import authenticate_websocket
-from api.core_platform.banking_auth import router as banking_auth_router
+from api.core_platform.config import validate_environment
+from api.core_platform.dependencies import get_current_tenant, check_resource_ownership
+from api.core_platform.banking_auth import (
+    router as banking_auth_router,
+    BankingAuthService,
+    LoginRequest,
+    RefreshRequest,
+    RegisterRequest,
+    LogoutRequest,
+    banking_auth,
+)
 from api.core_platform.events import platform_event_broker
 from api.core_platform.graph_runtime import graph_runtime
 from api.core_platform.model_runtime import model_runtime
@@ -82,6 +94,29 @@ app.include_router(gateway_router)
 app.include_router(banking_auth_router)
 app.include_router(identity_router)
 app.include_router(copilot_router)
+_active_websocket_sessions: set[str] = set()
+
+@app.post("/auth/login")
+async def canonical_login(payload: LoginRequest):
+    pair, profile = banking_auth.login(payload)
+    return {**pair.to_dict(), "profile": profile}
+
+
+@app.post("/auth/refresh")
+async def canonical_refresh(payload: RefreshRequest):
+    pair, profile = banking_auth.refresh(payload)
+    return {**pair.to_dict(), "profile": profile}
+
+
+@app.post("/auth/register", status_code=201)
+async def canonical_register(payload: RegisterRequest):
+    return banking_auth.register(payload)
+
+
+@app.post("/auth/logout", status_code=204)
+async def canonical_logout(payload: LogoutRequest):
+    banking_auth.logout(payload.refresh_token)
+    return None
 
 
 class PairingRequest(BaseModel):
@@ -415,21 +450,21 @@ def _case_from_transaction(transaction: dict, index: int, evaluation: dict | Non
     }
 
 
-async def _persist_universe_collections(universe: dict) -> None:
+async def _persist_universe_collections(universe: dict, tenant_id: str | None = None) -> None:
     """Make explicitly generated synthetic data available to list endpoints."""
     for customer in universe.get("customers", []):
-        store.put("customers", customer["customer_id"], customer)
+        store.put("customers", customer["customer_id"], customer, tenant_id=tenant_id)
 
     # Devices are persisted so shared-device linkage can be derived from stored
     # records rather than estimated. Transactions carry no device_id of their
     # own, so the customer's primary_device_id is the only real join available.
     for device in universe.get("devices", []):
         if device.get("device_id"):
-            store.put("devices", device["device_id"], device)
+            store.put("devices", device["device_id"], device, tenant_id=tenant_id)
 
     transactions = universe.get("transactions", [])
     for transaction in transactions:
-        store.put("transactions", transaction["txn_id"], transaction)
+        store.put("transactions", transaction["txn_id"], transaction, tenant_id=tenant_id)
 
     case_index = 0
     for transaction in transactions:
@@ -442,7 +477,7 @@ async def _persist_universe_collections(universe: dict) -> None:
             except Exception:
                 evaluation = None
             case = _case_from_transaction(transaction, case_index, evaluation)
-            store.put("cases", case["case_id"], case)
+            store.put("cases", case["case_id"], case, tenant_id=tenant_id)
 
 
 def _paginated_collection(
@@ -453,6 +488,7 @@ def _paginated_collection(
     q: str,
     status: str | None = None,
     severity: str | None = None,
+    tenant_id: str | None = None,
 ) -> dict:
     sort_desc = sort.startswith("-")
     sort_key = sort.lstrip("-") or None
@@ -472,6 +508,7 @@ def _paginated_collection(
         sort_key=sort_key,
         sort_desc=sort_desc,
         filter_fn=matches,
+        tenant_id=tenant_id,
     )
     return {
         "items": items,
@@ -491,6 +528,13 @@ class UniverseGenerateRequest(BaseModel):
     seed: int = 42
     bank_code: str = "FUSB"
 
+
+class SyntheticSimulationRequest(BaseModel):
+    sessions: int = Field(default=1, ge=1, le=10000)
+    seed: int | None = None
+    bank_code: str = "FUSB"
+    replay: bool = False
+
 class ScenarioStartRequest(BaseModel):
     scenario_id: str = "account_takeover"
     speed_multiplier: float = 1.0
@@ -501,7 +545,7 @@ async def create_virtual_bank(req: CreateBankRequest):
     return {"message": f"Virtual Bank {req.bank_name} initialized.", "bank_metadata": bank.to_dict()}
 
 @app.post("/synthetic/universe/generate")
-async def generate_synthetic_bank_universe(req: UniverseGenerateRequest):
+async def generate_synthetic_bank_universe(req: UniverseGenerateRequest, request: Request):
     global cached_universe
     universe = generate_bank_universe(
         num_customers=req.num_customers,
@@ -512,8 +556,70 @@ async def generate_synthetic_bank_universe(req: UniverseGenerateRequest):
     graph_topology = generate_graph_topology(universe)
     universe["graph_topology"] = graph_topology
     cached_universe = universe
-    await _persist_universe_collections(universe)
+    await _persist_universe_collections(universe, get_current_tenant(request))
     return universe
+
+
+@app.post("/synthetic/simulate")
+async def simulate_synthetic_sessions(req: SyntheticSimulationRequest, request: Request):
+    tenant_id = get_current_tenant(request)
+    seed = req.seed if req.seed is not None else secrets.randbelow(2**31)
+    universe = await asyncio.to_thread(
+        generate_bank_universe,
+        num_customers=max(req.sessions, 1),
+        num_txns=max(req.sessions, 1),
+        seed=seed,
+        bank_code=req.bank_code,
+    )
+    await _persist_universe_collections(universe, tenant_id)
+    return {
+        "run_id": f"SIM-{uuid.uuid4().hex[:12]}",
+        "session_count": req.sessions,
+        "seed": seed,
+        "replay": req.replay,
+        "stats": universe.get("stats", {}),
+        "sessions": [item.get("session_id") for item in universe.get("sessions", []) if item.get("session_id")],
+    }
+
+
+@app.get("/analytics/summary")
+async def analytics_summary(
+    period: str = Query("24h", pattern="^(daily|weekly|monthly|custom|1h|24h|7d|30d)$"),
+    start: str | None = None,
+    end: str | None = None,
+    request: Request = None,
+):
+    tenant_id = get_current_tenant(request)
+    transactions = store.list_all("transactions", tenant_id=tenant_id)
+    threats = cyber_threat_engine.get_all_threats(tenant_id=tenant_id)
+    decisions = [item for item in transactions if item.get("decision") or item.get("action")]
+    blocked = [item for item in decisions if str(item.get("decision") or item.get("action", "")).upper() in {"BLOCK", "BLOCKED"}]
+    challenged = [item for item in decisions if str(item.get("decision") or item.get("action", "")).upper() in {"CHALLENGE", "CHALLENGED"}]
+    vectors: dict[str, int] = {}
+    hourly: dict[str, int] = {}
+    for item in transactions:
+        stamp = str(item.get("timestamp") or item.get("created_at") or "")
+        hour = stamp[11:13] if len(stamp) >= 13 else "unknown"
+        hourly[hour] = hourly.get(hour, 0) + 1
+    for item in threats:
+        key = str(item.get("threat_category") or item.get("event_type") or "unknown")
+        vectors[key] = vectors.get(key, 0) + 1
+    total_threats = len(threats)
+    return {
+        "period": period,
+        "start": start,
+        "end": end,
+        "generated_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        "totals": {
+            "transactions": len(transactions), "decisions": len(decisions), "blocked": len(blocked),
+            "challenged": len(challenged), "threats": len(threats),
+            "amount": sum(float(item.get("amount") or 0) for item in transactions),
+            "blocked_amount": sum(float(item.get("amount") or 0) for item in blocked),
+        },
+        "hourly": [{"hour": key, "transactions": value} for key, value in sorted(hourly.items())],
+        "threat_vectors": [{"type": key, "count": value, "percent": round(value / total_threats * 100, 3) if total_threats else None} for key, value in sorted(vectors.items(), key=lambda pair: pair[1], reverse=True)],
+        "source": "backend_sqlite_and_threat_engine",
+    }
 
 
 @app.get("/transactions")
@@ -522,8 +628,9 @@ async def list_transactions(
     page_size: int = Query(50, ge=1, le=100),
     sort: str = "-timestamp",
     q: str = "",
+    request: Request = None,
 ):
-    return _paginated_collection("transactions", page, page_size, sort, q)
+    return _paginated_collection("transactions", page, page_size, sort, q, tenant_id=get_current_tenant(request) if request is not None else None)
 
 
 @app.get("/cases")
@@ -534,8 +641,9 @@ async def list_cases(
     q: str = "",
     status: str | None = None,
     severity: str | None = None,
+    request: Request = None,
 ):
-    return _paginated_collection("cases", page, page_size, sort, q, status, severity)
+    return _paginated_collection("cases", page, page_size, sort, q, status, severity, tenant_id=get_current_tenant(request) if request is not None else None)
 
 
 # --- CASE-SCOPED INVESTIGATION ENDPOINTS ---------------------------------------
@@ -851,8 +959,9 @@ async def list_customers(
     page_size: int = Query(50, ge=1, le=100),
     sort: str = "customer_id",
     q: str = "",
+    request: Request = None,
 ):
-    return _paginated_collection("customers", page, page_size, sort, q)
+    return _paginated_collection("customers", page, page_size, sort, q, tenant_id=get_current_tenant(request) if request is not None else None)
 
 
 class PolicySettings(BaseModel):
@@ -879,6 +988,12 @@ async def put_settings_policy(policy: PolicySettings):
 
 @app.on_event("startup")
 async def seed_demo_scale_data_when_requested():
+    try:
+        validate_environment()
+        store.init_db_indexes()
+    except RuntimeError as exc:
+        logging.critical("Environment validation failed: %s", exc)
+        raise SystemExit(1) from exc
     if os.environ.get("SEED_DEMO_SCALE") != "1":
         return
     universe = generate_bank_universe(num_customers=500, num_txns=5000, seed=42)
@@ -1073,46 +1188,17 @@ async def generate_cert_in_report(req: CertInReportRequest):
     })
 
 
+@app.get("/reports")
+async def list_reports(request: Request, limit: int = Query(50, ge=1, le=100)):
+    tenant_id = get_current_tenant(request)
+    reports = store.list_all("reports", tenant_id=tenant_id)
+    reports.sort(key=lambda item: str(item.get("created_at") or item.get("generated_at") or ""), reverse=True)
+    return {"items": reports[:limit], "total": len(reports), "source": "backend_sqlite"}
+
+
 def get_demo_events():
-    """
-    Returns the exact scripted sequence for the 90-second demo.
-    """
-    return [
-        {
-            "msg_type": "status",
-            "message": "T-0:00 - System calm, dashboard green.",
-            "delay": 2
-        },
-        {
-            "msg_type": "cyber_event",
-            "event_type": "impossible_travel_login",
-            "timestamp": "2026-07-16 10:00:00",
-            "user_id": "usr_abc",
-            "device_id": "dev_9999",
-            "ip": "185.15.2.22",
-            "severity": "critical",
-            "km_from_baseline": 4500,
-            "delay": 4
-        },
-        {
-            "msg_type": "status",
-            "message": "T+0:40 - Monitoring user activity post-compromise...",
-            "delay": 3
-        },
-        {
-            "msg_type": "transaction",
-            "txn_id": "txn_demo_999",
-            "timestamp": "2026-07-16 10:00:40",
-            "user_id": "usr_abc",
-            "nameOrig": "ACC_ABC_123",
-            "amount": 750000.0,
-            "nameDest": "ACC_MULE_NEW",
-            "dest_mule_cluster_id": "cluster_alpha",
-            "cyber_compromise_in_window": True,
-            "type": "TRANSFER",
-            "delay": 5
-        }
-    ]
+    """Legacy compatibility hook; scripted incidents are disabled."""
+    return []
 
 # --- DIGITAL TWIN INTELLIGENCE ENGINE ENDPOINTS (PART 13 APIs) ---
 class DigitalTwinUpdateRequest(BaseModel):
@@ -1176,19 +1262,19 @@ async def get_digital_twin_snapshot(user_id: str):
 
 # --- PRE-TRANSACTION SESSION INTELLIGENCE ENDPOINTS ---
 class SessionAnalyseRequest(BaseModel):
-    session_id: str = "SESS_9921_CRITICAL"
-    user_id: str = "usr_abc"
-    device_id: str = "dev_9999"
-    ip: str = "185.15.2.22"
-    cyber_compromise_in_window: bool = True
-    dest_mule_cluster_id: str = "cluster_alpha"
+    session_id: str
+    user_id: str
+    device_id: str = ""
+    ip: str = ""
+    cyber_compromise_in_window: bool = False
+    dest_mule_cluster_id: str | None = None
 
 class SessionUpdateRequest(BaseModel):
-    session_id: str = "SESS_9921_CRITICAL"
+    session_id: str
     event_data: dict = {}
 
 class SessionRecalculateRequest(BaseModel):
-    session_id: str = "SESS_9921_CRITICAL"
+    session_id: str
 
 
 class TrustRecalculateRequest(BaseModel):
@@ -1212,7 +1298,9 @@ async def update_session_trust(req: SessionUpdateRequest):
 @app.post("/session/recalculate")
 async def recalculate_session_trust(req: SessionRecalculateRequest):
     passport = session_engine.get_passport(req.session_id)
-    updated = session_engine.analyse_session({"session_id": req.session_id, "user_id": passport.get("user_id", "usr_abc")})
+    if not passport or not passport.get("user_id"):
+        raise HTTPException(status_code=404, detail="Session identity is unavailable")
+    updated = session_engine.analyse_session({"session_id": req.session_id, "user_id": passport["user_id"]})
     return updated
 
 
@@ -1230,35 +1318,6 @@ async def list_live_sessions(
             lifecycle = SessionLifecycle(state.upper())
         except ValueError as exc:
             raise HTTPException(status_code=422, detail=f"Unknown session state: {state}") from exc
-    if not session_intelligence.repository.list_sessions(include_closed=True):
-        session_intelligence.process_event({
-            "session_id": "SESS_9921_CRITICAL",
-            "user_id": "usr_demo_001",
-            "event_type": "SESSION_STARTED",
-            "device_id": "dev_9999",
-            "latitude": 28.6139,
-            "longitude": 77.2090,
-            "ip": "185.15.2.22"
-        })
-        session_intelligence.process_event({
-            "session_id": "SESS_FUSB_1001",
-            "user_id": "usr_000001",
-            "event_type": "SESSION_STARTED",
-            "device_id": "dev_android_991",
-            "latitude": 19.0760,
-            "longitude": 72.8777,
-            "ip": "192.168.1.10"
-        })
-        session_intelligence.process_event({
-            "session_id": "SESS_FUSB_1002",
-            "user_id": "usr_000002",
-            "event_type": "SESSION_STARTED",
-            "device_id": "dev_android_992",
-            "latitude": 12.9716,
-            "longitude": 77.5946,
-            "ip": "192.168.1.12"
-        })
-
     sessions = session_intelligence.repository.list_sessions(
         state=lifecycle,
         search=search,
@@ -1269,14 +1328,8 @@ async def list_live_sessions(
 
 
 @app.get("/timeline/stream")
-async def get_unified_event_timeline(limit: int = 50):
-    events = dynamic_stream_engine.get_unified_timeline(limit=limit)
-    if not events:
-        # Pre-seed dynamic timeline if empty
-        for _ in range(15):
-            evt = dynamic_stream_engine.generate_synthetic_event()
-            dynamic_stream_engine.record_event(evt)
-        events = dynamic_stream_engine.get_unified_timeline(limit=limit)
+async def get_unified_event_timeline(limit: int = 50, request: Request = None):
+    events = dynamic_stream_engine.get_unified_timeline(limit=limit, tenant_id=get_current_tenant(request))
     return {"timeline": events, "count": len(events)}
 
 
@@ -1556,9 +1609,14 @@ async def websocket_endpoint(websocket: WebSocket):
     try:
         auth = authenticate_websocket(websocket)
     except HTTPException as exc:
-        await websocket.close(code=4401, reason=str(exc.detail))
+        await websocket.close(code=exc.status_code if exc.status_code in {4401, 4403, 4409} else 4403, reason=str(exc.detail))
         return
-    await websocket.accept()
+    connection_key = f"{auth.tenant_id}:{auth.subject}:{websocket.query_params.get('session_id') or 'all'}"
+    if connection_key in _active_websocket_sessions:
+        await websocket.close(code=4409, reason="Duplicate session")
+        return
+    _active_websocket_sessions.add(connection_key)
+    await websocket.accept(subprotocol=next((item.strip() for item in websocket.headers.get("sec-websocket-protocol", "").split(",") if item.strip().startswith("Bearer.")), None))
     session_filter = websocket.query_params.get("session_id")
     if session_filter and "customer" in auth.roles:
         owned_session = sdk_engine.sdk_sessions.get(session_filter)
@@ -1571,8 +1629,12 @@ async def websocket_endpoint(websocket: WebSocket):
         await websocket.send_json(
             {
                 "msg_type": "connection_ack",
+                "tenant": auth.tenant_id,
+                "session": session_filter,
                 "session_id": session_filter,
                 "authenticated_subject": auth.subject,
+                "request_id": auth.request_id,
+                "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
             }
         )
         for recent_event in platform_event_broker.recent(
@@ -1591,24 +1653,26 @@ async def websocket_endpoint(websocket: WebSocket):
             for task in pending:
                 task.cancel()
             if update_task in done:
-                await websocket.send_json(update_task.result())
+                event = update_task.result()
+                await websocket.send_json({**event, "tenant": auth.tenant_id, "session": session_filter or event.get("session_id"), "request_id": auth.request_id, "timestamp": event.get("timestamp") or datetime.datetime.now(datetime.timezone.utc).isoformat()})
             if receive_task in done:
                 message = receive_task.result()
                 if message.lower() == "ping":
-                    await websocket.send_json({"msg_type": "pong"})
+                    await websocket.send_json({"msg_type": "pong", "tenant": auth.tenant_id, "session": session_filter, "request_id": auth.request_id, "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat()})
                 else:
                     try:
                         command = json.loads(message)
                     except json.JSONDecodeError:
                         command = {}
                     if command.get("type") == "ping":
-                        await websocket.send_json({"msg_type": "pong"})
+                        await websocket.send_json({"msg_type": "pong", "tenant": auth.tenant_id, "session": session_filter, "request_id": auth.request_id, "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat()})
     except WebSocketDisconnect:
         print("Client disconnected")
     except Exception as e:
         print(f"WebSocket error: {e}")
     finally:
         await platform_event_broker.unsubscribe(subscription.subscription_id)
+        _active_websocket_sessions.discard(connection_key)
 
 # --- FUSION ADAPTIVE TRUST SDK (FAT-SDK) ENDPOINTS ---
 class SDKSessionStartRequest(BaseModel):
@@ -1857,23 +1921,23 @@ async def get_metrics_cost(fn_cost: float = 250000.0, fp_cost: float = 400.0):
 
 # --- ENTERPRISE CYBER THREAT INTELLIGENCE ENGINE ENDPOINTS (PHASE 2) ---
 @app.get("/threats")
-async def get_threats(status: str = None, category: str = None, severity: str = None):
-    return {"threats": cyber_threat_engine.get_all_threats(status=status, category=category, severity=severity)}
+async def get_threats(status: str = None, category: str = None, severity: str = None, request: Request = None):
+    return {"threats": cyber_threat_engine.get_all_threats(status=status, category=category, severity=severity, tenant_id=get_current_tenant(request))}
 
 @app.get("/threats/{threat_id}")
-async def get_threat_by_id(threat_id: str):
-    t = cyber_threat_engine.get_threat_by_id(threat_id)
+async def get_threat_by_id(threat_id: str, request: Request = None):
+    t = cyber_threat_engine.get_threat_by_id(threat_id, tenant_id=get_current_tenant(request))
     if not t:
         return {"error": "Threat not found", "threat_id": threat_id}
     return t
 
 @app.get("/threats/session/{session_id}")
-async def get_threats_by_session(session_id: str):
-    return {"session_id": session_id, "threats": cyber_threat_engine.get_threats_by_session(session_id)}
+async def get_threats_by_session(session_id: str, request: Request):
+    return {"session_id": session_id, "threats": cyber_threat_engine.get_threats_by_session(session_id, tenant_id=get_current_tenant(request))}
 
 @app.get("/threats/device/{device_id}")
-async def get_threats_by_device(device_id: str):
-    return {"device_id": device_id, "threats": cyber_threat_engine.get_threats_by_device(device_id)}
+async def get_threats_by_device(device_id: str, request: Request):
+    return {"device_id": device_id, "threats": cyber_threat_engine.get_threats_by_device(device_id, tenant_id=get_current_tenant(request))}
 
 @app.post("/threats/evaluate")
 async def evaluate_threat_event(event: dict):
@@ -2052,6 +2116,21 @@ async def simulate_threat_scenario(payload: dict):
 
 from api.copilot_engine import router as copilot_router
 app.include_router(copilot_router)
+
+
+def _deduplicate_routes() -> None:
+    seen: set[tuple[str, tuple[str, ...], str]] = set()
+    unique = []
+    for route in app.router.routes:
+        key = (getattr(route, "path", ""), tuple(sorted(getattr(route, "methods", set()) or set())), route.__class__.__name__)
+        if key in seen:
+            continue
+        seen.add(key)
+        unique.append(route)
+    app.router.routes[:] = unique
+
+
+_deduplicate_routes()
 
 if __name__ == "__main__":
     import uvicorn

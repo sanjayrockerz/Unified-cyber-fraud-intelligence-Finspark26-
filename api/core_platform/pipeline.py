@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
+import json
+import logging
 import time
 import uuid
 from dataclasses import dataclass, field
@@ -10,10 +13,12 @@ from typing import Any
 from api.cyber_threat_engine import CyberThreatEngine, cyber_threat_engine
 from api.sdk_engine import FusionAdaptiveTrustSDKEngine, sdk_engine
 from api.identity_trust.service import identity_trust
+from api import store
 from .graph_runtime import GraphRuntime, graph_runtime
 from .model_runtime import ModelRuntime, model_runtime
 from .decision_runtime import DecisionEngineAdapter, decision_engine
 from .events import PlatformEventBroker, platform_event_broker
+from api.synthetic_universe.dynamic_event_stream import dynamic_stream_engine
 
 
 class PipelineValidationError(ValueError):
@@ -71,8 +76,26 @@ class AuthoritativePlatformPipeline:
         self.decision_engine = decisions
         self.event_broker = events
         self._idempotency_lock = asyncio.Lock()
-        self._completed: dict[tuple[str, str], PipelineResult] = {}
         self._inflight: dict[tuple[str, str], asyncio.Future[PipelineResult]] = {}
+
+    @staticmethod
+    def _transaction_hash(event: dict[str, Any]) -> str:
+        identity = event.get("event_id") or event.get("txn_id") or event.get("request_id")
+        material = {
+            "tenant_id": event.get("tenant_id", ""),
+            "session_id": event.get("session_id", ""),
+            "event_type": event.get("event_type", ""),
+            "identity": identity,
+        }
+        return hashlib.sha256(json.dumps(material, sort_keys=True).encode()).hexdigest()
+
+    @staticmethod
+    def is_processed(tenant_id: str, transaction_hash: str) -> bool:
+        return store.is_processed(tenant_id, transaction_hash)
+
+    @staticmethod
+    def mark_processed(tenant_id: str, transaction_hash: str) -> bool:
+        return store.mark_processed(tenant_id, transaction_hash)
 
     @staticmethod
     def normalize(payload: dict[str, Any]) -> dict[str, Any]:
@@ -87,6 +110,7 @@ class AuthoritativePlatformPipeline:
         event["event_type"] = event_type
         event["session_id"] = session_id
         event["device_id"] = device_id
+        event["tenant_id"] = str(event.get("tenant_id") or "").strip()
         event["amount"] = max(0.0, float(event.get("amount", 0.0) or 0.0))
         event["timestamp"] = str(
             event.get("timestamp") or datetime.now(timezone.utc).isoformat()
@@ -107,9 +131,6 @@ class AuthoritativePlatformPipeline:
         key = (event["session_id"], event["request_id"])
         owner = False
         async with self._idempotency_lock:
-            completed = self._completed.get(key)
-            if completed is not None:
-                return completed
             future = self._inflight.get(key)
             if future is None:
                 future = asyncio.get_running_loop().create_future()
@@ -117,21 +138,29 @@ class AuthoritativePlatformPipeline:
                 owner = True
         if not owner:
             return await asyncio.shield(future)
+        tenant_id = event.get("tenant_id") or "__unscoped__"
+        transaction_hash = self._transaction_hash(event)
+        marked = False
         try:
+            marked = self.mark_processed(tenant_id, transaction_hash)
+            if not marked:
+                raise PipelineValidationError("request has already been processed")
             result = await self._process_once(
                 event,
                 require_existing_session=require_existing_session,
                 publish=publish,
             )
+            if result.inference.get("status") == "degraded":
+                # A degraded evaluation is retryable after the model is restored.
+                store.unmark_processed(tenant_id, transaction_hash)
             async with self._idempotency_lock:
-                self._completed[key] = result
-                while len(self._completed) > 2_000:
-                    self._completed.pop(next(iter(self._completed)))
                 self._inflight.pop(key, None)
                 if not future.done():
                     future.set_result(result)
             return result
         except Exception as exception:
+            if marked:
+                store.unmark_processed(tenant_id, transaction_hash)
             async with self._idempotency_lock:
                 self._inflight.pop(key, None)
                 if not future.done():
@@ -229,13 +258,14 @@ class AuthoritativePlatformPipeline:
             },
         )
         if publish:
-            await self.event_broker.publish(
-                {
+            published_event = {
                     "msg_type": "pipeline_decision",
                     "session_id": event["session_id"],
+                    "tenant_id": event["tenant_id"],
                     **result.to_dict(),
                 }
-            )
+            dynamic_stream_engine.record_event(published_event)
+            await self.event_broker.publish(published_event)
         return result
 
 

@@ -20,24 +20,23 @@ from .config import PlatformSettings, platform_settings
 PUBLIC_PATHS = {
     "/health/live",
     "/health/ready",
+    "/docs",
+    "/openapi.json",
+    "/redoc",
     "/auth/token",
+    "/auth/login",
+    "/auth/refresh",
+    "/auth/register",
     "/banking/auth/login",
-    "/banking/auth/register",
     "/banking/auth/refresh",
+    "/banking/auth/register",
+    "/identity/login",
+    "/identity/register",
+    "/identity/password-reset",
+    "/gateway/status",
+    "/gateway/webhook",
     "/device/pair",
     "/device/register",
-    "/gateway/webhook",
-    "/identity/register",
-    "/identity/login",
-    "/identity/refresh",
-    "/identity/password-reset",
-    "/api/copilot/chat",
-    "/graph/topology",
-    "/graph/analyze",
-    "/transactions",
-    "/cases",
-    "/customers",
-    "/threats",
 }
 
 
@@ -77,6 +76,8 @@ class AuthContext:
     app_id: str | None
     token_id: str
     expires_at: int
+    permissions: frozenset[str]
+    request_id: str
 
     def has_any_role(self, required: frozenset[str]) -> bool:
         return bool(self.roles.intersection(required))
@@ -97,12 +98,17 @@ def create_access_token(
         "aud": settings.jwt_audience,
         "sub": subject or client_id,
         "client_id": client_id,
-        "roles": client.get("roles", []),
+        "roles": client.get("roles") or ([client["role"]] if client.get("role") else []),
+        "role": client.get("role") or (client.get("roles") or [None])[0],
+        "permissions": client.get("permissions", []),
         "tenant_id": client.get("tenant_id"),
         "app_id": client.get("app_id"),
         "iat": now,
         "nbf": now - 5,
         "exp": expires_at,
+        "expires": expires_at,
+        "issued_at": now,
+        "request_id": uuid.uuid4().hex,
         "jti": uuid.uuid4().hex,
     }
     encoded_header = _b64encode(json.dumps(header, separators=(",", ":")).encode())
@@ -139,8 +145,16 @@ def validate_access_token(
     if int(payload.get("nbf", 0)) > now or int(payload.get("exp", 0)) <= now:
         raise HTTPException(status_code=401, detail="Access token expired or not active")
     roles = payload.get("roles")
+    role = payload.get("role")
+    permissions = payload.get("permissions", [])
     if not isinstance(roles, list) or not all(isinstance(role, str) for role in roles):
         raise HTTPException(status_code=401, detail="Invalid access token roles")
+    if role is not None and not isinstance(role, str):
+        raise HTTPException(status_code=401, detail="Invalid access token role")
+    if not isinstance(permissions, list) or not all(isinstance(item, str) for item in permissions):
+        raise HTTPException(status_code=401, detail="Invalid access token permissions")
+    if not payload.get("sub") or not payload.get("tenant_id") or not payload.get("request_id"):
+        raise HTTPException(status_code=401, detail="Access token is missing required claims")
     return AuthContext(
         subject=str(payload.get("sub", "")),
         client_id=str(payload.get("client_id", "")),
@@ -149,6 +163,8 @@ def validate_access_token(
         app_id=payload.get("app_id"),
         token_id=str(payload.get("jti", "")),
         expires_at=int(payload["exp"]),
+        permissions=frozenset(permissions),
+        request_id=str(payload["request_id"]),
     )
 
 
@@ -157,6 +173,19 @@ def required_roles(path: str) -> frozenset[str]:
         if path.startswith(prefix):
             return roles
     return DEFAULT_ROLES
+
+
+def get_current_user(request: Request) -> AuthContext:
+    """Return the authenticated user and require a tenant scope."""
+    context = getattr(request.state, "auth", None)
+    if not context or not context.tenant_id:
+        raise HTTPException(status_code=401, detail="Authenticated tenant is required")
+    request.state.tenant = context.tenant_id
+    request.state.user = context
+    request.state.role = next(iter(context.roles), None)
+    request.state.permissions = context.permissions
+    request.state.correlation_id = context.request_id
+    return context
 
 
 def _bearer(value: str | None) -> str:
@@ -185,6 +214,13 @@ class PlatformSecurityMiddleware(BaseHTTPMiddleware):
             if not context.has_any_role(allowed):
                 raise HTTPException(status_code=403, detail="Role is not authorized for this endpoint")
             request.state.auth = context
+            request.state.user = context
+            request.state.role = next(iter(context.roles), None)
+            request.state.permissions = context.permissions
+            request.state.correlation_id = context.request_id
+            if not context.tenant_id:
+                raise HTTPException(status_code=401, detail="Authenticated tenant is required")
+            request.state.tenant = context.tenant_id
         except HTTPException as exc:
             return JSONResponse(
                 status_code=exc.status_code,
@@ -201,12 +237,15 @@ class PlatformSecurityMiddleware(BaseHTTPMiddleware):
 
 
 def authenticate_websocket(websocket: WebSocket) -> AuthContext:
-    header = websocket.headers.get("authorization")
-    query_token = websocket.query_params.get("access_token")
-    token = query_token or (_bearer(header) if header else "")
+    protocols = [item.strip() for item in websocket.headers.get("sec-websocket-protocol", "").split(",")]
+    token = next((item[7:] for item in protocols if item.startswith("Bearer.")), "")
     if not token:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Access token required")
+        token = websocket.cookies.get("access_token", "")
+    if not token:
+        raise HTTPException(status_code=4403, detail="Access token required")
     context = validate_access_token(token)
+    if not context.tenant_id:
+        raise HTTPException(status_code=4403, detail="Authenticated tenant is required")
     if not context.has_any_role(frozenset({"sdk", "analyst", "operator", "developer", "admin"})):
         raise HTTPException(status_code=403, detail="Role is not authorized for WebSocket")
     return context
