@@ -1,8 +1,9 @@
-﻿import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef, lazy } from 'react';
 import { authenticatedWebSocketUrl } from '../../platformAuth';
-import { 
-  ShieldAlert, 
-  User, 
+import {
+  Atom,
+  ShieldAlert,
+  User,
   Clock, 
   RefreshCw, 
   FileText, 
@@ -46,8 +47,11 @@ import LearningLoop from '../fabric/LearningLoop';
 import DigitalTwinBaseline from '../fabric/DigitalTwinBaseline';
 import SessionTrustPassportPanel from '../trust/SessionTrustPassportPanel';
 import InvestigationIntelligencePanel from './InvestigationIntelligencePanel';
-import QuantumTrustPanel from '../quantum/QuantumTrustPanel';
 import VerdictHero from '../common/VerdictHero';
+import CollapsibleSection from '../common/CollapsibleSection';
+
+// Lazy so the collapsed section costs no JS until an analyst opens it.
+const QuantumTrustPanel = lazy(() => import('../quantum/QuantumTrustPanel'));
 
 
 const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8000' : '');
@@ -267,8 +271,17 @@ export default function InvestigationWorkbench({ caseId = 'CASE-2026-8942' }) {
       {/* 3.8. INVESTIGATION INTELLIGENCE LAYER */}
       <InvestigationIntelligencePanel caseId={caseId} activeTxn={activeTxnPayload} />
 
-      {/* 3.9. FUSION QUANTUM TRUST LAYER */}
-      <QuantumTrustPanel />
+      {/* 3.9. FUSION QUANTUM TRUST LAYER — collapsed by default. Quantum posture
+          is adjacent to, not part of, the fraud/cyber-fusion decision, and the
+          panel fires four /quantum/* requests on mount. Also available as a
+          full page at /quantum. */}
+      <CollapsibleSection
+        title="Quantum Trust Posture"
+        description="TLS cipher-suite readiness and HNDL exposure"
+        icon={Atom}
+      >
+        <QuantumTrustPanel />
+      </CollapsibleSection>
 
 
       {/* 4. MAIN THREE-PANE OPERATIONAL WORKSPACE */}

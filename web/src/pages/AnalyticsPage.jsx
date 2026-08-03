@@ -20,6 +20,7 @@ import {
   Settings
 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer } from 'recharts';
+import { FLAT_EPSILON, formatF, formatPct, getUplift } from '../lib/metricsFormat';
 
 export default function AnalyticsPage() {
   const [timeRange, setTimeRange] = useState('24h');
@@ -56,23 +57,11 @@ export default function AnalyticsPage() {
       .catch(() => setSweepError(true));
   }, [fnCost, fpCost]);
 
-  const formatPct = (val) => `${(val * 100).toFixed(2)}%`;
-  const formatF = (val) => val.toFixed(3);
-  const getUplift = (base, fusion, isPct) => {
-    const diff = fusion - base;
-    return isPct ? `${diff >= 0 ? '+' : ''}${(diff * 100).toFixed(2)}%` : `${diff >= 0 ? '+' : ''}${diff.toFixed(3)}`;
-  };
-
   let computedModelMetrics = [];
   let headlineUplift = "Loading...";
   let headlineLabel = "Fusion PR-AUC Uplift";
   let recallCompare = "";
   let headlineIsPositive = true;
-
-  // Threshold below which a delta is treated as "flat" rather than a genuine
-  // move in either direction -- avoids describing FP-noise-sized wiggles as a
-  // win or a regression.
-  const FLAT_EPSILON = 0.0005;
 
   if (evalData) {
     computedModelMetrics = [

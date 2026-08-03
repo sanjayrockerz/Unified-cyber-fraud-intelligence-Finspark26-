@@ -1,16 +1,21 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, lazy } from 'react';
 import { authenticatedWebSocketUrl } from '../platformAuth';
 import { useNavigate } from 'react-router-dom';
-import { ShieldAlert, Radio, RefreshCw, Upload, Terminal, Landmark, User, ChevronDown, ChevronUp } from 'lucide-react';
+import { ShieldAlert, Radio, RefreshCw, Upload, Terminal, Landmark, User, Bot, BookOpen, Fingerprint, Search } from 'lucide-react';
 
 import CSVSchemaMapperModal from '../components/runtime/CSVSchemaMapperModal';
 import FusionLifecyclePipeline from '../components/runtime/FusionLifecyclePipeline';
-import FraudDevToolsInspector from '../components/runtime/FraudDevToolsInspector';
-import NarrativeAIStoryteller from '../components/runtime/NarrativeAIStoryteller';
-import SessionTrustPassportPanel from '../components/trust/SessionTrustPassportPanel';
 import VerdictHero from '../components/common/VerdictHero';
-import InvestigationIntelligencePanel from '../components/investigation/InvestigationIntelligencePanel';
-import AICopilotPanel from '../components/copilot/AICopilotPanel';
+import CollapsibleSection from '../components/common/CollapsibleSection';
+
+// Secondary panels are lazy so a collapsed section costs no JS on first paint --
+// CollapsibleSection does not render its children until the first expand, so
+// these chunks are never requested until the analyst asks for them.
+const SessionTrustPassportPanel = lazy(() => import('../components/trust/SessionTrustPassportPanel'));
+const InvestigationIntelligencePanel = lazy(() => import('../components/investigation/InvestigationIntelligencePanel'));
+const NarrativeAIStoryteller = lazy(() => import('../components/runtime/NarrativeAIStoryteller'));
+const AICopilotPanel = lazy(() => import('../components/copilot/AICopilotPanel'));
+const FraudDevToolsInspector = lazy(() => import('../components/runtime/FraudDevToolsInspector'));
 
 const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8000' : '');
 const WS_BASE = API_BASE.replace(/^http/, 'ws');
@@ -23,10 +28,8 @@ export default function OperationsCenterPage() {
   const [cyberEvents, setCyberEvents] = useState([]);
   const [evaluatedCases, setEvaluatedCases] = useState([]);
   const [selectedCase, setSelectedCase] = useState(null);
-  const [quantumData, setQuantumData] = useState(null);
   const [isCSVMapperOpen, setIsCSVMapperOpen] = useState(false);
   const [websocketStages, setWebsocketStages] = useState([]);
-  const [showSecondaryFeeds, setShowSecondaryFeeds] = useState(false);
 
   // Engine Metrics State
   const [apiLatency, setApiLatency] = useState(48);
@@ -36,24 +39,11 @@ export default function OperationsCenterPage() {
   const wsRef = useRef(null);
 
   useEffect(() => {
-    fetchQuantumPosture();
     connectWebSocket();
     return () => {
       if (wsRef.current) wsRef.current.close();
     };
   }, []);
-
-  const fetchQuantumPosture = async () => {
-    try {
-      const res = await fetch(`${API_BASE}/quantum/posture`);
-      if (res.ok) {
-        const data = await res.json();
-        setQuantumData(data);
-      }
-    } catch (e) {
-      console.warn("Quantum API fetch warning:", e);
-    }
-  };
 
   const connectWebSocket = () => {
     if (wsRef.current) wsRef.current.close();
@@ -289,105 +279,127 @@ export default function OperationsCenterPage() {
         <FusionLifecyclePipeline activeTxn={activeTxnPayload} evaluation={activeCase} websocketStages={websocketStages} />
       </div>
 
-      {/* SECTION 3.5: SESSION TRUST PASSPORT */}
-      <SessionTrustPassportPanel sessionId={activeCase.session_id} activeTxn={activeTxnPayload} />
+      {/* SECTION 4: THE FUSION VIEW — the transaction stream beside the SIEM feed
+          that explains it. Clicking a transaction selects the active case, so
+          this stays in the default view: it is the only manual case picker. */}
+      <div className="grid min-w-0 grid-cols-1 gap-4 font-mono text-xs lg:grid-cols-12">
+        {/* TRANSACTION FEED */}
+        <div className="min-w-0 lg:col-span-6 bg-soc-panel border border-soc-border rounded-xl p-3.5">
+          <div className="flex items-center justify-between border-b border-soc-border pb-2 mb-3">
+            <h3 className="text-xs font-bold text-soc-text uppercase flex items-center gap-2">
+              <Landmark className="w-4 h-4 text-soc-primary" />
+              <span>Incoming Transaction Stream</span>
+            </h3>
+            <span className="text-[10px] text-soc-muted">{displayCases.length} Txns</span>
+          </div>
+          <p className="mb-2 text-[10px] font-sans text-soc-dim">
+            Select a transaction to drive the verdict, pipeline, and every panel below.
+          </p>
+          <div className="max-h-[220px] overflow-y-auto space-y-2 text-[11px]">
+            {displayCases.map((c) => (
+              <button
+                type="button"
+                key={c.id}
+                onClick={() => setSelectedCase(c)}
+                aria-pressed={c.id === activeCase.id}
+                className={`w-full p-2 bg-soc-bg border rounded flex justify-between gap-2 text-left cursor-pointer transition-colors hover:border-soc-primary ${
+                  c.id === activeCase.id ? 'border-soc-primary' : 'border-soc-border'
+                }`}
+              >
+                <span className="truncate">{c.id} — {c.nameOrig} ➔ {c.nameDest}</span>
+                <span className="shrink-0 font-bold text-soc-danger">INR {c.amount.toLocaleString('en-IN')}</span>
+              </button>
+            ))}
+          </div>
+        </div>
 
-      {/* SECTION 4: THREAT CORRELATION TIMELINE & MULE RING INTELLIGENCE */}
-      <InvestigationIntelligencePanel caseId={activeCase.id} activeTxn={activeTxnPayload} />
-
-      {/* SECTION 5 & 6: DECISION SUMMARY & NARRATIVE AI RESPONSE */}
-      <NarrativeAIStoryteller activeTxn={activeTxnPayload} evaluation={activeCase} />
-
-      {/* SECTION 7: FUZEN AI COPILOT */}
-      <div className="h-[520px]">
-        <AICopilotPanel 
-          activeContext={{ user_id: activeCase?.user_id, session_id: activeCase?.session_id }}
-          onSelectCustomer={(custRow) => {
-            if (custRow && custRow.customerId) {
-              setSelectedCase({
-                ...activeCase,
-                user_id: custRow.customerId,
-                nameOrig: custRow.customer,
-                score: custRow.riskScore,
-                amount: 750000,
-              });
-            }
-          }}
-        />
+        {/* SIEM LOGS */}
+        <div className="min-w-0 lg:col-span-6 bg-soc-panel border border-soc-border rounded-xl p-3.5">
+          <div className="flex items-center justify-between border-b border-soc-border pb-2 mb-3">
+            <h3 className="text-xs font-bold text-soc-text uppercase flex items-center gap-2">
+              <Radio className="w-4 h-4 text-soc-danger animate-pulse" />
+              <span>Synchronized SIEM Cyber Logs</span>
+            </h3>
+            <span className="text-[10px] text-soc-muted">{cyberEvents.length} Logs</span>
+          </div>
+          <p className="mb-2 text-[10px] font-sans text-soc-dim">
+            Cyber events arriving in the same window as the transfers on the left.
+          </p>
+          <div className="max-h-[220px] overflow-y-auto space-y-2 text-[11px]">
+            {cyberEvents.length === 0 ? (
+              <div className="p-2 bg-soc-danger/10 border border-soc-danger/30 text-soc-danger rounded">
+                [T-0:40s] Impossible Travel Login Detected (IP 185.15.2.22, Moscow ➔ Mumbai)
+              </div>
+            ) : (
+              cyberEvents.map((evt, idx) => (
+                <div key={idx} className="p-2 bg-soc-bg border border-soc-border rounded text-soc-muted">
+                  {evt.timestamp} • {evt.event_type} • User: {evt.user_id} • IP: {evt.ip}
+                </div>
+              ))
+            )}
+          </div>
+        </div>
       </div>
 
-      {/* PROGRESSIVE DISCLOSURE: EXPANDABLE SECONDARY RAW STREAM FEEDS */}
-      <div className="bg-soc-surface border border-soc-border rounded-xl overflow-hidden shadow-lg">
-        <button
-          onClick={() => setShowSecondaryFeeds(!showSecondaryFeeds)}
-          className="w-full p-3.5 flex items-center justify-between bg-soc-panel hover:bg-soc-border/50 text-left transition-colors font-mono text-xs font-bold text-soc-text"
-        >
-          <div className="flex items-center gap-2">
-            <Terminal className="w-4 h-4 text-soc-primary" />
-            <span>Raw Operational Stream Feeds & Inspector (Click to Expand / Collapse)</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] text-soc-muted">
-              {showSecondaryFeeds ? 'Collapse Secondary Logs' : 'Expand Raw Logs & DevTools'}
-            </span>
-            {showSecondaryFeeds ? <ChevronUp className="w-4 h-4 text-soc-dim" /> : <ChevronDown className="w-4 h-4 text-soc-dim" />}
-          </div>
-        </button>
+      {/* PROGRESSIVE DISCLOSURE: depth on demand. Each section lazy-mounts on
+          first expand and then stays mounted, so re-collapsing never refetches
+          and never discards panel state. */}
+      <CollapsibleSection
+        title="Session Trust Passport"
+        description="Identity, device, network, and behaviour checkpoints"
+        icon={Fingerprint}
+      >
+        <SessionTrustPassportPanel sessionId={activeCase.session_id} activeTxn={activeTxnPayload} />
+      </CollapsibleSection>
 
-        {showSecondaryFeeds && (
-          <div className="p-4 space-y-4 font-mono text-xs border-t border-soc-border">
-            <div className="grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-12">
-              {/* TRANSACTION FEED */}
-              <div className="min-w-0 lg:col-span-6 bg-soc-panel border border-soc-border rounded-xl p-3.5">
-                <div className="flex items-center justify-between border-b border-soc-border pb-2 mb-3">
-                  <h3 className="text-xs font-bold text-soc-text uppercase flex items-center gap-2">
-                    <Landmark className="w-4 h-4 text-soc-primary" />
-                    <span>Incoming Transaction Stream</span>
-                  </h3>
-                  <span className="text-[10px] text-soc-muted">{displayCases.length} Txns</span>
-                </div>
-                <div className="max-h-[220px] overflow-y-auto space-y-2 text-[11px]">
-                  {displayCases.map((c) => (
-                    <div key={c.id} onClick={() => setSelectedCase(c)} className="p-2 bg-soc-bg border border-soc-border rounded flex justify-between cursor-pointer">
-                      <span>{c.id} — {c.nameOrig} ➔ {c.nameDest}</span>
-                      <span className="font-bold text-soc-danger">INR {c.amount.toLocaleString('en-IN')}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
+      <CollapsibleSection
+        title="Threat Correlation & Mule Ring Intelligence"
+        description="Linked cyber signals and beneficiary network"
+        icon={Search}
+      >
+        <InvestigationIntelligencePanel caseId={activeCase.id} activeTxn={activeTxnPayload} />
+      </CollapsibleSection>
 
-              {/* SIEM LOGS */}
-              <div className="min-w-0 lg:col-span-6 bg-soc-panel border border-soc-border rounded-xl p-3.5">
-                <div className="flex items-center justify-between border-b border-soc-border pb-2 mb-3">
-                  <h3 className="text-xs font-bold text-soc-text uppercase flex items-center gap-2">
-                    <Radio className="w-4 h-4 text-soc-danger animate-pulse" />
-                    <span>Synchronized SIEM Cyber Logs</span>
-                  </h3>
-                  <span className="text-[10px] text-soc-muted">{cyberEvents.length} Logs</span>
-                </div>
-                <div className="max-h-[220px] overflow-y-auto space-y-2 text-[11px]">
-                  {cyberEvents.length === 0 ? (
-                    <div className="p-2 bg-soc-danger/10 border border-soc-danger/30 text-soc-danger rounded">
-                      [T-0:40s] Impossible Travel Login Detected (IP 185.15.2.22, Moscow ➔ Mumbai)
-                    </div>
-                  ) : (
-                    cyberEvents.map((evt, idx) => (
-                      <div key={idx} className="p-2 bg-soc-bg border border-soc-border rounded text-soc-muted">
-                        {evt.timestamp} • {evt.event_type} • User: {evt.user_id} • IP: {evt.ip}
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            </div>
+      <CollapsibleSection
+        title="Narrative AI Decision Summary"
+        description="Plain-language account of why this verdict was reached"
+        icon={BookOpen}
+      >
+        <NarrativeAIStoryteller activeTxn={activeTxnPayload} evaluation={activeCase} />
+      </CollapsibleSection>
 
-            {/* DEVTOOLS INSPECTOR */}
-            <div className="h-[320px]">
-              <FraudDevToolsInspector activeTxn={activeTxnPayload} evaluation={activeCase} />
-            </div>
-          </div>
-        )}
-      </div>
+      <CollapsibleSection
+        title="Fuzen AI Copilot"
+        description="Ask questions about this session"
+        icon={Bot}
+      >
+        <div className="h-[520px]">
+          <AICopilotPanel
+            activeContext={{ user_id: activeCase?.user_id, session_id: activeCase?.session_id }}
+            onSelectCustomer={(custRow) => {
+              if (custRow && custRow.customerId) {
+                setSelectedCase({
+                  ...activeCase,
+                  user_id: custRow.customerId,
+                  nameOrig: custRow.customer,
+                  score: custRow.riskScore,
+                  amount: 750000,
+                });
+              }
+            }}
+          />
+        </div>
+      </CollapsibleSection>
+
+      <CollapsibleSection
+        title="Fraud DevTools Inspector"
+        description="Raw features, SHAP values, and engine internals"
+        icon={Terminal}
+      >
+        <div className="h-[320px]">
+          <FraudDevToolsInspector activeTxn={activeTxnPayload} evaluation={activeCase} />
+        </div>
+      </CollapsibleSection>
 
       {/* Dataset Schema Mapper Ingestion Modal */}
       <CSVSchemaMapperModal 
