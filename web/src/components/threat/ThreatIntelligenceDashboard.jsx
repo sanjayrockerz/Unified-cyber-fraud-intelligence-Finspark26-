@@ -4,7 +4,7 @@ import {
   Terminal, Globe, Users, Briefcase, Zap, Info, ArrowUpRight, Copy, Check, MessageSquare
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { authenticatedWebSocketUrl } from '../../platformAuth';
+import { authenticatedWebSocketUrl, authenticatedWebSocketProtocols } from '../../platformAuth';
 import DataTable from '../common/DataTable';
 import Drawer from '../common/Drawer';
 import LiveThreatMap from './LiveThreatMap';
@@ -111,7 +111,10 @@ export default function ThreatIntelligenceDashboard() {
 
     function connect() {
       try {
-        socket = new WebSocket(authenticatedWebSocketUrl(`${WS_BASE}/ws/stream`));
+        socket = new WebSocket(
+          authenticatedWebSocketUrl(`${WS_BASE}/ws/stream`),
+          authenticatedWebSocketProtocols(),
+        );
         socket.onopen = () => setStreamConnected(true);
         socket.onmessage = (event) => {
           const message = JSON.parse(event.data);

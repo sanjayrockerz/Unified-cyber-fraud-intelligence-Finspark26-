@@ -23,6 +23,16 @@ function validateRuntimeConfig() {
 
 function requestToken() {
   // The client secret is held by the deployment's server-side token proxy.
+  if (import.meta.env.DEV) {
+    return rawFetch(`${API_BASE}/auth/token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        client_id: import.meta.env.VITE_DEV_CLIENT_ID,
+        client_secret: import.meta.env.VITE_DEV_CLIENT_SECRET,
+      }),
+    });
+  }
   return rawFetch('/api/token', { method: 'POST' });
 }
 

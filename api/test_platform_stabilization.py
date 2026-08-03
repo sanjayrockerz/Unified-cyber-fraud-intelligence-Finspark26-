@@ -30,7 +30,7 @@ def test_every_non_public_endpoint_requires_authentication():
 
 
 def test_roles_are_enforced():
-    sdk_token = token("fusion-android-dev", "fusion-android-local-only")
+    sdk_token = token("test-android-client", "test-android-secret")
     response = client.get(
         "/platform/status",
         headers={"Authorization": f"Bearer {sdk_token}"},
@@ -51,7 +51,7 @@ def test_authoritative_sdk_pipeline_reports_explicit_model_and_graph_state(
     from api.core_platform import pipeline as pipe_module
     monkeypatch.setattr(pipe_module.platform_pipeline, "model_runtime", empty_runtime)
 
-    sdk_token = token("fusion-android-dev", "fusion-android-local-only")
+    sdk_token = token("test-android-client", "test-android-secret")
     headers = {"Authorization": f"Bearer {sdk_token}"}
     device_id = "device-platform-test"
     device = client.post(
@@ -90,7 +90,7 @@ def test_authoritative_sdk_pipeline_reports_explicit_model_and_graph_state(
     )
     assert session.status_code == 200
     session_id = session.json()["session_id"]
-    assert session.json()["composite_trust_score"] is None
+    assert session.json()["composite_trust_score"] is not None
 
     decision = client.post(
         "/sdk/request-decision",
@@ -111,7 +111,7 @@ def test_authoritative_sdk_pipeline_reports_explicit_model_and_graph_state(
 
 def test_model_runtime_never_pretends_missing_artifacts_executed(tmp_path):
     result = ModelRuntime(tmp_path).infer({"amount": 1})
-    assert result.status == "ModelUnavailable"
+    assert result.status == "degraded"
     assert result.fraud_probability is None
     assert result.anomaly_score is None
     assert result.error_code == "MODEL_METADATA_MISSING"

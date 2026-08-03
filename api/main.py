@@ -333,7 +333,7 @@ def _evaluation_response(result) -> dict:
         ),
         "fallback_used": (
             result.inference["implementation"]
-            if result.inference["status"] == "ModelUnavailable"
+            if result.inference["status"] == "degraded"
             else None
         ),
         "graph": result.graph,
@@ -1819,76 +1819,6 @@ async def sdk_ingest_event(req: SDKEventRequest, request: Request):
     )
     return result.event_ack
 
-@app.post("/sdk/request-decision")
-async def sdk_request_decision(req: SDKDecisionRequest, request: Request):
-    dec_dict = req.model_dump()
-    dec_dict["request_id"] = req.request_id or request.state.request_id
-    session = sdk_engine.sdk_sessions.get(req.session_id)
-    if session:
-        dec_dict["user_id"] = session["user_id"]
-        dec_dict["device_id"] = session["device_id"]
-        if "customer" in request.state.auth.roles and session["user_id"] != request.state.auth.subject:
-            raise HTTPException(status_code=403, detail="SDK session is not owned by this identity")
-    try:
-        result = await platform_pipeline.process(
-            dec_dict, require_existing_session=True
-        )
-    except PipelineValidationError as exc:
-        raise HTTPException(status_code=422, detail=str(exc)) from exc
-    decision = result.decision
-    return {
-        **decision,
-        "recommended_action": decision["decision"].replace("_", " ").title(),
-        "policy_version": sdk_engine.policy_version,
-        "decision_latency_ms": result.timings["total_ms"],
-        "pipeline_id": result.pipeline_id,
-        "request_id": result.request_id,
-        "correlation_id": result.correlation_id,
-        "backend_ack": result.event_ack["backend_ack"],
-        "model_status": result.inference["status"],
-        "model_error_code": result.inference["error_code"],
-        "graph_status": result.graph["status"],
-        "graph_backend": result.graph["backend"],
-        "timings": result.timings,
-        "model_used": (
-            result.inference["implementation"]
-            if result.inference["status"] == "EXECUTED"
-            else None
-        ),
-        "fallback_used": (
-            result.inference["implementation"]
-            if result.inference["status"] == "ModelUnavailable"
-            else None
-        ),
-    }
-
-@app.get("/sdk/policies")
-async def sdk_get_policies():
-    return sdk_engine.get_policies()
-
-@app.get("/sdk/passport")
-async def sdk_get_passport(session_id: str):
-    passport = session_intelligence.repository.get_passport(session_id)
-    if passport:
-        return passport.to_compatible_dict()
-    raise HTTPException(status_code=404, detail="No authoritative trust passport for session")
-
-@app.get("/sdk/health")
-async def sdk_get_health():
-    return sdk_engine.get_observability()
-
-@app.get("/sdk/apps")
-async def sdk_get_connected_apps():
-    return sdk_engine.get_connected_apps()
-
-@app.get("/sdk/events")
-async def sdk_get_live_events():
-    return sdk_engine.get_live_event_stream()
-
-@app.get("/sdk/error-codes")
-async def sdk_get_error_codes():
-    return sdk_engine.get_error_codes()
-
 @app.get("/metrics/threshold_sweep")
 async def get_metrics_threshold_sweep():
     import json
@@ -1996,7 +1926,7 @@ async def sdk_request_decision(req: SDKDecisionRequest, request: Request):
         ),
         "fallback_used": (
             result.inference["implementation"]
-            if result.inference["status"] == "ModelUnavailable"
+            if result.inference["status"] == "degraded"
             else None
         ),
     }
@@ -2042,77 +1972,6 @@ async def get_metrics_evaluate():
         return data
     except Exception as e:
         return {"error": str(e)}
-
-@app.get("/metrics/threshold_sweep")
-async def get_metrics_threshold_sweep():
-    import json
-    sweep_path = ROOT / "ml" / "sweep_cache.json"
-    try:
-        content = sweep_path.read_text()
-        return json.loads(content)
-    except Exception as e:
-        return {"error": str(e)}
-
-@app.get("/metrics/cost")
-async def get_metrics_cost(fn_cost: float = 250000.0, fp_cost: float = 400.0):
-    import json
-    sweep_path = ROOT / "ml" / "sweep_cache.json"
-    try:
-        content = sweep_path.read_text()
-        data = json.loads(content)
-        
-        recomputed = {}
-        for config_name, sweep_pts in data.items():
-            recomputed[config_name] = []
-            for pt in sweep_pts:
-                new_pt = dict(pt)
-                new_pt["total_cost"] = (new_pt["FN"] * fn_cost) + (new_pt["FP"] * fp_cost)
-                recomputed[config_name].append(new_pt)
-                
-        return recomputed
-    except Exception as e:
-        return {"error": str(e)}
-
-# --- ENTERPRISE CYBER THREAT INTELLIGENCE ENGINE ENDPOINTS (PHASE 2) ---
-@app.get("/threats")
-async def get_threats(status: str = None, category: str = None, severity: str = None):
-    return {"threats": cyber_threat_engine.get_all_threats(status=status, category=category, severity=severity)}
-
-@app.get("/threats/{threat_id}")
-async def get_threat_by_id(threat_id: str):
-    t = cyber_threat_engine.get_threat_by_id(threat_id)
-    if not t:
-        return {"error": "Threat not found", "threat_id": threat_id}
-    return t
-
-@app.get("/threats/session/{session_id}")
-async def get_threats_by_session(session_id: str):
-    return {"session_id": session_id, "threats": cyber_threat_engine.get_threats_by_session(session_id)}
-
-@app.get("/threats/device/{device_id}")
-async def get_threats_by_device(device_id: str):
-    return {"device_id": device_id, "threats": cyber_threat_engine.get_threats_by_device(device_id)}
-
-@app.post("/threats/evaluate")
-async def evaluate_threat_event(event: dict):
-    result = await platform_pipeline.process(event, require_existing_session=False)
-    return {
-        "status": "SUCCESS",
-        "evaluated_threats": result.threats,
-        "count": len(result.threats),
-        "graph": result.graph,
-        "pipeline_id": result.pipeline_id,
-    }
-
-@app.post("/threats/simulate")
-async def simulate_threat_scenario(payload: dict):
-    result = await platform_pipeline.process(payload, require_existing_session=False)
-    return {
-        "status": "SIMULATED",
-        "threats": result.threats,
-        "graph": result.graph,
-        "pipeline_id": result.pipeline_id,
-    }
 
 from api.copilot_engine import router as copilot_router
 app.include_router(copilot_router)

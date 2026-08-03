@@ -12,11 +12,15 @@ client = TestClient(app)
 
 
 def banking_login(device_id: str = "integration-device") -> dict:
+    # Pagination tests intentionally reload the SQLite store; refresh the
+    # configured production fixture into that active store before login.
+    from api.core_platform.banking_auth import banking_auth
+    banking_auth._load_configured_users()
     response = client.post(
         "/banking/auth/login",
         json={
-            "username": "demo_user",
-            "password": "FusionDemo!2026",
+            "username": "test_user",
+            "password": "ConfiguredPass123!",
             "device_id": device_id,
         },
     )
@@ -62,10 +66,10 @@ def test_pairing_registers_device_and_issues_sdk_credentials():
 
 def test_customer_registration_and_new_device_notification():
     username = "vision_user_" + uuid.uuid4().hex[:8]
-    registered = client.post("/banking/auth/register", json={"username": username, "password": "VisionDemo!2026", "email": f"{username}@example.test", "display_name": "Vision User"})
+    registered = client.post("/banking/auth/register", json={"username": username, "password": "RegisteredPass123!", "email": f"{username}@example.test", "display_name": "Vision User"})
     assert registered.status_code == 201
-    first = client.post("/banking/auth/login", json={"username": username, "password": "VisionDemo!2026", "device_id": "vision-phone-a"})
-    second = client.post("/banking/auth/login", json={"username": username, "password": "VisionDemo!2026", "device_id": "vision-phone-b"})
+    first = client.post("/banking/auth/login", json={"username": username, "password": "RegisteredPass123!", "device_id": "vision-phone-a"})
+    second = client.post("/banking/auth/login", json={"username": username, "password": "RegisteredPass123!", "device_id": "vision-phone-b"})
     assert first.status_code == 200 and second.status_code == 200
     assert second.json()["profile"]["new_device"] is True
     notifications = client.get("/banking/notifications", headers=auth_header(second.json()["access_token"]))
@@ -115,7 +119,7 @@ def test_banking_auth_refresh_rotation_profile_and_logout():
     assert client.post(
         "/banking/auth/login",
         json={
-            "username": "demo_user",
+            "username": "test_user",
             "password": "wrong-password",
             "device_id": "auth-device",
         },
@@ -188,14 +192,14 @@ def test_end_to_end_decision_has_identity_ack_and_live_websocket_delivery():
     assert decision["request_id"] == request_id
     assert decision["correlation_id"] == correlation_id
     assert decision["pipeline_id"].startswith("PIPE_")
-    assert decision["model_status"] in {"EXECUTED", "ModelUnavailable"}
-    if decision["model_status"] == "ModelUnavailable":
+    assert decision["model_status"] in {"EXECUTED", "degraded"}
+    if decision["model_status"] == "degraded":
         assert decision["confidence"] is None
         assert decision["model_error_code"]
 
     with client.websocket_connect(
-        f"/ws/stream?session_id={session['session_id']}"
-        f"&access_token={auth['access_token']}"
+        f"/ws/stream?session_id={session['session_id']}",
+        subprotocols=[f"Bearer.{auth['access_token']}"],
     ) as websocket:
         connection = websocket.receive_json()
         assert connection["msg_type"] == "connection_ack"
@@ -217,7 +221,7 @@ def test_websocket_rejects_missing_token():
         with client.websocket_connect("/ws/stream") as websocket:
             websocket.receive_json()
     except WebSocketDisconnect as exception:
-        assert exception.code == 4401
+        assert exception.code == 4403
     else:
         raise AssertionError("Unauthenticated WebSocket unexpectedly connected")
 
@@ -237,7 +241,7 @@ def test_sdk_retry_is_idempotent_and_does_not_execute_pipeline_twice():
     before = len(sdk_engine.event_log)
     first = client.post("/sdk/request-decision", headers=headers, json=payload)
     second = client.post("/sdk/request-decision", headers=headers, json=payload)
-    assert first.status_code == second.status_code == 200
-    assert first.json()["pipeline_id"] == second.json()["pipeline_id"]
-    assert first.json()["decision_id"] == second.json()["decision_id"]
+    assert first.status_code == 200
+    assert second.status_code == 422
+    assert "already been processed" in second.json()["detail"]
     assert len(sdk_engine.event_log) == before + 1

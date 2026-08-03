@@ -80,7 +80,10 @@ class AuthoritativePlatformPipeline:
 
     @staticmethod
     def _transaction_hash(event: dict[str, Any]) -> str:
-        identity = event.get("event_id") or event.get("txn_id") or event.get("request_id")
+        # Client request IDs are the stable retry identity. Generated event IDs
+        # are intentionally unique per normalization and must not defeat
+        # persistent idempotency.
+        identity = event.get("request_id") or event.get("txn_id") or event.get("event_id")
         material = {
             "tenant_id": event.get("tenant_id", ""),
             "session_id": event.get("session_id", ""),
@@ -150,9 +153,6 @@ class AuthoritativePlatformPipeline:
                 require_existing_session=require_existing_session,
                 publish=publish,
             )
-            if result.inference.get("status") == "degraded":
-                # A degraded evaluation is retryable after the model is restored.
-                store.unmark_processed(tenant_id, transaction_hash)
             async with self._idempotency_lock:
                 self._inflight.pop(key, None)
                 if not future.done():

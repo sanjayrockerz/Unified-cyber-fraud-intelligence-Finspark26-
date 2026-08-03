@@ -1,5 +1,5 @@
 ﻿import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { authenticatedWebSocketUrl } from '../../platformAuth';
+import { authenticatedWebSocketUrl, authenticatedWebSocketProtocols } from '../../platformAuth';
 import { Clock3, RefreshCw, Search, ShieldCheck, Wifi, WifiOff } from 'lucide-react';
 import Card from '../common/Card';
 import TrustComponentHeatmap from './TrustComponentHeatmap';
@@ -81,7 +81,10 @@ export default function SessionIntelligenceDashboard() {
 
     const connect = () => {
       setConnectionState('CONNECTING');
-      socket = new WebSocket(authenticatedWebSocketUrl(`${WS_BASE}/ws/stream?session_id=${encodeURIComponent(selectedId)}`));
+      socket = new WebSocket(
+        authenticatedWebSocketUrl(`${WS_BASE}/ws/stream?session_id=${encodeURIComponent(selectedId)}`),
+        authenticatedWebSocketProtocols(),
+      );
       socket.onopen = () => setConnectionState('LIVE');
       socket.onmessage = (message) => {
         const envelope = JSON.parse(message.data);

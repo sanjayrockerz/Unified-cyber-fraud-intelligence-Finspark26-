@@ -206,8 +206,8 @@ def test_rest_api_and_websocket_bootstrap(
         token_response = client.post(
             "/auth/token",
             json={
-                "client_id": "fusion-test",
-                "client_secret": "fusion-test-local-only",
+                "client_id": "test-dashboard-client",
+                "client_secret": "test-dashboard-secret",
             },
         )
         assert token_response.status_code == 200
@@ -242,7 +242,8 @@ def test_rest_api_and_websocket_bootstrap(
         assert recalculated.json()["msg_type"] == "trust_passport_update"
 
         with client.websocket_connect(
-            f"/ws/stream?session_id=SESS_API_TEST&access_token={token}"
+            "/ws/stream?session_id=SESS_API_TEST",
+            subprotocols=[f"Bearer.{token}"],
         ) as websocket:
             bootstrap = websocket.receive_json()
             assert bootstrap["msg_type"] == "connection_ack"

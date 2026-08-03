@@ -1,5 +1,5 @@
 ﻿import React, { useState, useEffect, useRef } from 'react';
-import { authenticatedWebSocketUrl } from '../../platformAuth';
+import { authenticatedWebSocketUrl, authenticatedWebSocketProtocols } from '../../platformAuth';
 import {
   Code2, Terminal, Zap, Globe, Shield, Radio, Play, Download,
   RefreshCw, CheckCircle2, AlertTriangle, Smartphone, Cpu, 
@@ -151,7 +151,10 @@ export default function FATSDKDeveloperPortal() {
     let disposed = false;
     const connect = () => {
       setTrustStreamState('CONNECTING');
-      socket = new WebSocket(authenticatedWebSocketUrl(`${WS_BASE}/ws/stream?stream=trust`));
+      socket = new WebSocket(
+        authenticatedWebSocketUrl(`${WS_BASE}/ws/stream?stream=trust`),
+        authenticatedWebSocketProtocols(),
+      );
       socket.onopen = () => setTrustStreamState('LIVE');
       socket.onmessage = (message) => {
         const update = JSON.parse(message.data);
