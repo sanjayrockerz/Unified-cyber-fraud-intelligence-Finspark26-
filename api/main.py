@@ -311,14 +311,16 @@ def _evaluation_response(result) -> dict:
     }
 
 
-async def _evaluate_stored_transaction(transaction: dict) -> dict:
+async def _evaluate_stored_transaction(transaction: dict, publish: bool = True) -> dict:
     """Run a transaction already held in the store through the live pipeline."""
     txn_dict = dict(transaction)
     txn_dict["session_id"] = (
         transaction.get("session_id") or f"TXN_CONTEXT_{transaction.get('txn_id', 'unknown')}"
     )
     txn_dict["event_type"] = "TRANSACTION_EVALUATION"
-    result = await platform_pipeline.process(txn_dict, require_existing_session=False)
+    result = await platform_pipeline.process(
+        txn_dict, require_existing_session=False, publish=publish
+    )
     return _evaluation_response(result)
 
 
@@ -370,27 +372,50 @@ scenario_execution_state = {
 cached_universe = None
 
 
-def _case_from_transaction(transaction: dict, index: int) -> dict:
+#  core_platform/decision_runtime.py emits a richer vocabulary than ALLOW /
+#  CHALLENGE / BLOCK (BLOCK_TRANSACTION, REQUIRE_FACE_AUTHENTICATION, ...).
+#  Mirrors web/src/lib/verdict.js's ENGINE_TO_VERDICT so a case's severity
+#  agrees with what the dashboard renders for the same evaluation.
+_ENGINE_TO_VERDICT = {
+    "ALLOW": "ALLOW",
+    "CHALLENGE": "CHALLENGE",
+    "BLOCK": "BLOCK",
+    "BLOCK_TRANSACTION": "BLOCK",
+    "REQUIRE_BIOMETRIC": "CHALLENGE",
+    "REQUIRE_FACE_AUTHENTICATION": "CHALLENGE",
+    "REQUIRE_STEP_UP": "CHALLENGE",
+}
+
+
+def _case_from_transaction(transaction: dict, index: int, evaluation: dict | None = None) -> dict:
     is_critical = bool(transaction.get("cyber_compromise_in_window"))
-    score = 96 if is_critical else 72
+    action = evaluation.get("action") if evaluation else None
+    reasons = evaluation.get("reasons") if evaluation else None
+    score = evaluation.get("score") if evaluation else None
+    verdict = _ENGINE_TO_VERDICT.get(str(action).upper()) if action else None
+    severity = {"BLOCK": "CRITICAL", "CHALLENGE": "HIGH"}.get(verdict) or (
+        "CRITICAL" if is_critical else "HIGH"
+    )
+    status = "OPEN" if (verdict == "BLOCK" if verdict else is_critical) else "TRIAGE"
+    reason = (reasons[0] if reasons else None) or (
+        "Cyber compromise and mule-network evidence require analyst review."
+        if is_critical
+        else "Elevated transaction risk requires analyst review."
+    )
     return {
         "case_id": f"CASE-SYN-{index:05d}",
         "transaction_id": transaction.get("txn_id"),
         "customer_id": transaction.get("user_id"),
-        "status": "OPEN" if is_critical else "TRIAGE",
-        "severity": "CRITICAL" if is_critical else "HIGH",
-        "score": score,
+        "status": status,
+        "severity": severity,
+        "score": score if score is not None else (96 if is_critical else 72),
         "amount": transaction.get("amount", 0),
         "created_at": transaction.get("timestamp"),
-        "reason": (
-            "Cyber compromise and mule-network evidence require analyst review."
-            if is_critical
-            else "Elevated transaction risk requires analyst review."
-        ),
+        "reason": reason,
     }
 
 
-def _persist_universe_collections(universe: dict) -> None:
+async def _persist_universe_collections(universe: dict) -> None:
     """Make explicitly generated synthetic data available to list endpoints."""
     for customer in universe.get("customers", []):
         store.put("customers", customer["customer_id"], customer)
@@ -410,7 +435,13 @@ def _persist_universe_collections(universe: dict) -> None:
     for transaction in transactions:
         if transaction.get("cyber_compromise_in_window") or transaction.get("amount", 0) >= 250000:
             case_index += 1
-            case = _case_from_transaction(transaction, case_index)
+            # Real fusion-engine score per case, not a two-value hardcode --
+            # never published to the live WS, this is seeding, not a live event.
+            try:
+                evaluation = await _evaluate_stored_transaction(transaction, publish=False)
+            except Exception:
+                evaluation = None
+            case = _case_from_transaction(transaction, case_index, evaluation)
             store.put("cases", case["case_id"], case)
 
 
@@ -481,7 +512,7 @@ async def generate_synthetic_bank_universe(req: UniverseGenerateRequest):
     graph_topology = generate_graph_topology(universe)
     universe["graph_topology"] = graph_topology
     cached_universe = universe
-    _persist_universe_collections(universe)
+    await _persist_universe_collections(universe)
     return universe
 
 
@@ -851,7 +882,7 @@ async def seed_demo_scale_data_when_requested():
     if os.environ.get("SEED_DEMO_SCALE") != "1":
         return
     universe = generate_bank_universe(num_customers=500, num_txns=5000, seed=42)
-    _persist_universe_collections(universe)
+    await _persist_universe_collections(universe)
 
 @app.get("/synthetic/universe/preview")
 async def preview_universe(sample_size: int = 10):

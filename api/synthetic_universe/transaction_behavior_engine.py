@@ -25,8 +25,10 @@ def simulate_customer_transaction(customer: dict, is_anomaly: bool = False, days
     dt = dt.replace(hour=hour)
     timestamp = dt.strftime("%Y-%m-%d %H:%M:%S")
 
-    # DEMO SHORTCUT / ANOMALY CONDITION
-    if is_anomaly or (user_id == "usr_abc" and days_ago == 0):
+    # DEMO SHORTCUT: the scripted persona (usr_abc / txn_demo_999) keeps its
+    # exact literal values -- Reports, the digital twin and the rehearsed demo
+    # script all reference this one transaction by name.
+    if is_anomaly and user_id == "usr_abc":
         amount = 750000.0
         txn_type = "TRANSFER"
         dest_acc = "ACC_MULE_NEW"
@@ -34,6 +36,17 @@ def simulate_customer_transaction(customer: dict, is_anomaly: bool = False, days
         cyber_flag = True
         mule_cluster = "cluster_alpha"
         channel_risk = 0.94
+    elif is_anomaly:
+        # Cyber-preceded fraud anomaly for every other customer. Varied per
+        # instance -- otherwise every case derived from these transactions is
+        # an identical clone (same amount, same destination, same score).
+        amount = float(round(random.uniform(150000.0, 950000.0), 2))
+        txn_type = "TRANSFER"
+        dest_acc = f"ACC_MULE_{random.randint(100, 999)}"
+        channel = "UPI_EXPRESS"
+        cyber_flag = True
+        mule_cluster = f"cluster_{random.choice(['alpha', 'beta', 'gamma', 'delta', 'epsilon'])}"
+        channel_risk = round(random.uniform(0.80, 0.97), 2)
     else:
         cyber_flag = False
         mule_cluster = None
