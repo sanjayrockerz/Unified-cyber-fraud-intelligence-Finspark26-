@@ -226,7 +226,7 @@ const DEMO_GRAPH = (() => {
   return { nodes, links };
 })();
 
-export default function Neo4jGraphStudio({ graphData, onNodeClick }) {
+export default function Neo4jGraphStudio({ graphData, onNodeClick, allowDemoFallback = false, emptyMessage = 'No graph data for this selection.' }) {
   const fgRef = useRef();
   const graphContainerRef = useRef(null);
   const [selectedNode, setSelectedNode] = useState(null);
@@ -234,9 +234,13 @@ export default function Neo4jGraphStudio({ graphData, onNodeClick }) {
   const [filterGroup, setFilterGroup] = useState('all');
   const [graphDimensions, setGraphDimensions] = useState({ width: 0, height: 0 });
 
-  // Use live data when available, otherwise show the rich demo graph
+  // `allowDemoFallback` is opt-in. Surfaces that are showing a specific case
+  // (the investigation workspace) must never render DEMO_GRAPH, because a
+  // fabricated mule ring beside a real case id reads as that case's network.
+  // Standalone exploratory surfaces may still opt in.
   const hasLiveData = graphData && graphData.nodes && graphData.nodes.length > 0;
-  const baseData = hasLiveData ? graphData : DEMO_GRAPH;
+  const showDemo = !hasLiveData && allowDemoFallback;
+  const baseData = hasLiveData ? graphData : (showDemo ? DEMO_GRAPH : { nodes: [], links: [] });
 
   // Apply group filter
   const activeData = filterGroup === 'all'
@@ -369,9 +373,14 @@ export default function Neo4jGraphStudio({ graphData, onNodeClick }) {
           <span className="text-xs font-mono font-bold text-soc-text uppercase tracking-wider">
             Neo4j Threat Graph Visualizer
           </span>
-          {!hasLiveData && (
+          {showDemo && (
             <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/30 text-amber-400">
               DEMO · {baseData.nodes.length} nodes
+            </span>
+          )}
+          {!hasLiveData && !showDemo && (
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-soc-panel border border-soc-border text-soc-muted">
+              NO GRAPH DATA
             </span>
           )}
           {hasLiveData && (
@@ -431,7 +440,13 @@ export default function Neo4jGraphStudio({ graphData, onNodeClick }) {
       {/* ── Canvas area ─────────────────────────────────────────────────── */}
       <div ref={graphContainerRef} className="relative flex-1 min-h-0 overflow-hidden bg-[#07101C]">
 
-        {graphDimensions.width > 0 && graphDimensions.height > 0 ? (
+        {baseData.nodes.length === 0 ? (
+          <div className="flex h-full min-h-[280px] flex-col items-center justify-center gap-2 p-6 text-center">
+            <Layers aria-hidden="true" className="h-6 w-6 text-soc-muted" strokeWidth={1.5} />
+            <p className="text-sm font-medium text-soc-text">No connected entities</p>
+            <p className="max-w-sm text-xs leading-5 text-soc-muted">{emptyMessage}</p>
+          </div>
+        ) : graphDimensions.width > 0 && graphDimensions.height > 0 ? (
           <ForceGraph2D
             ref={fgRef}
             width={graphDimensions.width}

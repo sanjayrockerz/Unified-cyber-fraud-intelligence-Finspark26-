@@ -1,59 +1,58 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, lazy } from 'react';
 import { authenticatedWebSocketUrl } from '../platformAuth';
 import { useNavigate } from 'react-router-dom';
-import { ShieldAlert, Radio, RefreshCw, Upload, Terminal, Landmark, User, ChevronDown, ChevronUp } from 'lucide-react';
+import {
+  Bot, BookOpen, ExternalLink, Fingerprint, Landmark, Radio, RefreshCw, Search, ShieldAlert,
+  Terminal, Upload,
+} from 'lucide-react';
 
 import CSVSchemaMapperModal from '../components/runtime/CSVSchemaMapperModal';
 import FusionLifecyclePipeline from '../components/runtime/FusionLifecyclePipeline';
-import FraudDevToolsInspector from '../components/runtime/FraudDevToolsInspector';
-import NarrativeAIStoryteller from '../components/runtime/NarrativeAIStoryteller';
-import SessionTrustPassportPanel from '../components/trust/SessionTrustPassportPanel';
 import VerdictHero from '../components/common/VerdictHero';
-import InvestigationIntelligencePanel from '../components/investigation/InvestigationIntelligencePanel';
-import AICopilotPanel from '../components/copilot/AICopilotPanel';
+import CollapsibleSection from '../components/common/CollapsibleSection';
+import EmptyState from '../components/common/EmptyState';
+import PanelState from '../components/common/PanelState';
+import useResource from '../lib/useResource';
+import { formatAmount, formatTimestamp, normalizeVerdict, severityChip } from '../lib/verdict';
+
+// Secondary panels are lazy so a collapsed section costs no JS on first paint --
+// CollapsibleSection does not render its children until the first expand, so
+// these chunks are never requested until the analyst asks for them.
+const SessionTrustPassportPanel = lazy(() => import('../components/trust/SessionTrustPassportPanel'));
+const InvestigationIntelligencePanel = lazy(() => import('../components/investigation/InvestigationIntelligencePanel'));
+const NarrativeAIStoryteller = lazy(() => import('../components/runtime/NarrativeAIStoryteller'));
+const AICopilotPanel = lazy(() => import('../components/copilot/AICopilotPanel'));
+const FraudDevToolsInspector = lazy(() => import('../components/runtime/FraudDevToolsInspector'));
 
 const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8000' : '');
 const WS_BASE = API_BASE.replace(/^http/, 'ws');
+const QUEUE_PATH = '/cases?page_size=25&sort=-created_at';
 
 export default function OperationsCenterPage() {
   const navigate = useNavigate();
 
-  // Real-time State
-  const [streamEvents, setStreamEvents] = useState([]);
+  // The queue is the stored case list. Live evaluations from the replay stream
+  // are layered on top of it -- they never replace it with invented records.
+  const queue = useResource(QUEUE_PATH);
+
+  const [liveDecisions, setLiveDecisions] = useState([]);
   const [cyberEvents, setCyberEvents] = useState([]);
-  const [evaluatedCases, setEvaluatedCases] = useState([]);
-  const [selectedCase, setSelectedCase] = useState(null);
-  const [quantumData, setQuantumData] = useState(null);
+  const [selection, setSelection] = useState(null); // { id, source: 'analyst' | 'auto' }
   const [isCSVMapperOpen, setIsCSVMapperOpen] = useState(false);
   const [websocketStages, setWebsocketStages] = useState([]);
-  const [showSecondaryFeeds, setShowSecondaryFeeds] = useState(false);
 
-  // Engine Metrics State
-  const [apiLatency, setApiLatency] = useState(48);
+  const [apiLatency, setApiLatency] = useState(null);
   const [wsConnected, setWsConnected] = useState(false);
-  const [totalLossPrevented, setTotalLossPrevented] = useState(1980000);
+  const [blockedValue, setBlockedValue] = useState(0);
 
   const wsRef = useRef(null);
 
   useEffect(() => {
-    fetchQuantumPosture();
     connectWebSocket();
     return () => {
       if (wsRef.current) wsRef.current.close();
     };
   }, []);
-
-  const fetchQuantumPosture = async () => {
-    try {
-      const res = await fetch(`${API_BASE}/quantum/posture`);
-      if (res.ok) {
-        const data = await res.json();
-        setQuantumData(data);
-      }
-    } catch (e) {
-      console.warn("Quantum API fetch warning:", e);
-    }
-  };
 
   const connectWebSocket = () => {
     if (wsRef.current) wsRef.current.close();
@@ -66,336 +65,365 @@ export default function OperationsCenterPage() {
       try {
         const data = JSON.parse(evt.data);
         if (data.msg_type === 'status') return;
-
-        if (data.msg_type === 'pipeline_overview') {
-          setWebsocketStages([]);
-        }
-
-        if (data.msg_type === 'pipeline_stage') {
-          setWebsocketStages(prev => [...prev, data]);
-        }
-
+        if (data.msg_type === 'pipeline_overview') setWebsocketStages([]);
+        if (data.msg_type === 'pipeline_stage') setWebsocketStages((prev) => [...prev, data]);
         if (data.msg_type === 'cyber_event') {
-          setCyberEvents(prev => [data, ...prev].slice(0, 50));
+          setCyberEvents((prev) => [data, ...prev].slice(0, 50));
         }
 
         if (data.msg_type === 'transaction') {
-          setStreamEvents(prev => [data, ...prev].slice(0, 50));
-
           const startTime = performance.now();
           const evalRes = await fetch(`${API_BASE}/evaluate/transaction`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
+            body: JSON.stringify(data),
+          });
+          setApiLatency(Math.round(performance.now() - startTime));
+          if (!evalRes.ok) return;
+
+          const evaluation = await evalRes.json();
+          const verdict = normalizeVerdict(evaluation.action);
+          const decision = {
+            id: data.txn_id,
+            txn_id: data.txn_id,
+            transaction: data,
+            evaluation,
+            verdict,
+            score: evaluation.score,
+            amount: data.amount,
+            nameOrig: data.nameOrig,
+            nameDest: data.nameDest,
+            receivedAt: new Date().toISOString(),
+            isLive: true,
+          };
+
+          setLiveDecisions((prev) => {
+            if (prev.some((item) => item.txn_id === decision.txn_id)) return prev;
+            return [decision, ...prev].slice(0, 50);
           });
 
-          const latency = Math.round(performance.now() - startTime);
-          setApiLatency(latency > 0 ? latency : 48);
-
-          if (evalRes.ok) {
-            const evalData = await evalRes.json();
-            
-            const caseRecord = {
-              id: `CASE-2026-${Math.floor(8900 + Math.random() * 100)}`,
-              txn_id: data.txn_id || 'txn_demo_999',
-              user_id: data.user_id || 'usr_abc',
-              session_id: data.session_id || evalData.session_id || 'SESS_9921_CRITICAL',
-              nameOrig: data.nameOrig || 'ACC_ABC_123',
-              nameDest: data.nameDest || 'ACC_MULE_NEW',
-              amount: data.amount || 750000,
-              score: evalData.score || 94,
-              action: evalData.action || 'BLOCK',
-              reasons: evalData.reasons || [],
-              shap_features: evalData.shap_features || [],
-              counterfactual_sentence: evalData.counterfactual_sentence || '',
-              assignedAnalyst: 'Analyst_04',
-              createdTime: data.timestamp || new Date().toLocaleTimeString(),
-              status: evalData.action === 'BLOCK' ? 'CRITICAL IN REVIEW' : 'PENDING TRIAGE',
-              slaRemaining: '04m 12s',
-              rawTxn: data
-            };
-
-            setEvaluatedCases(prev => {
-              const exists = prev.some(c => c.txn_id === caseRecord.txn_id);
-              if (exists) return prev;
-              return [caseRecord, ...prev];
-            });
-
-            if (!selectedCase || evalData.action === 'BLOCK') {
-              setSelectedCase(caseRecord);
-            }
-
-            if (evalData.action === 'BLOCK') {
-              setTotalLossPrevented(prev => prev + (data.amount || 750000));
-            }
+          if (verdict === 'BLOCK') {
+            setBlockedValue((prev) => prev + Number(data.amount || 0));
+            // A live block takes focus, but the reason is stated in the UI so
+            // nobody has to guess why the view moved.
+            setSelection({ id: decision.id, source: 'auto' });
           }
         }
       } catch (e) {
-        console.error("WS Message Error:", e);
+        console.error('WS Message Error:', e);
       }
     };
   };
 
-  const defaultCases = useMemo(() => [
-    {
-      id: 'CASE-2026-8942',
-      txn_id: 'txn_demo_999',
-      user_id: 'usr_abc',
-      session_id: 'SESS_9921_CRITICAL',
-      nameOrig: 'ACC_ABC_123',
-      nameDest: 'ACC_MULE_NEW',
-      amount: 750000,
-      score: 94,
-      action: 'BLOCK',
-      reasons: [
-        'High baseline fraud probability (Tabular Score: 0.82)',
-        'Recent cyber compromise detected (Login from unusual IP prior to transfer)',
-        'Beneficiary is part of a known mule cluster (cluster_alpha)'
-      ],
-      shap_features: [
-        { feature: 'cyber_flag', impact: 2.1 },
-        { feature: 'log_amount', impact: 1.2 },
-        { feature: 'dest_balance_ratio', impact: 0.8 },
-        { feature: 'time_since_last_txn', impact: -0.4 }
-      ],
-      counterfactual_sentence: 'Counterfactual: With no prior cyber compromise, score = 61 -> CHALLENGE, not BLOCK.',
-      assignedAnalyst: 'Analyst_04 (Tier-3)',
-      createdTime: '10:00:40 IST',
-      status: 'CRITICAL IN REVIEW',
-      slaRemaining: '03m 45s',
-      cyber_compromise_in_window: true,
-      dest_mule_cluster_id: 'cluster_alpha',
-      ip: '185.15.2.22',
-      device_id: 'dev_9999',
-      type: 'TRANSFER'
-    }
-  ], []);
+  const queueRows = useMemo(
+    () =>
+      (queue.data?.items ?? []).map((item) => ({
+        id: item.case_id,
+        caseId: item.case_id,
+        severity: item.severity,
+        status: item.status,
+        score: item.score,
+        amount: item.amount,
+        createdAt: item.created_at,
+        reason: item.reason,
+        customerId: item.customer_id,
+        isLive: false,
+      })),
+    [queue.data],
+  );
 
-  const displayCases = evaluatedCases.length > 0 ? evaluatedCases : defaultCases;
-  const activeCase = selectedCase || displayCases[0];
+  const rows = useMemo(() => [...liveDecisions, ...queueRows], [liveDecisions, queueRows]);
+  const activeRow = selection ? rows.find((row) => row.id === selection.id) ?? null : null;
 
-  const activeTxnPayload = useMemo(() => activeCase.rawTxn || {
-    txn_id: activeCase.txn_id,
-    user_id: activeCase.user_id,
-    nameOrig: activeCase.nameOrig,
-    nameDest: activeCase.nameDest,
-    amount: activeCase.amount,
-    type: activeCase.type || 'TRANSFER',
-    ip: activeCase.ip || '185.15.2.22',
-    device_id: activeCase.device_id || 'dev_9999',
-    cyber_compromise_in_window: activeCase.cyber_compromise_in_window || true,
-    dest_mule_cluster_id: activeCase.dest_mule_cluster_id || 'cluster_alpha'
-  }, [activeCase]);
+  // Only a live decision carries a scored transaction. A stored queue row is a
+  // pointer into the investigation workspace, which fetches its own context.
+  const activeTransaction = activeRow?.transaction ?? null;
+  const activeEvaluation = activeRow?.evaluation ?? null;
 
   return (
-    <div className="flex w-full min-w-0 flex-col gap-5 max-w-[1850px] mx-auto select-none font-sans text-soc-text pb-8">
-      
-      {/* SECTION 1: MISSION OVERVIEW (PRE-TRANSACTION PLATFORM HEADER) */}
-      <div className="bg-soc-surface border border-soc-border rounded-xl p-4 flex flex-wrap items-center justify-between gap-4 shadow-xl">
+    <div className="mx-auto flex w-full min-w-0 max-w-[1850px] flex-col gap-5 pb-8 font-sans text-soc-text">
+      {/* One header. Identity, live engine state, and the two stream controls. */}
+      <header className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-soc-border bg-soc-surface p-4 shadow-xl">
         <div className="flex min-w-0 items-center gap-3.5">
-          <div className="p-3 bg-soc-primary/20 border border-soc-primary/40 rounded-xl">
-            <ShieldAlert className="w-7 h-7 text-soc-primary animate-pulse" />
+          <div className="rounded-xl border border-soc-primary/40 bg-soc-primary/20 p-3">
+            <ShieldAlert aria-hidden="true" className="h-6 w-6 text-soc-primary" />
           </div>
           <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-base font-mono font-black text-soc-text tracking-wider uppercase">
-                Fuzen AI — Pre-Transaction Cyber Fraud Prevention Platform
-              </h1>
-              <span className="text-[10px] font-mono px-2.5 py-0.5 rounded bg-soc-success/20 text-soc-success font-bold border border-soc-success/30">
-                PRE-TRANSACTION PROTECTION ACTIVE
-              </span>
-            </div>
-            <p className="text-xs text-soc-muted font-mono mt-0.5">
-              Evaluating Banking Session Trust & Mule Rings BEFORE money movement occurs
+            <h1 className="text-base font-bold text-soc-text">Operations Center</h1>
+            <p className="mt-0.5 text-xs text-soc-muted">
+              Transactions scored against the SIEM signals arriving in the same window.
             </p>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center justify-end gap-4 text-xs font-mono">
-          <div className="flex flex-col text-right">
-            <span className="text-[10px] text-soc-dim uppercase font-semibold">Total Loss Prevented</span>
-            <span className="font-mono font-black text-soc-success text-sm">INR {totalLossPrevented.toLocaleString('en-IN')}</span>
-          </div>
-
-          <div className="flex flex-col text-right border-l border-soc-border pl-6">
-            <span className="text-[10px] text-soc-dim uppercase font-semibold">Pre-Tx Engine SLA</span>
-            <span className="font-mono font-bold text-soc-warning text-sm">0.14 ms</span>
-          </div>
-
-          <div className="flex items-center gap-2 pl-2">
-            <button
-              onClick={() => setIsCSVMapperOpen(true)}
-              className="px-3 py-1.5 bg-soc-panel hover:bg-soc-border border border-soc-border text-soc-text rounded-lg font-mono font-bold flex items-center gap-1.5 transition-colors shadow"
+        <div className="flex flex-wrap items-center justify-end gap-5 font-mono text-xs">
+          <div className="text-right">
+            <span className="block text-[10px] uppercase text-soc-dim">Stream</span>
+            <span
+              className={`font-bold ${wsConnected ? 'text-soc-success' : 'text-soc-muted'}`}
             >
-              <Upload className="w-3.5 h-3.5 text-soc-primary" />
-              <span>Upload Dataset</span>
-            </button>
-
-            <button
-              onClick={connectWebSocket}
-              className="px-3 py-1.5 bg-soc-primary hover:bg-soc-primary text-soc-onPrimary rounded-lg font-mono font-bold flex items-center gap-1.5 transition-colors shadow"
-            >
-              <RefreshCw className="w-3.5 h-3.5" />
-              <span>Replay Stream</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* SECTION 2: ACTIVE SESSION / INVESTIGATION FOCUS */}
-      <div className="p-4 bg-soc-panel border border-soc-border rounded-xl flex flex-wrap items-center justify-between gap-4 shadow-md">
-        <div className="flex min-w-0 items-center gap-4">
-          <div className="p-3 bg-soc-bg border border-soc-border rounded-xl">
-            <User className="w-6 h-6 text-soc-primary" />
-          </div>
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded bg-soc-bg border border-soc-border text-soc-muted">
-                ACTIVE FOCUS SESSION: {activeTxnPayload.user_id}
-              </span>
-              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-soc-danger/20 text-soc-danger border border-soc-danger/40">
-                CRITICAL IN REVIEW
-              </span>
-            </div>
-            <h2 className="text-base font-black text-soc-text tracking-wide mt-1 flex items-center gap-3">
-              Target Customer: Rajesh Kumar ({activeTxnPayload.user_id})
-              <span className="text-xs text-soc-dim font-normal">| Device Fingerprint: <strong className="text-soc-text font-bold">{activeTxnPayload.device_id}</strong></span>
-            </h2>
-          </div>
-        </div>
-
-        <div className="flex flex-wrap items-center justify-end gap-4 text-xs font-mono">
-          <div className="flex flex-col text-right">
-            <span className="text-[10px] text-soc-dim uppercase">Assigned SOC Analyst</span>
-            <span className="font-bold text-soc-text">Analyst_04 (Tier-3)</span>
-          </div>
-
-          <div className="flex flex-col text-right border-l border-soc-border pl-6">
-            <span className="text-[10px] text-soc-dim uppercase">Active Transfer Payload</span>
-            <span className="font-bold text-soc-danger text-sm">INR {activeTxnPayload.amount?.toLocaleString('en-IN')}</span>
-          </div>
-        </div>
-      </div>
-
-      <VerdictHero
-        verdict={activeCase.action}
-        score={activeCase.score}
-        reason={activeCase.counterfactual_sentence || activeCase.reasons?.[0] || 'No explanation available for this decision yet.'}
-        timestamp={activeCase.createdTime}
-      />
-
-      {/* SECTION 3: MULTI-CHECKPOINT PRE-TRANSACTION TRUST PIPELINE */}
-      <div className="w-full">
-        <FusionLifecyclePipeline activeTxn={activeTxnPayload} evaluation={activeCase} websocketStages={websocketStages} />
-      </div>
-
-      {/* SECTION 3.5: SESSION TRUST PASSPORT */}
-      <SessionTrustPassportPanel sessionId={activeCase.session_id} activeTxn={activeTxnPayload} />
-
-      {/* SECTION 4: THREAT CORRELATION TIMELINE & MULE RING INTELLIGENCE */}
-      <InvestigationIntelligencePanel caseId={activeCase.id} activeTxn={activeTxnPayload} />
-
-      {/* SECTION 5 & 6: DECISION SUMMARY & NARRATIVE AI RESPONSE */}
-      <NarrativeAIStoryteller activeTxn={activeTxnPayload} evaluation={activeCase} />
-
-      {/* SECTION 7: FUZEN AI COPILOT */}
-      <div className="h-[520px]">
-        <AICopilotPanel 
-          activeContext={{ user_id: activeCase?.user_id, session_id: activeCase?.session_id }}
-          onSelectCustomer={(custRow) => {
-            if (custRow && custRow.customerId) {
-              setSelectedCase({
-                ...activeCase,
-                user_id: custRow.customerId,
-                nameOrig: custRow.customer,
-                score: custRow.riskScore,
-                amount: 750000,
-              });
-            }
-          }}
-        />
-      </div>
-
-      {/* PROGRESSIVE DISCLOSURE: EXPANDABLE SECONDARY RAW STREAM FEEDS */}
-      <div className="bg-soc-surface border border-soc-border rounded-xl overflow-hidden shadow-lg">
-        <button
-          onClick={() => setShowSecondaryFeeds(!showSecondaryFeeds)}
-          className="w-full p-3.5 flex items-center justify-between bg-soc-panel hover:bg-soc-border/50 text-left transition-colors font-mono text-xs font-bold text-soc-text"
-        >
-          <div className="flex items-center gap-2">
-            <Terminal className="w-4 h-4 text-soc-primary" />
-            <span>Raw Operational Stream Feeds & Inspector (Click to Expand / Collapse)</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] text-soc-muted">
-              {showSecondaryFeeds ? 'Collapse Secondary Logs' : 'Expand Raw Logs & DevTools'}
+              {wsConnected ? 'Connected' : 'Disconnected'}
             </span>
-            {showSecondaryFeeds ? <ChevronUp className="w-4 h-4 text-soc-dim" /> : <ChevronDown className="w-4 h-4 text-soc-dim" />}
           </div>
-        </button>
+          <div className="border-l border-soc-border pl-5 text-right">
+            <span className="block text-[10px] uppercase text-soc-dim">Decision latency</span>
+            <span className="font-bold tabular-nums text-soc-text">
+              {apiLatency == null ? '—' : `${apiLatency} ms`}
+            </span>
+          </div>
+          <div className="border-l border-soc-border pl-5 text-right">
+            <span className="block text-[10px] uppercase text-soc-dim">Blocked this session</span>
+            <span className="font-bold tabular-nums text-soc-success">
+              {formatAmount(blockedValue)}
+            </span>
+          </div>
 
-        {showSecondaryFeeds && (
-          <div className="p-4 space-y-4 font-mono text-xs border-t border-soc-border">
-            <div className="grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-12">
-              {/* TRANSACTION FEED */}
-              <div className="min-w-0 lg:col-span-6 bg-soc-panel border border-soc-border rounded-xl p-3.5">
-                <div className="flex items-center justify-between border-b border-soc-border pb-2 mb-3">
-                  <h3 className="text-xs font-bold text-soc-text uppercase flex items-center gap-2">
-                    <Landmark className="w-4 h-4 text-soc-primary" />
-                    <span>Incoming Transaction Stream</span>
-                  </h3>
-                  <span className="text-[10px] text-soc-muted">{displayCases.length} Txns</span>
-                </div>
-                <div className="max-h-[220px] overflow-y-auto space-y-2 text-[11px]">
-                  {displayCases.map((c) => (
-                    <div key={c.id} onClick={() => setSelectedCase(c)} className="p-2 bg-soc-bg border border-soc-border rounded flex justify-between cursor-pointer">
-                      <span>{c.id} — {c.nameOrig} ➔ {c.nameDest}</span>
-                      <span className="font-bold text-soc-danger">INR {c.amount.toLocaleString('en-IN')}</span>
-                    </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setIsCSVMapperOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-soc-border bg-soc-panel px-3 py-1.5 font-bold text-soc-text transition-colors hover:border-soc-primary"
+            >
+              <Upload aria-hidden="true" className="h-3.5 w-3.5 text-soc-primary" />
+              <span>Upload dataset</span>
+            </button>
+            <button
+              type="button"
+              onClick={connectWebSocket}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-soc-primary px-3 py-1.5 font-bold text-soc-onPrimary shadow transition-opacity hover:opacity-90"
+            >
+              <RefreshCw aria-hidden="true" className="h-3.5 w-3.5" />
+              <span>Replay stream</span>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* Nothing is selected until an analyst clicks or a live BLOCK arrives,
+          and when the view auto-selects it says so. */}
+      {activeRow ? (
+        <>
+          {selection?.source === 'auto' && (
+            <p
+              role="status"
+              className="rounded-lg border border-soc-info/40 bg-soc-info/10 px-3 py-2 text-xs text-soc-text"
+            >
+              Auto-selected — newest BLOCK decision on the live stream. Select any row below to
+              pin a different one.
+            </p>
+          )}
+
+          <VerdictHero
+            verdict={activeRow.verdict ?? null}
+            score={activeRow.score}
+            reason={activeEvaluation?.reasons?.[0] || activeRow.reason}
+            timestamp={formatTimestamp(activeRow.receivedAt || activeRow.createdAt)}
+            transactionId={activeRow.txn_id}
+          />
+
+          {activeRow.caseId && (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-soc-border bg-soc-panel px-4 py-3">
+              <span className="font-mono text-xs text-soc-muted">
+                Case <span className="font-bold text-soc-text">{activeRow.caseId}</span>
+                {activeRow.customerId ? ` · ${activeRow.customerId}` : ''}
+              </span>
+              <button
+                type="button"
+                onClick={() => navigate(`/investigation/${activeRow.caseId}`)}
+                className="inline-flex items-center gap-2 rounded bg-soc-primary px-3 py-1.5 text-xs font-semibold text-soc-onPrimary transition-opacity hover:opacity-90"
+              >
+                <ExternalLink aria-hidden="true" className="h-3.5 w-3.5" />
+                Open investigation
+              </button>
+            </div>
+          )}
+        </>
+      ) : (
+        <EmptyState
+          title="No decision selected"
+          description="Select a transaction or case below to see its verdict, pipeline and supporting panels. Nothing is pre-selected."
+        />
+      )}
+
+      {activeTransaction && (
+        <FusionLifecyclePipeline
+          activeTxn={activeTransaction}
+          evaluation={activeEvaluation}
+          websocketStages={websocketStages}
+        />
+      )}
+
+      {/* The fusion view: the decision queue beside the SIEM feed explaining it. */}
+      <div className="grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-12">
+        <section className="min-w-0 rounded-xl border border-soc-border bg-soc-panel p-3.5 lg:col-span-6">
+          <header className="mb-3 flex items-center justify-between border-b border-soc-border pb-2">
+            <h2 className="flex items-center gap-2 text-xs font-bold uppercase text-soc-text">
+              <Landmark aria-hidden="true" className="h-4 w-4 text-soc-primary" />
+              Decision queue
+            </h2>
+            <span className="font-mono text-[10px] text-soc-muted">
+              {liveDecisions.length} live · {queue.data?.total ?? 0} stored
+            </span>
+          </header>
+          <p className="mb-2 text-[10px] text-soc-dim">
+            Select a row to drive the verdict and every panel below.
+          </p>
+
+          <div className="max-h-[260px] overflow-y-auto pr-1">
+            <PanelState
+              status={queue.status}
+              error={queue.error}
+              onRetry={queue.reload}
+              isEmpty={rows.length === 0}
+              loadingLabel="Loading the case queue…"
+              emptyTitle="Queue is empty"
+              emptyDescription="No stored cases and nothing on the live stream yet."
+            >
+              {() => (
+                <ul className="space-y-2">
+                  {rows.map((row) => (
+                    <li key={row.id}>
+                      <button
+                        type="button"
+                        onClick={() => setSelection({ id: row.id, source: 'analyst' })}
+                        aria-pressed={row.id === activeRow?.id}
+                        className={`flex w-full items-center justify-between gap-2 rounded border bg-soc-bg p-2 text-left text-[11px] transition-colors hover:border-soc-primary ${
+                          row.id === activeRow?.id ? 'border-soc-primary' : 'border-soc-border'
+                        }`}
+                      >
+                        <span className="flex min-w-0 items-center gap-2">
+                          {row.isLive ? (
+                            <span className="shrink-0 rounded border border-soc-success/40 bg-soc-success/10 px-1 py-0.5 font-mono text-[9px] font-bold text-soc-success">
+                              LIVE
+                            </span>
+                          ) : (
+                            <span
+                              className={`shrink-0 rounded border px-1 py-0.5 font-mono text-[9px] font-bold ${
+                                severityChip[row.severity] || severityChip.LOW
+                              }`}
+                            >
+                              {row.severity}
+                            </span>
+                          )}
+                          <span className="truncate font-mono text-soc-text">
+                            {row.caseId || row.txn_id}
+                          </span>
+                          <span className="truncate font-mono text-soc-dim">
+                            {row.nameOrig} → {row.nameDest}
+                          </span>
+                        </span>
+                        <span className="shrink-0 font-mono font-bold tabular-nums text-soc-danger">
+                          {formatAmount(row.amount)}
+                        </span>
+                      </button>
+                    </li>
                   ))}
-                </div>
-              </div>
-
-              {/* SIEM LOGS */}
-              <div className="min-w-0 lg:col-span-6 bg-soc-panel border border-soc-border rounded-xl p-3.5">
-                <div className="flex items-center justify-between border-b border-soc-border pb-2 mb-3">
-                  <h3 className="text-xs font-bold text-soc-text uppercase flex items-center gap-2">
-                    <Radio className="w-4 h-4 text-soc-danger animate-pulse" />
-                    <span>Synchronized SIEM Cyber Logs</span>
-                  </h3>
-                  <span className="text-[10px] text-soc-muted">{cyberEvents.length} Logs</span>
-                </div>
-                <div className="max-h-[220px] overflow-y-auto space-y-2 text-[11px]">
-                  {cyberEvents.length === 0 ? (
-                    <div className="p-2 bg-soc-danger/10 border border-soc-danger/30 text-soc-danger rounded">
-                      [T-0:40s] Impossible Travel Login Detected (IP 185.15.2.22, Moscow ➔ Mumbai)
-                    </div>
-                  ) : (
-                    cyberEvents.map((evt, idx) => (
-                      <div key={idx} className="p-2 bg-soc-bg border border-soc-border rounded text-soc-muted">
-                        {evt.timestamp} • {evt.event_type} • User: {evt.user_id} • IP: {evt.ip}
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* DEVTOOLS INSPECTOR */}
-            <div className="h-[320px]">
-              <FraudDevToolsInspector activeTxn={activeTxnPayload} evaluation={activeCase} />
-            </div>
+                </ul>
+              )}
+            </PanelState>
           </div>
-        )}
+        </section>
+
+        <section className="min-w-0 rounded-xl border border-soc-border bg-soc-panel p-3.5 lg:col-span-6">
+          <header className="mb-3 flex items-center justify-between border-b border-soc-border pb-2">
+            <h2 className="flex items-center gap-2 text-xs font-bold uppercase text-soc-text">
+              <Radio aria-hidden="true" className="h-4 w-4 text-soc-danger" />
+              Synchronized SIEM logs
+            </h2>
+            <span className="font-mono text-[10px] text-soc-muted">{cyberEvents.length}</span>
+          </header>
+          <p className="mb-2 text-[10px] text-soc-dim">
+            Cyber events arriving in the same window as the transfers on the left.
+          </p>
+          <div className="max-h-[260px] space-y-2 overflow-y-auto pr-1 font-mono text-[11px]">
+            {cyberEvents.length === 0 ? (
+              <EmptyState
+                title="No cyber events yet"
+                description="Start the replay stream to see SIEM signals as they arrive."
+              />
+            ) : (
+              cyberEvents.map((event, index) => (
+                <div
+                  key={`${event.timestamp}-${index}`}
+                  className="rounded border border-soc-border bg-soc-bg p-2 text-soc-muted"
+                >
+                  {event.timestamp} • {event.event_type} • {event.user_id} • {event.ip}
+                </div>
+              ))
+            )}
+          </div>
+        </section>
       </div>
 
-      {/* Dataset Schema Mapper Ingestion Modal */}
-      <CSVSchemaMapperModal 
-        isOpen={isCSVMapperOpen} 
-        onClose={() => setIsCSVMapperOpen(false)} 
-        onIngest={(data) => console.log('CSV Ingested:', data)} 
-      />
+      {/* Progressive disclosure: depth on demand. Each section lazy-mounts on
+          first expand and then stays mounted, so re-collapsing never refetches. */}
+      {activeTransaction && (
+        <>
+          <CollapsibleSection
+            title="Session Trust Passport"
+            description="Identity, device, network, and behaviour checkpoints"
+            icon={Fingerprint}
+          >
+            <SessionTrustPassportPanel
+              sessionId={activeEvaluation?.session_id || activeTransaction.session_id}
+              activeTxn={activeTransaction}
+            />
+          </CollapsibleSection>
 
+          <CollapsibleSection
+            title="Threat Correlation & Mule Ring Intelligence"
+            description="Linked cyber signals and beneficiary network"
+            icon={Search}
+          >
+            <InvestigationIntelligencePanel
+              caseId={activeRow?.caseId || activeRow?.txn_id}
+              activeTxn={activeTransaction}
+            />
+          </CollapsibleSection>
+
+          <CollapsibleSection
+            title="Narrative AI Decision Summary"
+            description="Plain-language account of why this verdict was reached"
+            icon={BookOpen}
+          >
+            <NarrativeAIStoryteller activeTxn={activeTransaction} evaluation={activeEvaluation} />
+          </CollapsibleSection>
+
+          <CollapsibleSection
+            title="Fraud DevTools Inspector"
+            description="Raw features, SHAP values, and engine internals"
+            icon={Terminal}
+          >
+            <div className="h-[320px]">
+              <FraudDevToolsInspector
+                activeTxn={activeTransaction}
+                evaluation={activeEvaluation}
+              />
+            </div>
+          </CollapsibleSection>
+        </>
+      )}
+
+      <CollapsibleSection
+        title="Fuzen AI Copilot"
+        description="Ask questions about the platform and the current selection"
+        icon={Bot}
+      >
+        <div className="h-[520px]">
+          <AICopilotPanel
+            activeContext={{
+              user_id: activeTransaction?.user_id ?? activeRow?.customerId,
+              session_id: activeEvaluation?.session_id,
+            }}
+          />
+        </div>
+      </CollapsibleSection>
+
+      <CSVSchemaMapperModal
+        isOpen={isCSVMapperOpen}
+        onClose={() => setIsCSVMapperOpen(false)}
+        onIngest={(data) => console.log('CSV Ingested:', data)}
+      />
     </div>
   );
 }

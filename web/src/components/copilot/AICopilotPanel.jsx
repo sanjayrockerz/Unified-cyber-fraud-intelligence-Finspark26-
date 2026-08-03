@@ -687,27 +687,10 @@ function MarkdownReportRenderer({ content, onSelectCustomer }) {
 
 // 4. MAIN COPILOT PANEL
 export default function AICopilotPanel({ activeContext, onSelectCustomer }) {
-  const [messages, setMessages] = useState([
-    {
-      role: 'model',
-      timestamp: '10:24:32 AM',
-      type: 'structured_alert',
-      heading: 'Latest Critical Alerts',
-      stats: [
-        { label: 'Total Critical', value: '7', color: 'text-red-500' },
-        { label: 'Affected Users', value: '5', color: 'text-soc-text' },
-        { label: 'High Risk Score', value: '92', color: 'text-red-500 font-black' },
-        { label: 'Confidence Avg.', value: '87%', color: 'text-soc-quantum' },
-      ],
-      tableData: [
-        { time: '10:23:51 AM', type: 'Impossible Travel', typeIcon: '✈️', customer: 'Rajesh Kumar', customerId: 'CUST_982734', riskScore: 92, location: 'Mumbai ➔ New York 🇺🇸', status: 'New', statusColor: 'bg-red-500' },
-        { time: '10:22:44 AM', type: 'Unusual Transaction', typeIcon: '💳', customer: 'Priya Sharma', customerId: 'CUST_442910', riskScore: 89, location: 'Bangalore, India 🇮🇳', status: 'New', statusColor: 'bg-red-500' },
-        { time: '10:21:33 AM', type: 'Multiple Sessions', typeIcon: '📱', customer: 'Arjun Mehta', customerId: 'CUST_551029', riskScore: 88, location: 'Delhi, India 🇮🇳', status: 'In Progress', statusColor: 'bg-amber-500' },
-        { time: '10:20:11 AM', type: 'New Device Login', typeIcon: '💻', customer: 'Sneha Iyer', customerId: 'CUST_110948', riskScore: 85, location: 'Chennai, India 🇮🇳', status: 'New', statusColor: 'bg-red-500' },
-        { time: '10:19:02 AM', type: 'High Value Transfer', typeIcon: '💸', customer: 'Vikram Singh', customerId: 'CUST_330192', riskScore: 92, location: 'Hyderabad, India 🇮🇳', status: 'New', statusColor: 'bg-red-500' },
-      ],
-    },
-  ]);
+  // The thread starts empty. It previously opened with a fabricated alert table
+  // -- five named customers and risk scores that exist nowhere in the store --
+  // presented as if the copilot had just reported them.
+  const [messages, setMessages] = useState([]);
 
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -722,7 +705,7 @@ export default function AICopilotPanel({ activeContext, onSelectCustomer }) {
   ];
 
   const quickActions = [
-    { label: "Investigate Customer", query: "Investigate Rajesh Kumar", icon: Search },
+    { label: "Investigate Customer", query: "Investigate the customer on the current case", icon: Search },
     { label: "Show Critical Alerts", query: "Show me the latest critical alerts", icon: ShieldAlert, tint: "text-red-400" },
     { label: "Detect Anomalies", query: "Detect anomalies in active sessions", icon: Activity },
     { label: "Audit VPN Logins", query: "Who logged in through VPN today?", icon: ShieldAlert },

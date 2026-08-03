@@ -1,27 +1,19 @@
 import React, { createContext, useContext, useState } from 'react';
 
+// No seeded customer. Nothing is "active" until an analyst selects one.
 const CustomerContext = createContext({
-  activeCustomerId: 'usr_abc',
+  activeCustomerId: null,
   customerProfile: null,
   selectCustomer: () => {}
 });
 
 export function CustomerProvider({ children }) {
-  const [activeCustomerId, setActiveCustomerId] = useState('usr_abc');
-  const [customerProfile, setCustomerProfile] = useState({
-    id: 'usr_abc',
-    name: 'Rajesh Kumar',
-    primaryAccount: 'ACC_ABC_123',
-    riskScore: 94,
-    riskGrade: 'CRITICAL',
-    status: 'COMPROMISED',
-    location: 'Mumbai, IN',
-    balance: '₹1,450,000.00'
-  });
+  const [activeCustomerId, setActiveCustomerId] = useState(null);
+  const [customerProfile, setCustomerProfile] = useState(null);
 
-  const selectCustomer = (customerId) => {
+  const selectCustomer = (customerId, profile = null) => {
     setActiveCustomerId(customerId);
-    setCustomerProfile(prev => ({ ...prev, id: customerId }));
+    setCustomerProfile(profile);
   };
 
   return (

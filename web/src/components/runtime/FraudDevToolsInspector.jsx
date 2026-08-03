@@ -68,12 +68,28 @@ export default function FraudDevToolsInspector({ activeTxn, evaluation }) {
           <div className="space-y-2">
             <span className="text-[10px] text-soc-dim uppercase font-semibold">Event Precursor Timeline</span>
             <div className="space-y-2">
-              <div className="p-2.5 bg-soc-danger/10 border border-soc-danger/30 rounded-lg text-soc-danger">
-                <div className="font-bold">[T-0:40s] Impossible Travel Login Detected</div>
-                <div className="text-[11px] text-soc-muted">IP: 185.15.2.22 (RU) | User: {activeTxn.user_id} | 4,500 km Anomaly</div>
-              </div>
+              {/* Precursors are the threats the engine actually raised for this
+                  transaction, not a fixed narrative. */}
+              {(evaluation?.threats ?? []).map((threat) => (
+                <div
+                  key={threat.threat_id}
+                  className="p-2.5 bg-soc-danger/10 border border-soc-danger/30 rounded-lg text-soc-danger"
+                >
+                  <div className="font-bold">[precursor] {threat.threat_name}</div>
+                  <div className="text-[11px] text-soc-muted">
+                    {threat.severity} | {threat.threat_category} | User: {activeTxn.user_id}
+                  </div>
+                </div>
+              ))}
+              {(evaluation?.threats ?? []).length === 0 && (
+                <div className="p-2.5 bg-soc-panel border border-soc-border rounded-lg text-[11px] text-soc-muted">
+                  No precursor threats were raised for this transaction.
+                </div>
+              )}
               <div className="p-2.5 bg-soc-panel border border-soc-border rounded-lg">
-                <div className="font-bold text-soc-text">[T+0:00s] Transaction Transfer Initiated</div>
+                <div className="font-bold text-soc-text">
+                  [{activeTxn.timestamp || 'T+0:00s'}] Transaction Transfer Initiated
+                </div>
                 <div className="text-[11px] text-soc-muted">Amount: INR {activeTxn.amount?.toLocaleString('en-IN')} | To: {activeTxn.nameDest}</div>
               </div>
             </div>

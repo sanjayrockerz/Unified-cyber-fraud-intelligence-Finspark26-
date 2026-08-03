@@ -3,12 +3,12 @@ import {
   Activity, AlertTriangle, RefreshCw, ShieldAlert, Sparkles, TimerReset, ShieldCheck, 
   Terminal, Globe, Users, Briefcase, Zap, Info, ArrowUpRight, Copy, Check, MessageSquare
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { authenticatedWebSocketUrl } from '../../platformAuth';
 import DataTable from '../common/DataTable';
 import Drawer from '../common/Drawer';
 import LiveThreatMap from './LiveThreatMap';
 import EnterpriseStatusBadge from '../common/EnterpriseStatusBadge';
-import { useCase } from '../../context/CaseContext';
 
 const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8000' : '');
 const WS_BASE = API_BASE.replace(/^http/, 'ws');
@@ -24,7 +24,8 @@ function decisionForThreat(threat) {
 }
 
 export default function ThreatIntelligenceDashboard() {
-  const { selectCase } = useCase();
+  // Threats route to the real case queue rather than pinning a fixed case id.
+  const navigate = useNavigate();
   const [threats, setThreats] = useState([]);
   const [streamConnected, setStreamConnected] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -209,7 +210,7 @@ export default function ThreatIntelligenceDashboard() {
         <div className="col-span-2 flex items-center gap-2 justify-end text-[10px] font-bold">
           <button 
             type="button" 
-            onClick={(e) => { e.stopPropagation(); selectCase('CASE-2026-8942'); alert(`Elevating transaction ${txn.txn_id} to case dossier.`); }} 
+            onClick={(e) => { e.stopPropagation(); navigate('/cases'); }}
             className="px-2.5 py-1 bg-soc-primary/10 border border-soc-primary/30 text-soc-primary hover:bg-soc-primary hover:text-soc-onPrimary rounded transition-all"
           >
             Investigate Case
@@ -705,7 +706,7 @@ export default function ThreatIntelligenceDashboard() {
             <div className="border-t border-soc-border pt-3 flex gap-2">
               <button
                 type="button"
-                onClick={() => { setSelectedIncident(null); selectCase('CASE-2026-8942'); alert(`Dossier CASE-2026-8942 linking incident ${selectedIncident.id} opened.`); }}
+                onClick={() => { setSelectedIncident(null); navigate('/cases'); }}
                 className="w-full py-2 bg-soc-primary text-soc-onPrimary rounded font-bold hover:bg-soc-primary/80 transition-all text-center flex items-center justify-center gap-1.5"
               >
                 <MessageSquare className="h-4 w-4" />

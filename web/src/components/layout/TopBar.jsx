@@ -1,14 +1,25 @@
 import React, { useEffect, useState } from 'react';
-import { Bell, Cpu, Moon, Search, Sun, ShieldCheck, Terminal, Users, AlertTriangle, Briefcase } from 'lucide-react';
+import { Bell, Cpu, Moon, Search, Sun, ShieldCheck, Terminal, AlertTriangle, Briefcase } from 'lucide-react';
 import { useSearch } from '../../context/SearchContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useNotifications } from '../../context/NotificationContext';
+import useResource from '../../lib/useResource';
 
 export default function TopBar({ quantumData }) {
   const { openSearch } = useSearch();
   const { theme, toggleTheme } = useTheme();
   const { unreadCount } = useNotifications();
   const [freshness, setFreshness] = useState(0);
+
+  // Counts come from the same endpoints the pages use, so the header cannot
+  // disagree with the queue underneath it. "Analysts online" is gone: there is
+  // no presence service, so there was no number to show.
+  const openCases = useResource('/cases?status=OPEN&page_size=1');
+  const criticalCases = useResource('/cases?severity=CRITICAL&page_size=1');
+  const platform = useResource('/platform/status');
+
+  const engineHealthy =
+    platform.data?.models?.status === 'AVAILABLE' && platform.data?.graph?.status === 'AVAILABLE';
 
   // Live freshness counter that counts up and resets on global threat update event
   useEffect(() => {
@@ -60,9 +71,19 @@ export default function TopBar({ quantumData }) {
         {/* Engine Status */}
         <div className="flex flex-col min-w-[100px]">
           <span className="text-[9px] uppercase tracking-[0.1em] text-soc-muted font-bold">Engine Status</span>
-          <div className="flex items-center gap-1.5 mt-0.5 text-soc-success">
+          <div
+            className={`flex items-center gap-1.5 mt-0.5 ${
+              platform.status === 'ready'
+                ? engineHealthy
+                  ? 'text-soc-success'
+                  : 'text-soc-warning'
+                : 'text-soc-muted'
+            }`}
+          >
             <ShieldCheck className="h-3.5 w-3.5" />
-            <span className="font-mono text-xs font-bold">Healthy</span>
+            <span className="font-mono text-xs font-bold">
+              {platform.status !== 'ready' ? '—' : engineHealthy ? 'Healthy' : 'Degraded'}
+            </span>
           </div>
         </div>
 
@@ -78,21 +99,12 @@ export default function TopBar({ quantumData }) {
           </div>
         </div>
 
-        {/* Analysts Online */}
-        <div className="flex flex-col min-w-[100px]">
-          <span className="text-[9px] uppercase tracking-[0.1em] text-soc-muted font-bold">Analysts Online</span>
-          <div className="flex items-center gap-1.5 mt-0.5 text-blue-400 font-mono text-xs font-bold">
-            <Users className="h-3.5 w-3.5" />
-            <span>14</span>
-          </div>
-        </div>
-
-        {/* Current Alerts */}
+        {/* Critical Cases */}
         <div className="flex flex-col min-w-[90px]">
-          <span className="text-[9px] uppercase tracking-[0.1em] text-soc-muted font-bold">Current Alerts</span>
+          <span className="text-[9px] uppercase tracking-[0.1em] text-soc-muted font-bold">Critical Cases</span>
           <div className="flex items-center gap-1.5 mt-0.5 text-soc-danger font-mono text-xs font-bold">
-            <AlertTriangle className="h-3.5 w-3.5 animate-bounce" />
-            <span>8</span>
+            <AlertTriangle className="h-3.5 w-3.5" />
+            <span>{criticalCases.status === 'ready' ? criticalCases.data?.total ?? 0 : '—'}</span>
           </div>
         </div>
 
@@ -101,7 +113,7 @@ export default function TopBar({ quantumData }) {
           <span className="text-[9px] uppercase tracking-[0.1em] text-soc-muted font-bold">Open Cases</span>
           <div className="flex items-center gap-1.5 mt-0.5 text-soc-quantum font-mono text-xs font-bold">
             <Briefcase className="h-3.5 w-3.5" />
-            <span>17</span>
+            <span>{openCases.status === 'ready' ? openCases.data?.total ?? 0 : '—'}</span>
           </div>
         </div>
       </div>

@@ -1,37 +1,44 @@
 import React, { useEffect, useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import {
-  Activity, BarChart3, Building2, ChevronLeft, Code2, FileBarChart2, FlaskConical,
-  LayoutDashboard, Menu, Network, Radio, Settings, ShieldAlert, Users, Workflow,
-  Pin, Zap, Clock, Keyboard, ShieldCheck
+  Activity, Atom, BarChart3, Building2, ChevronDown, ChevronLeft, Code2, FileBarChart2,
+  FlaskConical, LayoutDashboard, Menu, Network, Radio, Settings, ShieldAlert, Users,
+  Workflow, Pin, Zap, Clock, Keyboard, ShieldCheck, MoreHorizontal
 } from 'lucide-react';
 import { useSidebar } from '../../context/SidebarContext';
+import { useCase } from '../../context/CaseContext';
+import { severityChip } from '../../lib/verdict';
 
+// Five primary destinations carry the core fraud/cyber-fusion story. Everything
+// else stays reachable behind one collapsed "Advanced" group -- reorganised for
+// first-run legibility, never removed.
 const NAV_ITEMS = [
-  { to: '/', label: 'Overview', icon: LayoutDashboard, group: null },
-  { to: '/operations', label: 'Operations Center', icon: Activity, group: 'Fraud Operations' },
-  { to: '/cases', label: 'Cases', icon: FileBarChart2, group: 'Fraud Operations' },
-  { to: '/customers', label: 'Customers', icon: Users, group: 'Fraud Operations' },
-  { to: '/investigation', label: 'Investigation', icon: Workflow, group: 'Fraud Operations' },
-  { to: '/analytics', label: 'Analytics', icon: BarChart3, group: 'Intelligence' },
-  { to: '/reports', label: 'Reports', icon: FileBarChart2, group: 'Intelligence' },
-  { to: '/sessions', label: 'Session Intelligence', icon: Radio, group: 'Intelligence' },
-  { to: '/graph', label: 'Graph Runtime', icon: Network, group: 'Intelligence' },
-  { to: '/executive', label: 'Executive Command Center', icon: LayoutDashboard, group: 'Leadership & Platform' },
-  { to: '/telemetry', label: 'Telemetry', icon: Activity, group: 'Leadership & Platform' },
-  { to: '/banking', label: 'Banking', icon: Building2, group: 'Leadership & Platform' },
-  { to: '/synthetic-lab', label: 'Synthetic Lab', icon: FlaskConical, group: 'Leadership & Platform' },
-  { to: '/developer', label: 'SDK Runtime', icon: Code2, group: 'Leadership & Platform' },
-  { to: '/settings', label: 'Settings', icon: Settings, group: null },
+  { to: '/', label: 'Overview', icon: LayoutDashboard, advanced: false },
+  { to: '/operations', label: 'Operations Center', icon: Activity, advanced: false },
+  // Cases is primary: it is the queue an investigation is entered from, so the
+  // path Overview -> Cases -> Investigation stays visible without expanding a group.
+  { to: '/cases', label: 'Cases', icon: FileBarChart2, advanced: false },
+  { to: '/investigation', label: 'Investigation', icon: Workflow, advanced: false },
+  { to: '/analytics', label: 'Analytics', icon: BarChart3, advanced: false },
+  { to: '/graph', label: 'Graph Runtime', icon: Network, advanced: false },
+
+  { to: '/customers', label: 'Customers', icon: Users, advanced: true },
+  { to: '/reports', label: 'Reports', icon: FileBarChart2, advanced: true },
+  { to: '/sessions', label: 'Session Intelligence', icon: Radio, advanced: true },
+  { to: '/threats', label: 'Cyber Threat Intelligence', icon: ShieldAlert, advanced: true },
+  { to: '/executive', label: 'Executive Command Center', icon: LayoutDashboard, advanced: true },
+  { to: '/telemetry', label: 'Telemetry', icon: Activity, advanced: true },
+  { to: '/banking', label: 'Banking', icon: Building2, advanced: true },
+  { to: '/synthetic-lab', label: 'Synthetic Lab', icon: FlaskConical, advanced: true },
+  { to: '/developer', label: 'SDK Runtime', icon: Code2, advanced: true },
+  { to: '/quantum', label: 'Quantum Trust', icon: Atom, advanced: true },
+  { to: '/settings', label: 'Settings', icon: Settings, advanced: true },
 ];
 
-const GROUP_ORDER = ['Fraud Operations', 'Intelligence', 'Leadership & Platform'];
-const groups = GROUP_ORDER.map((label) => ({
-  label,
-  items: NAV_ITEMS.filter((item) => item.group === label),
-}));
+const primaryItems = NAV_ITEMS.filter((item) => !item.advanced);
+const advancedItems = NAV_ITEMS.filter((item) => item.advanced);
 const allNavItems = NAV_ITEMS;
-const overviewItem = NAV_ITEMS.find((item) => item.to === '/');
+const ADVANCED_OPEN_KEY = 'nav-advanced-open';
 
 function DirectNavLink({ to, label, icon: Icon, end = false, collapsed, isPinned, onTogglePin }) {
   return (
@@ -73,8 +80,12 @@ function DirectNavLink({ to, label, icon: Icon, end = false, collapsed, isPinned
 
 export default function Sidebar() {
   const { isCollapsed, toggleSidebar, setIsCollapsed } = useSidebar();
-  
-  // Stored state for pinned paths
+  const { pathname } = useLocation();
+  const { recentCases } = useCase();
+
+  // Stored state for pinned paths. Defaults to empty so a first-time viewer sees
+  // exactly five primary destinations plus one collapsed group -- pinning stays
+  // available, it is just no longer pre-seeded with duplicate links.
   const [pinnedPaths, setPinnedPaths] = useState(() => {
     try {
       const stored = localStorage.getItem('pinned-favorites');
@@ -82,11 +93,38 @@ export default function Sidebar() {
         // Filter out '/' from stored values to prevent stale Overview pinning from old sessions
         return JSON.parse(stored).filter((p) => p !== '/');
       }
-      return ['/operations', '/cases'];
+      return [];
     } catch {
-      return ['/operations', '/cases'];
+      return [];
     }
   });
+
+  const [isAdvancedOpen, setIsAdvancedOpen] = useState(() => {
+    try {
+      return localStorage.getItem(ADVANCED_OPEN_KEY) === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  // A direct URL into an Advanced route should reveal where you are, but must
+  // not persist the group as open for the next visit.
+  const isAdvancedRouteActive = advancedItems.some(
+    (item) => pathname === item.to || pathname.startsWith(`${item.to}/`)
+  );
+  const showAdvancedItems = isAdvancedOpen || isAdvancedRouteActive;
+
+  const toggleAdvanced = () => {
+    setIsAdvancedOpen((open) => {
+      const next = !open;
+      try {
+        localStorage.setItem(ADVANCED_OPEN_KEY, String(next));
+      } catch {
+        /* storage unavailable -- in-memory state still works */
+      }
+      return next;
+    });
+  };
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(max-width: 767px)');
@@ -144,96 +182,120 @@ export default function Sidebar() {
         </div>
       </div>
 
-      {/* Permanent Overview link — always visible, not part of the removable-pin system */}
-      <div className="border-b border-soc-border px-2 py-2">
-        <DirectNavLink
-          to={overviewItem.to}
-          label={overviewItem.label}
-          icon={overviewItem.icon}
-          end
-          collapsed={isCollapsed}
-        />
-      </div>
-
       {/* Navigation Body */}
       <nav className="flex-1 space-y-4 overflow-y-auto px-2 py-4 no-scrollbar">
-        {/* Pinned Section */}
-        {!isCollapsed && (
-          <div className="px-3 mb-2 flex items-center gap-1.5 text-[10px] tracking-[0.15em] font-mono font-bold text-soc-primary uppercase">
-            <Pin className="h-3 w-3" />
-            <span>Pinned Favorites</span>
-          </div>
-        )}
+        {/* Primary destinations — the fraud/cyber-fusion path, always visible */}
         <div className="space-y-0.5">
-          {pinnedPaths.map((path) => {
-            const item = allNavItems.find((n) => n.to === path);
-            if (!item) return null;
-            return (
-              <DirectNavLink
-                key={`pinned-${path}`}
-                to={item.to}
-                label={item.label}
-                icon={item.icon}
-                end={item.to === '/'}
-                collapsed={isCollapsed}
-                isPinned={true}
-                onTogglePin={togglePin}
-              />
-            );
-          })}
-          {!isCollapsed && pinnedPaths.length === 0 && (
-            <p className="px-3 py-2 text-[10px] text-soc-muted font-mono italic">
-              No favorites pinned. Hover links to pin.
-            </p>
-          )}
+          {primaryItems.map((item) => (
+            <DirectNavLink
+              key={item.to}
+              to={item.to}
+              label={item.label}
+              icon={item.icon}
+              end={item.to === '/'}
+              collapsed={isCollapsed}
+              isPinned={pinnedPaths.includes(item.to)}
+              onTogglePin={togglePin}
+            />
+          ))}
         </div>
 
-        {/* Groups */}
-        {groups.map((group) => (
-          <div key={group.label} className="space-y-1.5 pt-2">
+        {/* Advanced — every remaining destination, collapsed by default */}
+        <div className="space-y-1.5 pt-2 border-t border-soc-border/50">
+          <button
+            type="button"
+            onClick={toggleAdvanced}
+            aria-expanded={showAdvancedItems}
+            title="Advanced"
+            className="flex w-full items-center gap-3 px-3.5 py-2.5 text-xs font-semibold text-soc-muted transition-colors hover:text-soc-text"
+          >
+            <MoreHorizontal className="h-4 w-4 shrink-0 text-soc-primary" strokeWidth={2} />
             {!isCollapsed && (
-              <span className="px-3 text-[10px] tracking-[0.15em] font-mono font-bold text-soc-muted/70 uppercase">
-                {group.label}
-              </span>
+              <>
+                <span className="flex-1 text-left">Advanced</span>
+                <span className="font-mono text-[10px] text-soc-dim">{advancedItems.length}</span>
+                <ChevronDown
+                  className={`h-3.5 w-3.5 transition-transform ${showAdvancedItems ? 'rotate-180' : ''}`}
+                />
+              </>
             )}
+          </button>
+
+          {showAdvancedItems && (
             <div className="space-y-0.5">
-              {group.items.map((item) => (
-                <DirectNavLink 
-                  key={item.to} 
-                  to={item.to} 
-                  label={item.label} 
-                  icon={item.icon} 
+              {advancedItems.map((item) => (
+                <DirectNavLink
+                  key={item.to}
+                  to={item.to}
+                  label={item.label}
+                  icon={item.icon}
                   collapsed={isCollapsed}
                   isPinned={pinnedPaths.includes(item.to)}
                   onTogglePin={togglePin}
                 />
               ))}
             </div>
-          </div>
-        ))}
+          )}
+        </div>
 
-        {/* Recent Investigations (Expanded only) */}
-        {!isCollapsed && (
+        {/* Pinned Section */}
+        {pinnedPaths.length > 0 && (
+          <div className="space-y-1.5 pt-2 border-t border-soc-border/50">
+            {!isCollapsed && (
+              <div className="px-3 flex items-center gap-1.5 text-[10px] tracking-[0.15em] font-mono font-bold text-soc-primary uppercase">
+                <Pin className="h-3 w-3" />
+                <span>Pinned Favorites</span>
+              </div>
+            )}
+            <div className="space-y-0.5">
+              {pinnedPaths.map((path) => {
+                const item = allNavItems.find((n) => n.to === path);
+                if (!item) return null;
+                return (
+                  <DirectNavLink
+                    key={`pinned-${path}`}
+                    to={item.to}
+                    label={item.label}
+                    icon={item.icon}
+                    end={item.to === '/'}
+                    collapsed={isCollapsed}
+                    isPinned={true}
+                    onTogglePin={togglePin}
+                  />
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Recent Investigations -- cases this analyst actually opened. Nothing
+            is listed until one has been, rather than seeding plausible-looking
+            case ids that resolve to nothing. */}
+        {!isCollapsed && recentCases.length > 0 && (
           <div className="pt-4 border-t border-soc-border/50 space-y-2">
             <span className="px-3 flex items-center gap-1.5 text-[10px] tracking-[0.15em] font-mono font-bold text-soc-muted/70 uppercase">
               <Clock className="h-3 w-3" />
               <span>Recent Investigations</span>
             </span>
             <div className="px-3 space-y-1">
-              <a
-                href="/investigation/CASE-2026-8942"
-                className="flex items-center justify-between text-[11px] font-mono text-soc-muted hover:text-soc-text transition-colors"
-              >
-                <span>CASE-8942</span>
-                <span className="px-1 bg-soc-danger/15 text-soc-danger rounded border border-soc-danger/30 text-[9px] font-bold">CRITICAL</span>
-              </a>
-              <a
-                href="/investigation/CASE-2026-2104"
-                className="flex items-center justify-between text-[11px] font-mono text-soc-muted hover:text-soc-text transition-colors"
-              >
-                <span>CASE-2104</span>
-                <span className="px-1 bg-soc-warning/15 text-soc-warning rounded border border-soc-warning/30 text-[9px] font-bold">HIGH</span>
-              </a>
+              {recentCases.map((entry) => (
+                <NavLink
+                  key={entry.caseId}
+                  to={`/investigation/${entry.caseId}`}
+                  className="flex items-center justify-between gap-2 text-[11px] font-mono text-soc-muted hover:text-soc-text transition-colors"
+                >
+                  <span className="truncate">{entry.caseId}</span>
+                  {entry.severity && (
+                    <span
+                      className={`shrink-0 px-1 rounded border text-[9px] font-bold ${
+                        severityChip[entry.severity] || severityChip.LOW
+                      }`}
+                    >
+                      {entry.severity}
+                    </span>
+                  )}
+                </NavLink>
+              ))}
             </div>
           </div>
         )}
