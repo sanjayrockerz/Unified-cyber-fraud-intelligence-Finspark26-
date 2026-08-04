@@ -21,6 +21,25 @@ import {
 
 const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8000' : '');
 
+// Every API response is wrapped in {success, data, meta, errors}. A dict payload
+// is additionally flattened onto the envelope, but a list payload cannot be --
+// so /quantum/inventory and /quantum/recommendations carry their arrays only
+// under `data`. Read the payload out of `data` so both shapes work, and never
+// hand a non-array to state that the render treats as a list.
+function unwrapList(body) {
+  if (Array.isArray(body)) return body;
+  if (Array.isArray(body?.data)) return body.data;
+  if (Array.isArray(body?.items)) return body.items;
+  return [];
+}
+
+function unwrapRecord(body) {
+  if (!body || typeof body !== 'object' || Array.isArray(body)) return null;
+  if (body.success === false) return null;
+  if (body.data && typeof body.data === 'object' && !Array.isArray(body.data)) return body.data;
+  return body;
+}
+
 export default function QuantumTrustPanel() {
   const [readiness, setReadiness] = useState(null);
   const [assessment, setAssessment] = useState(null);
@@ -52,15 +71,17 @@ export default function QuantumTrustPanel() {
         fetch(`${API_BASE}/quantum/recommendations`)
       ]);
 
-      const rData = await rRes.json();
-      const aData = await aRes.json();
-      const iData = await iRes.json();
-      const recData = await recRes.json();
+      const [rData, aData, iData, recData] = await Promise.all([
+        rRes.json().catch(() => null),
+        aRes.json().catch(() => null),
+        iRes.json().catch(() => null),
+        recRes.json().catch(() => null),
+      ]);
 
-      setReadiness(rData);
-      setAssessment(aData);
-      setInventory(iData);
-      setRecommendations(recData);
+      setReadiness(unwrapRecord(rData));
+      setAssessment(unwrapRecord(aData));
+      setInventory(unwrapList(iData));
+      setRecommendations(unwrapList(recData));
     } catch (e) {
       console.error("Quantum Trust fetch error:", e);
     } finally {
@@ -79,8 +100,8 @@ export default function QuantumTrustPanel() {
           simulated_year: simYear
         })
       });
-      const data = await res.json();
-      setSimResult(data);
+      const data = await res.json().catch(() => null);
+      setSimResult(unwrapRecord(data));
     } catch (e) {
       console.error("Simulation error:", e);
     } finally {
@@ -117,10 +138,11 @@ export default function QuantumTrustPanel() {
     );
   }
 
-  const filteredInventory = inventory.filter(item => 
-    item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.public_key_algo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.id.toLowerCase().includes(searchTerm.toLowerCase())
+  const term = searchTerm.toLowerCase();
+  const filteredInventory = inventory.filter(item =>
+    [item?.name, item?.public_key_algo, item?.id].some(field =>
+      String(field ?? '').toLowerCase().includes(term)
+    )
   );
 
   return (
@@ -386,11 +408,11 @@ export default function QuantumTrustPanel() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-[11px]">
                 <div className="p-2 bg-soc-panel border border-soc-border rounded">
                   <span className="text-soc-dim block text-[10px]">Shor's Algorithm Factoring Time:</span>
-                  <span className="font-bold text-soc-danger">{simResult.quantum_threat_result.shor_factoring_time_minutes}</span>
+                  <span className="font-bold text-soc-danger">{simResult.quantum_threat_result?.shor_factoring_time_minutes ?? 'Not returned'}</span>
                 </div>
                 <div className="p-2 bg-soc-panel border border-soc-border rounded">
                   <span className="text-soc-dim block text-[10px]">Payload Compromise Risk:</span>
-                  <span className="font-bold text-soc-warning">{simResult.quantum_threat_result.payload_compromise_risk}</span>
+                  <span className="font-bold text-soc-warning">{simResult.quantum_threat_result?.payload_compromise_risk ?? 'Not returned'}</span>
                 </div>
               </div>
               <div className="text-[10px] text-soc-muted italic">{simResult.disclaimer}</div>
