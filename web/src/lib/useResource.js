@@ -7,7 +7,7 @@ const DEFAULT_TIMEOUT_MS = 8000;
 const DEFAULT_REFRESH_MS = 30000;
 const wait = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
-export default function useResource(path, { skip = false, timeoutMs = DEFAULT_TIMEOUT_MS, refreshMs = DEFAULT_REFRESH_MS } = {}) {
+export default function useResource(path, { skip = false, timeoutMs = DEFAULT_TIMEOUT_MS, refreshMs = DEFAULT_REFRESH_MS, retries = 2 } = {}) {
   const cached = path ? resourceCache.get(path) : null;
   const [data, setData] = useState(cached?.data ?? null);
   const [status, setStatus] = useState(path && !skip ? (cached ? 'stale' : 'loading') : 'idle');
@@ -29,7 +29,7 @@ export default function useResource(path, { skip = false, timeoutMs = DEFAULT_TI
       setStatus((current) => (data ? 'stale' : current === 'ready' ? 'stale' : 'loading'));
       setError(null);
       let lastError = null;
-      for (let attempt = 0; attempt < 3; attempt += 1) {
+      for (let attempt = 0; attempt <= retries; attempt += 1) {
         if (!active) return;
         const controller = new AbortController();
         activeController = controller;
@@ -50,7 +50,7 @@ export default function useResource(path, { skip = false, timeoutMs = DEFAULT_TI
           return;
         } catch (requestError) {
           lastError = requestError;
-          if (attempt < 2) await wait(250 * (attempt + 1));
+          if (attempt < retries) await wait(250 * (attempt + 1));
         } finally {
           clearTimeout(timeout);
           if (activeController === controller) activeController = null;
@@ -67,7 +67,7 @@ export default function useResource(path, { skip = false, timeoutMs = DEFAULT_TI
       activeController?.abort();
       clearInterval(timer);
     };
-  }, [path, skip, reloadToken, timeoutMs, refreshMs]);
+  }, [path, skip, reloadToken, timeoutMs, refreshMs, retries]);
 
   return { data, status, error, reload, lastUpdated };
 }

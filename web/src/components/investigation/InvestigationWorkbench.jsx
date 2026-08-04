@@ -9,10 +9,10 @@ import VerdictHero from '../common/VerdictHero';
 import EmptyState from '../common/EmptyState';
 import CaseSwitcher from './CaseSwitcher';
 import InvestigationQueuePicker from './InvestigationQueuePicker';
+import SummaryTab from './tabs/SummaryTab';
 
 // One tab's panels mount on first visit and stay mounted. First paint costs a
 // single tab rather than the sixteen panels this page used to render at once.
-const SummaryTab = lazy(() => import('./tabs/SummaryTab'));
 const EvidenceTab = lazy(() => import('./tabs/EvidenceTab'));
 const ResponseTab = lazy(() => import('./tabs/ResponseTab'));
 const ExplainabilityTab = lazy(() => import('./tabs/ExplainabilityTab'));
@@ -43,6 +43,7 @@ export default function InvestigationWorkbench({ caseId, resumed = false }) {
 
   const { data, status, error, reload } = useResource(
     caseId ? `/cases/${encodeURIComponent(caseId)}/context` : null,
+    { timeoutMs: 4000, retries: 1, refreshMs: 60000 },
   );
 
   // Tab lives in the URL so a deep link opens the right panel and browser back

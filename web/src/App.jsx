@@ -9,13 +9,13 @@ import { NotificationProvider } from './context/NotificationContext';
 import { CustomerProvider } from './context/CustomerContext';
 import { CaseProvider } from './context/CaseContext';
 import { ReplayProvider } from './context/ReplayContext';
+import InvestigationPage from './pages/InvestigationPage';
 
 const OverviewPage = lazy(() => import('./pages/OverviewPage'));
 const ThreatDashboard = lazy(() => import('./pages/CyberThreatIntelligencePage'));
 const OperationsCenterPage = lazy(() => import('./pages/OperationsCenterPage'));
 const CasesPage = lazy(() => import('./pages/CasesPage'));
 const CustomersPage = lazy(() => import('./pages/CustomersPage'));
-const InvestigationPage = lazy(() => import('./pages/InvestigationPage'));
 const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage'));
 const ReportsPage = lazy(() => import('./pages/ReportsPage'));
 const SessionIntelligencePage = lazy(() => import('./pages/SessionIntelligencePage'));

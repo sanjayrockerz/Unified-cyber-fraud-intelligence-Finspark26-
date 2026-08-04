@@ -20,6 +20,7 @@ export default function CasesPage() {
   const [status, setStatus] = useState('');
   const [result, setResult] = useState(null);
   const [selectedCase, setSelectedCase] = useState(null);
+
   const columns = [
     { key: 'case_id', label: 'Case' },
     { key: 'severity', label: 'Severity', render: (value) => <span className={`font-semibold ${severityTone[value] || 'text-soc-muted'}`}>{value || '—'}</span> },

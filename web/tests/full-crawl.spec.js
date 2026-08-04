@@ -57,3 +57,15 @@ test('the render-crash test hook cannot fire without the explicit test trigger',
   await page.waitForTimeout(500);
   await expect(page.getByText(/service temporarily unavailable/i)).not.toBeVisible();
 });
+
+test('opening a case reaches investigation facts without a boundary or long route stall', async ({ page }) => {
+  await page.goto('http://127.0.0.1:5173/cases');
+  const caseRow = page.getByRole('row', { name: /CASE-SYN-00015/ });
+  await expect(caseRow).toBeVisible();
+  await caseRow.click();
+  const openInvestigation = page.getByRole('button', { name: 'Open investigation' });
+  await expect(openInvestigation).toBeVisible();
+  await openInvestigation.click();
+  await expect(page.getByRole('heading', { name: 'Case facts' })).toBeVisible({ timeout: 5000 });
+  await expect(page.getByText('Service temporarily unavailable', { exact: true })).not.toBeVisible();
+});
