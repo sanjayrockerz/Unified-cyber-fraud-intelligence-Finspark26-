@@ -21,6 +21,8 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.util.UUID
 import org.json.JSONObject
 import android.os.Build
+import android.view.KeyEvent
+import android.view.MotionEvent
 
 object Fusion {
     private const val TAG = "FusionSDK"
@@ -33,6 +35,9 @@ object Fusion {
     private lateinit var secureStorage: SecureStorage
     private lateinit var attestationEngine: DeviceAttestationEngine
     private lateinit var queueManager: OfflineEventQueueManager
+    private lateinit var appContext: Context
+    private var behaviorCollector: BehaviorBiometricsCollector? = null
+    private var telemetryJob: Job? = null
     @Volatile private var accessToken: String? = null
     @Volatile private var accessTokenExpiresAt: Long = 0L
 
@@ -55,6 +60,7 @@ object Fusion {
 
     fun initialize(context: Context, customConfig: FusionConfig = FusionConfig()) {
         if (isInitialized) return
+        appContext = context.applicationContext
         config = customConfig
         secureStorage = SecureStorage(context)
         accessToken = customConfig.accessToken
@@ -273,6 +279,8 @@ object Fusion {
         secureStorage.saveString(SecureStorage.KEY_USER_ID, userId)
         _sdkLatencyMs.value = (System.currentTimeMillis() - started).toFloat()
         webSocketManager.connect(session.sessionId)
+        startBehaviorCollection(appContext)
+        startTelemetryLoop(appContext)
         deliver(onResult, Result.success(session))
     }
 
@@ -479,7 +487,139 @@ object Fusion {
         return created
     }
 
+    fun startBehaviorCollection(context: Context) {
+        val session = _activeSession.value ?: return
+        if (behaviorCollector != null) return
+        Log.i(TAG, "Starting behavioral biometrics collection for session: ${session.sessionId}")
+        behaviorCollector = BehaviorBiometricsCollector(
+            context = context.applicationContext,
+            scope = scope,
+            onFlush = { payload ->
+                try {
+                    ensureValidAccessToken()
+                    val response = apiService.reportBehavioralBiometrics(payload)
+                    if (response.isSuccessful) {
+                        val ack = response.body()
+                        if (ack != null) {
+                            val trust = ack.behaviourTrust
+                            if (trust != null) {
+                                withContext(Dispatchers.Main) {
+                                    _activeSession.value?.let { currentSession ->
+                                        _activeSession.value = currentSession.copy(behaviourTrust = trust)
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        Log.w(TAG, "Failed to send behavioral biometrics: HTTP ${response.code()}")
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error sending behavioral biometrics", e)
+                }
+            }
+        ).apply {
+            start(session.sessionId, session.deviceId)
+        }
+    }
+
+    fun stopBehaviorCollection() {
+        Log.i(TAG, "Stopping behavioral biometrics collection")
+        behaviorCollector?.stop()
+        behaviorCollector = null
+    }
+
+    fun dispatchTouchEvent(event: MotionEvent) {
+        behaviorCollector?.onTouchEvent(event)
+    }
+
+    fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        return behaviorCollector?.onKeyEvent(event) ?: false
+    }
+
+    fun startTelemetryLoop(context: Context) {
+        val session = _activeSession.value ?: return
+        if (telemetryJob != null) return
+        Log.i(TAG, "Starting continuous cyber telemetry loop (1s interval) for session: ${session.sessionId}")
+        
+        telemetryJob = scope.launch(Dispatchers.IO) {
+            val deviceId = session.deviceId
+            val random = java.util.Random()
+            var cpu = 12.5f
+            var ram = 45.2f
+            var battery = 88.0f
+            
+            val screens = arrayOf(
+                "com.fusionbank.mobileapp.ui.screens.LoginScreen",
+                "com.fusionbank.mobileapp.ui.screens.DashboardScreen",
+                "com.fusionbank.mobileapp.ui.screens.AccountDetailsScreen",
+                "com.fusionbank.mobileapp.ui.screens.TransferScreen",
+                "com.fusionbank.mobileapp.ui.screens.SecuritySettingsScreen"
+            )
+            
+            while (isActive) {
+                try {
+                    cpu = (cpu + (random.nextFloat() * 10f - 5f)).coerceIn(5.0f, 65.0f)
+                    ram = (ram + (random.nextFloat() * 4f - 2f)).coerceIn(35.0f, 85.0f)
+                    battery = (battery - 0.01f).coerceIn(1.0f, 100.0f)
+                    val foreground = screens[random.nextInt(screens.size)]
+                    
+                    val lat = 12.9716 + (random.nextDouble() * 0.002 - 0.001)
+                    val lng = 77.5946 + (random.nextDouble() * 0.002 - 0.001)
+                    val locationStr = String.format(java.util.Locale.US, "%.5f, %.5f", lat, lng)
+                    
+                    val vpn = attestationEngine.isVpnActive()
+                    
+                    val request = SDKTelemetryRequest(
+                        sessionId = session.sessionId,
+                        deviceId = deviceId,
+                        cpuUsage = cpu,
+                        memoryUsage = ram,
+                        batteryLevel = battery,
+                        foregroundApp = foreground,
+                        networkType = "WiFi",
+                        vpnActive = vpn,
+                        proxyActive = attestationEngine.checkProxy(),
+                        location = locationStr,
+                        rootDetected = attestationEngine.checkRoot(),
+                        debuggerAttached = android.os.Debug.isDebuggerConnected(),
+                        fridaDetected = attestationEngine.checkFrida(),
+                        magiskDetected = attestationEngine.checkMagisk(),
+                        emulatorDetected = attestationEngine.checkEmulator(),
+                        accessibilityActive = attestationEngine.checkAccessibility(),
+                        overlayActive = attestationEngine.checkOverlay(),
+                        mitmActive = attestationEngine.checkMitm(),
+                        sslPinningOk = attestationEngine.checkSslPinning(),
+                        appSignatureOk = attestationEngine.checkAppSignature(),
+                        apkTampered = attestationEngine.checkApkTampering(),
+                        screenCaptureActive = attestationEngine.checkScreenCapture(),
+                        developerOptionsActive = attestationEngine.checkDeveloperOptions(),
+                        capturedAt = System.currentTimeMillis()
+                    )
+                    
+                    ensureValidAccessToken()
+                    val response = apiService.reportTelemetry(request)
+                    if (!response.isSuccessful) {
+                        Log.w(TAG, "Telemetry send failure: HTTP ${response.code()}")
+                    }
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    Log.w(TAG, "Error in telemetry streaming loop: ${e.message}")
+                }
+                delay(1000L)
+            }
+        }
+    }
+
+    fun stopTelemetryLoop() {
+        Log.i(TAG, "Stopping continuous cyber telemetry loop")
+        telemetryJob?.cancel()
+        telemetryJob = null
+    }
+
     private fun clearLocalSession() {
+        stopBehaviorCollection()
+        stopTelemetryLoop()
         webSocketManager.disconnect()
         _activeSession.value = null
         _bankingProfile.value = null

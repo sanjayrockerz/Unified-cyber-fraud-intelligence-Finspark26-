@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   BarChart3, 
   TrendingUp, 
@@ -21,41 +21,56 @@ import {
 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer } from 'recharts';
 import { FLAT_EPSILON, formatF, formatPct, getUplift } from '../lib/metricsFormat';
+import useResource from '../lib/useResource';
+
+const unwrap = (body) => body?.data ?? body ?? null;
+const numberOrNull = (value) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+const normalizeMetricSet = (value) => ({
+  pr_auc: numberOrNull(value?.pr_auc),
+  precision: numberOrNull(value?.precision),
+  recall: numberOrNull(value?.recall),
+  f1: numberOrNull(value?.f1),
+  confusion_matrix: Object.fromEntries(['TP', 'TN', 'FP', 'FN'].map((key) => [key, numberOrNull(value?.confusion_matrix?.[key]) ?? 0])),
+});
+const normalizeEvaluation = (value) => {
+  if (!value || typeof value !== 'object') return null;
+  return { transaction_only: normalizeMetricSet(value.transaction_only), full_fusion: normalizeMetricSet(value.full_fusion) };
+};
+const normalizeSweep = (value) => {
+  if (!value || typeof value !== 'object') return null;
+  return { transaction_only: value.transaction_only || {}, cyber_only: value.cyber_only || {}, full_fusion: value.full_fusion || {} };
+};
 
 export default function AnalyticsPage() {
   const [timeRange, setTimeRange] = useState('24h');
   
-  // Data states
-  const [evalData, setEvalData] = useState(null);
-  const [evalError, setEvalError] = useState(false);
-  const [sweepData, setSweepData] = useState(null);
-  const [sweepError, setSweepError] = useState(false);
-
   // Sweep controls
   const [fnCost, setFnCost] = useState(250000);
   const [fpCost, setFpCost] = useState(400);
   const [thresholdInt, setThresholdInt] = useState(50);
   const [selectedConfig, setSelectedConfig] = useState('full_fusion');
 
-  useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8000' : '')}/metrics/evaluate`)
-      .then(r => r.json())
-      .then(data => {
-        if (data.error) setEvalError(true);
-        else setEvalData(data);
-      })
-      .catch(() => setEvalError(true));
-  }, []);
-
-  useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8000' : '')}/metrics/cost?fn_cost=${fnCost}&fp_cost=${fpCost}`)
-      .then(r => r.json())
-      .then(data => {
-        if (data.error) setSweepError(true);
-        else setSweepData(data);
-      })
-      .catch(() => setSweepError(true));
-  }, [fnCost, fpCost]);
+  const summaryResource = useResource(`/analytics/summary?period=${timeRange}`, { refreshMs: 60000 });
+  const evalResource = useResource('/metrics/evaluate', { refreshMs: 300000 });
+  const sweepResource = useResource(`/metrics/cost?fn_cost=${fnCost}&fp_cost=${fpCost}`, { refreshMs: 300000 });
+  const summaryData = unwrap(summaryResource.data);
+  const evalData = normalizeEvaluation(unwrap(evalResource.data));
+  const sweepData = normalizeSweep(unwrap(sweepResource.data));
+  const summaryError = summaryResource.status === 'error';
+  const evalError = evalResource.status === 'error';
+  const sweepError = sweepResource.status === 'error';
+  const totals = summaryData?.totals ?? {};
+  const hasEval = ['transaction_only', 'full_fusion'].every((config) =>
+    ['pr_auc', 'precision', 'recall', 'f1'].every((metric) => Number.isFinite(evalData?.[config]?.[metric]))
+  );
+  const retryAll = () => {
+    summaryResource.reload();
+    evalResource.reload();
+    sweepResource.reload();
+  };
 
   let computedModelMetrics = [];
   let headlineUplift = "Loading...";
@@ -63,7 +78,7 @@ export default function AnalyticsPage() {
   let recallCompare = "";
   let headlineIsPositive = true;
 
-  if (evalData) {
+  if (hasEval) {
     computedModelMetrics = [
       {
         metric: 'PR-AUC (Precision-Recall Area)',
@@ -118,49 +133,24 @@ export default function AnalyticsPage() {
   }
 
   const kpis = [
-    { title: 'Intercepted Attack Invocations', val: '14,892 Attacks', sub: '100% In-Flight Block Rate', color: 'text-soc-success', icon: ShieldAlert },
+    { title: 'Observed Transactions', val: summaryData ? (totals.transactions ?? 0) : 'Waiting', sub: summaryData ? `${totals.blocked ?? 0} blocked decisions` : 'Waiting for telemetry', color: 'text-soc-success', icon: ShieldAlert },
     {
       title: 'Fusion Model PR-AUC Uplift',
       val: headlineUplift,
-      sub: evalData ? `PR-AUC (${formatF(evalData.full_fusion.pr_auc)} vs ${formatF(evalData.transaction_only.pr_auc)})` : (evalError ? 'Metrics Unavailable' : 'Loading...'),
+      sub: hasEval ? `PR-AUC (${formatF(evalData.full_fusion.pr_auc)} vs ${formatF(evalData.transaction_only.pr_auc)})` : (evalError ? 'Retrying metrics connection' : 'Loading...'),
       color: headlineIsPositive ? 'text-soc-primary' : 'text-soc-warning', icon: TrendingUp
     },
-    { title: 'Avg Threat Correlation Latency', val: '12 ms', sub: 'LightGBM + IsoForest + GraphSAGE', color: 'text-soc-warning', icon: Activity },
-    { title: 'CERT-In Mandate Compliance', val: '100%', sub: 'Avg Incident Report: 14m < 6h Limit', color: 'text-soc-success', icon: FileCheck2 }
+    { title: 'Blocked Amount', val: summaryData ? `INR ${Number(totals.blocked_amount ?? 0).toLocaleString('en-IN')}` : 'Waiting', sub: 'Tenant-scoped backend total', color: 'text-soc-warning', icon: Activity },
+    { title: 'Observed Threats', val: summaryData ? (totals.threats ?? 0) : 'Waiting', sub: summaryError ? 'Retrying analytics connection' : 'Threat engine telemetry', color: 'text-soc-success', icon: FileCheck2 }
   ];
 
-  const threatVectors = [
-    { type: 'Impossible Travel Login', pct: 42, count: 6254, severity: 'CRITICAL', color: 'bg-soc-danger' },
-    { type: 'Credential Stuffing Botnet', pct: 28, count: 4170, severity: 'CRITICAL', color: 'bg-soc-danger' },
-    { type: 'Mule Ring Layering Network', pct: 18, count: 2680, severity: 'HIGH', color: 'bg-soc-warning' },
-    { type: 'SIM Swap Interception', pct: 8, count: 1191, severity: 'HIGH', color: 'bg-soc-warning' },
-    { type: 'MFA Cookie Reuse', pct: 4, count: 597, severity: 'MEDIUM', color: 'bg-soc-primary' }
-  ];
+  const threatVectors = (Array.isArray(summaryData?.threat_vectors) ? summaryData.threat_vectors : []).map((item) => ({ ...item, count: numberOrNull(item.count) ?? 0, pct: numberOrNull(item.percent) ?? 0, severity: 'OBSERVED', color: 'bg-soc-primary' }));
 
-  const hourlyVelocities = [
-    { hour: '00:00', attacks: 120 }, { hour: '02:00', attacks: 840 },
-    { hour: '04:00', attacks: 1420 }, { hour: '06:00', attacks: 650 },
-    { hour: '08:00', attacks: 320 }, { hour: '10:00', attacks: 980 },
-    { hour: '12:00', attacks: 450 }, { hour: '14:00', attacks: 290 },
-    { hour: '16:00', attacks: 380 }, { hour: '18:00', attacks: 710 },
-    { hour: '20:00', attacks: 1100 }, { hour: '22:00', attacks: 590 }
-  ];
+  const hourlyVelocities = (Array.isArray(summaryData?.hourly) ? summaryData.hourly : []).map((item) => ({ hour: item.hour, attacks: numberOrNull(item.transactions) ?? 0 }));
 
-  const topOriginGeos = [
-    { country: 'Russia (RU)', share: '38.2%', count: 5689, risk: 'CRITICAL' },
-    { country: 'Romania (RO)', share: '24.1%', count: 3589, risk: 'HIGH' },
-    { country: 'Vietnam (VN)', share: '18.4%', count: 2740, risk: 'HIGH' },
-    { country: 'Netherlands (NL)', share: '12.3%', count: 1831, risk: 'MEDIUM' },
-    { country: 'Other International', share: '7.0%', count: 1043, risk: 'LOW' }
-  ];
+  const topOriginGeos = [];
 
-  const shapDrivers = [
-    { feature: 'cyber_compromise_in_window', impact: '+2.10', desc: 'Preceding impossible travel login event' },
-    { feature: 'log_amount', impact: '+1.24', desc: 'Transaction size relative to account balance' },
-    { feature: 'dest_mule_cluster_id', impact: '+0.85', desc: 'Beneficiary linked to known mule ring' },
-    { feature: 'orig_balance_drain_ratio', impact: '+0.62', desc: '100% originator account balance drain' },
-    { feature: 'impossible_travel_km', impact: '+0.48', desc: 'Distance anomaly from baseline location' }
-  ];
+  const shapDrivers = [];
 
   const handleExportAnalyticsReport = () => {
     alert("Exporting CERT-In Cyber Security Incident Analytics Report (PDF format)...");
@@ -178,14 +168,17 @@ export default function AnalyticsPage() {
     }
   }
 
-  const currentSweepPt = (sweepData && sweepData[selectedConfig]) ? sweepData[selectedConfig][thresholdInt] : null;
+  const candidateSweepPt = sweepData?.[selectedConfig]?.[thresholdInt];
+  const currentSweepPt = candidateSweepPt && ['precision', 'recall', 'total_cost', 'FP', 'FN'].every((key) => Number.isFinite(Number(candidateSweepPt[key])))
+    ? { ...candidateSweepPt, precision: Number(candidateSweepPt.precision), recall: Number(candidateSweepPt.recall), total_cost: Number(candidateSweepPt.total_cost), FP: Number(candidateSweepPt.FP), FN: Number(candidateSweepPt.FN) }
+    : null;
   // No fabricated fallback here: totalPos/totalNeg must come from the SAME
   // honest evalData source as the FP/FN counts rendered below, or the
   // confusion-matrix panel is hidden entirely rather than mixing a real
   // sweep with stale/fabricated totals (see CRITICAL 2 fix notes).
   let totalPos = null;
   let totalNeg = null;
-  if (evalData && evalData.transaction_only) {
+  if (hasEval && evalData.transaction_only.confusion_matrix) {
     totalPos = evalData.transaction_only.confusion_matrix.TP + evalData.transaction_only.confusion_matrix.FN;
     totalNeg = evalData.transaction_only.confusion_matrix.TN + evalData.transaction_only.confusion_matrix.FP;
   }
@@ -237,6 +230,13 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
+      {(summaryError || evalError || sweepError) && (
+        <div role="status" className="flex items-center justify-between rounded-lg border border-soc-warning/40 bg-soc-warning/5 px-4 py-3 text-xs text-soc-muted">
+          <span>Some analytics telemetry is reconnecting. Available panels remain visible and will refresh automatically.</span>
+          <button type="button" onClick={retryAll} className="rounded border border-soc-border px-3 py-1 text-soc-text">Retry telemetry</button>
+        </div>
+      )}
+
       {/* 1. EXEC KPI STRIP */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {kpis.map((kpi, idx) => {
@@ -269,7 +269,7 @@ export default function AnalyticsPage() {
 
         {evalError ? (
           <div className="p-4 text-soc-danger font-bold border border-soc-danger/30 rounded bg-soc-danger/10">
-            Metrics Unavailable. Cannot reach evaluation endpoint.
+            Service temporarily unavailable. Retrying metrics connection automatically.
           </div>
         ) : !evalData ? (
           <div className="p-4 text-soc-muted font-bold animate-pulse">Loading real-time metrics...</div>
@@ -323,7 +323,7 @@ export default function AnalyticsPage() {
         </div>
 
         {sweepError ? (
-          <div className="text-soc-danger font-bold p-4 border border-soc-danger/30 rounded bg-soc-danger/10">Metrics unavailable</div>
+          <div className="text-soc-muted font-bold p-4 border border-soc-warning/30 rounded bg-soc-warning/5">Service temporarily unavailable. Retrying sweep connection automatically.</div>
         ) : !sweepData ? (
           <div className="text-soc-muted p-4 animate-pulse">Loading sweep data...</div>
         ) : (
@@ -446,7 +446,7 @@ export default function AnalyticsPage() {
               <Radio className="w-4 h-4 text-soc-danger animate-pulse" />
               <span>SIEM Threat Vector Distribution</span>
             </h3>
-            <span className="text-[10px] text-soc-muted">14,892 Events</span>
+            <span className="text-[10px] text-soc-muted">{summaryData ? `${totals.transactions ?? 0} Events` : 'Waiting for telemetry'}</span>
           </div>
 
           <div className="space-y-3">
@@ -555,4 +555,3 @@ export default function AnalyticsPage() {
     </div>
   );
 }
-

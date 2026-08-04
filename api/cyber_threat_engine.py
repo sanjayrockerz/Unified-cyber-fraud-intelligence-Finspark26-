@@ -347,6 +347,7 @@ class CyberThreatEngine:
             "session_id": session_id,
             "device_id": device_id,
             "user_id": user_id,
+            "tenant_id": event_data.get("tenant_id"),
             "timestamp": ts,
             "detection_source": item["detection_source"],
             "trust_impact": item["trust_impact"],
@@ -406,6 +407,7 @@ class CyberThreatEngine:
                 "session_id": session_id,
                 "device_id": device_id,
                 "user_id": inputs[0].get("user_id", "unknown"),
+                "tenant_id": inputs[0].get("tenant_id"),
                 "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
                 "detection_source": "Fusion Multi-Threat Correlation Engine",
                 "trust_impact": {"overall_trust": -60.0},
@@ -427,8 +429,10 @@ class CyberThreatEngine:
         if len(self.historical_threats) > 1000:
             self.historical_threats = self.historical_threats[-1000:]
 
-    def get_all_threats(self, status: Optional[str] = None, category: Optional[str] = None, severity: Optional[str] = None) -> List[dict]:
+    def get_all_threats(self, status: Optional[str] = None, category: Optional[str] = None, severity: Optional[str] = None, tenant_id: Optional[str] = None) -> List[dict]:
         res = list(self.threat_store.values())
+        if tenant_id:
+            res = [t for t in res if t.get("tenant_id") == tenant_id]
         if status:
             res = [t for t in res if t.get("status") == status]
         if category:
@@ -437,16 +441,17 @@ class CyberThreatEngine:
             res = [t for t in res if t.get("severity") == severity]
         return res[::-1]
 
-    def get_threat_by_id(self, threat_id: str) -> Optional[dict]:
-        return self.threat_store.get(threat_id)
+    def get_threat_by_id(self, threat_id: str, tenant_id: Optional[str] = None) -> Optional[dict]:
+        threat = self.threat_store.get(threat_id)
+        return threat if threat and (not tenant_id or threat.get("tenant_id") == tenant_id) else None
 
-    def get_threats_by_session(self, session_id: str) -> List[dict]:
+    def get_threats_by_session(self, session_id: str, tenant_id: Optional[str] = None) -> List[dict]:
         tids = self.session_threat_index.get(session_id, [])
-        return [self.threat_store[t] for t in tids if t in self.threat_store]
+        return [self.threat_store[t] for t in tids if t in self.threat_store and (not tenant_id or self.threat_store[t].get("tenant_id") == tenant_id)]
 
-    def get_threats_by_device(self, device_id: str) -> List[dict]:
+    def get_threats_by_device(self, device_id: str, tenant_id: Optional[str] = None) -> List[dict]:
         tids = self.device_threat_index.get(device_id, [])
-        return [self.threat_store[t] for t in tids if t in self.threat_store]
+        return [self.threat_store[t] for t in tids if t in self.threat_store and (not tenant_id or self.threat_store[t].get("tenant_id") == tenant_id)]
 
 # Singleton Instance
 cyber_threat_engine = CyberThreatEngine()

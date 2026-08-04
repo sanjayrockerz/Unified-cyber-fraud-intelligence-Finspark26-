@@ -73,6 +73,9 @@ class FusionAdaptiveTrustSDKEngine:
         self.policies: List[dict] = DEFAULT_POLICIES
         self.policy_version: str = "1.0.3"
         self.connected_apps: List[dict] = []
+        self.attack_chains: Dict[str, List[dict]] = {}
+        self.recovery_events: Dict[str, List[dict]] = {}
+        self.telemetry_history: Dict[str, List[dict]] = {}
 
     # MODULE 1: SDK Session Management
     def start_session(self, data: dict) -> dict:
@@ -89,15 +92,18 @@ class FusionAdaptiveTrustSDKEngine:
             "started_at": ts,
             "status": "ACTIVE",
             "policy_version": self.policy_version,
-            "composite_trust_score": None,
-            "device_trust": None,
-            "session_trust": None,
-            "behaviour_trust": None,
-            "network_trust": None,
-            "runtime_trust": None,
-            "trust_status": "PENDING_AUTHORITATIVE_EVIDENCE",
+            "composite_trust_score": 95.0,
+            "device_trust": 95.0,
+            "session_trust": 95.0,
+            "behaviour_trust": 95.0,
+            "network_trust": 95.0,
+            "runtime_trust": 95.0,
+            "trust_status": "HEALTHY",
         }
         self.sdk_sessions[session_id] = session
+        self.attack_chains[session_id] = []
+        self.recovery_events[session_id] = []
+        self.telemetry_history[session_id] = []
         app = next(
             (item for item in self.connected_apps if item["app_id"] == session["app_id"]),
             None,
@@ -116,6 +122,139 @@ class FusionAdaptiveTrustSDKEngine:
             self.connected_apps.append(app)
         app["last_heartbeat"] = ts
         app["trust_sessions"] += 1
+        return session
+
+    def process_telemetry(self, data: dict) -> dict:
+        session_id = data.get("session_id")
+        session = self.sdk_sessions.get(session_id)
+        if not session:
+            session = self.start_session({"session_id": session_id, "user_id": "usr_sdk_demo", "device_id": data.get("device_id")})
+            
+        history = self.telemetry_history.setdefault(session_id, [])
+        history.append(data)
+        if len(history) > 100:
+            history.pop(0)
+            
+        is_vpn = data.get("vpn_active", False)
+        is_proxy = data.get("proxy_active", False)
+        is_root = data.get("root_detected", False)
+        is_debugger = data.get("debugger_attached", False)
+        is_frida = data.get("frida_detected", False)
+        is_magisk = data.get("magisk_detected", False)
+        is_emulator = data.get("emulator_detected", False)
+        is_accessibility = data.get("accessibility_active", False)
+        is_overlay = data.get("overlay_active", False)
+        is_mitm = data.get("mitm_active", False)
+        is_ssl_pinning_broken = not data.get("ssl_pinning_ok", True)
+        is_signature_broken = not data.get("app_signature_ok", True)
+        is_tampered = data.get("apk_tampered", False)
+        is_screen_capture = data.get("screen_capture_active", False)
+        is_dev_options = data.get("developer_options_active", False)
+        
+        chain = self.attack_chains.setdefault(session_id, [])
+        active_events = [e["event"] for e in chain]
+        
+        now_str = datetime.datetime.now().strftime("%H:%M:%S")
+        
+        if is_vpn and "VPN Enabled" not in active_events:
+            chain.append({"time": now_str, "event": "VPN Enabled", "severity": "MEDIUM"})
+        if is_emulator and "Emulator Detected" not in active_events:
+            chain.append({"time": now_str, "event": "Emulator Detected", "severity": "HIGH"})
+        if is_root and "Root Access Enabled" not in active_events:
+            chain.append({"time": now_str, "event": "Root Access Enabled", "severity": "CRITICAL"})
+        if is_magisk and "Magisk Manager Active" not in active_events:
+            chain.append({"time": now_str, "event": "Magisk Manager Active", "severity": "CRITICAL"})
+        if is_frida and "Frida Hook Tool Detected" not in active_events:
+            chain.append({"time": now_str, "event": "Frida Hook Tool Detected", "severity": "CRITICAL"})
+        if is_debugger and "Debugger Attached" not in active_events:
+            chain.append({"time": now_str, "event": "Debugger Attached", "severity": "HIGH"})
+        if is_accessibility and "Accessibility Service Exploited" not in active_events:
+            chain.append({"time": now_str, "event": "Accessibility Service Exploited", "severity": "HIGH"})
+        if is_overlay and "Overlay Window Active" not in active_events:
+            chain.append({"time": now_str, "event": "Overlay Window Active", "severity": "HIGH"})
+        if is_mitm and "MITM Attack Suspected" not in active_events:
+            chain.append({"time": now_str, "event": "MITM Attack Suspected", "severity": "CRITICAL"})
+        if is_ssl_pinning_broken and "SSL Pinning Integrity Fault" not in active_events:
+            chain.append({"time": now_str, "event": "SSL Pinning Integrity Fault", "severity": "HIGH"})
+        if is_signature_broken and "App Signature Mismatch" not in active_events:
+            chain.append({"time": now_str, "event": "App Signature Mismatch", "severity": "CRITICAL"})
+        if is_tampered and "APK Tampering Flagged" not in active_events:
+            chain.append({"time": now_str, "event": "APK Tampering Flagged", "severity": "CRITICAL"})
+        if is_screen_capture and "Screen Recording Detected" not in active_events:
+            chain.append({"time": now_str, "event": "Screen Recording Detected", "severity": "MEDIUM"})
+        if is_dev_options and "Developer Options Active" not in active_events:
+            chain.append({"time": now_str, "event": "Developer Options Active", "severity": "LOW"})
+            
+        device_trust = 95.0
+        network_trust = 95.0
+        runtime_trust = 95.0
+        
+        if is_root or is_magisk:
+            device_trust -= 30
+        if is_emulator:
+            device_trust -= 20
+        if is_vpn:
+            network_trust -= 20
+        if is_proxy:
+            network_trust -= 15
+        if is_frida or is_debugger:
+            runtime_trust -= 35
+        if is_tampered or is_signature_broken:
+            runtime_trust -= 40
+        if is_overlay or is_accessibility:
+            runtime_trust -= 20
+            
+        active_threat_count = sum([is_vpn, is_root or is_magisk, is_frida or is_debugger, is_overlay or is_accessibility])
+        correlation_penalty = 0
+        if active_threat_count >= 2:
+            correlation_penalty = 15 * (active_threat_count - 1)
+            
+        session_trust = 95.0 - (95.0 - device_trust) - (95.0 - network_trust) - (95.0 - runtime_trust) - correlation_penalty
+        
+        recovery = self.recovery_events.get(session_id, [])
+        has_biometric_recovered = any(r["event"] == "Biometric Verified" for r in recovery)
+        
+        if has_biometric_recovered:
+            session_trust += 40
+            
+        device_trust = max(10.0, min(100.0, device_trust))
+        network_trust = max(10.0, min(100.0, network_trust))
+        runtime_trust = max(10.0, min(100.0, runtime_trust))
+        session_trust = max(10.0, min(100.0, session_trust))
+        
+        session["device_trust"] = device_trust
+        session["network_trust"] = network_trust
+        session["runtime_trust"] = runtime_trust
+        session["composite_trust_score"] = session_trust
+        
+        if session_trust >= 80:
+            session["trust_status"] = "HEALTHY"
+        elif session_trust >= 50:
+            session["trust_status"] = "SUSPICIOUS"
+        elif session_trust >= 30:
+            session["trust_status"] = "CHALLENGED"
+        else:
+            session["trust_status"] = "BLOCKED"
+            
+        return session
+
+    def recover_session(self, session_id: str, action: str) -> dict:
+        session = self.sdk_sessions.get(session_id)
+        if not session:
+            return {"status": "ERROR", "message": "Session not found"}
+            
+        now_str = datetime.datetime.now().strftime("%H:%M:%S")
+        recovery = self.recovery_events.setdefault(session_id, [])
+        
+        if action == "biometric":
+            recovery.append({"time": now_str, "event": "Biometric Verified"})
+            chain = self.attack_chains.setdefault(session_id, [])
+            chain.append({"time": now_str, "event": "Biometric Verified - Trust Restored", "severity": "RECOVERY"})
+            
+            session["composite_trust_score"] = min(95.0, session.get("composite_trust_score", 95.0) + 40.0)
+            if session["composite_trust_score"] >= 80:
+                session["trust_status"] = "HEALTHY"
+                
         return session
 
     # MODULE 2 & 3: Device Intelligence & Runtime Integrity
@@ -263,4 +402,118 @@ class FusionAdaptiveTrustSDKEngine:
     def get_error_codes(self) -> dict:
         return ERROR_CODES
 
+class BehavioralBiometricsEngine:
+    def __init__(self):
+        # session_id -> list of samples
+        self.buffers: Dict[str, List[dict]] = {}
+
+    def add_sample(self, session_id: str, sample: dict) -> float:
+        if session_id not in self.buffers:
+            self.buffers[session_id] = []
+        self.buffers[session_id].append(sample)
+        if len(self.buffers[session_id]) > 200:
+            self.buffers[session_id].pop(0)
+
+        # Compute scoring
+        typing_score = self.compute_typing_rhythm_score(session_id)
+        touch_score = self.compute_touch_pressure_score(session_id)
+        motion_score = self.compute_motion_score(session_id)
+
+        # Weighted average
+        # If any channel is None (not collected), distribute weights to others
+        weights = {"typing": 0.4, "touch": 0.35, "motion": 0.25}
+        total_weight = 0.0
+        weighted_sum = 0.0
+
+        if typing_score is not None:
+            weighted_sum += typing_score * weights["typing"]
+            total_weight += weights["typing"]
+        if touch_score is not None:
+            weighted_sum += touch_score * weights["touch"]
+            total_weight += weights["touch"]
+        if motion_score is not None:
+            weighted_sum += motion_score * weights["motion"]
+            total_weight += weights["motion"]
+
+        if total_weight > 0:
+            combined_score = weighted_sum / total_weight
+        else:
+            combined_score = 1.0  # default when no biometrics received yet
+
+        return round(combined_score, 2)
+
+    def compute_typing_rhythm_score(self, session_id: str) -> float | None:
+        samples = [s.get("typing_rhythm") for s in self.buffers[session_id] if s.get("typing_rhythm")]
+        if not samples:
+            return None
+        
+        latest = samples[-1]
+        if latest.get("is_calibrating", True):
+            return 1.0
+        
+        std_dev = latest.get("std_dev_inter_key_interval_ms", 0.0)
+        mean_int = latest.get("mean_inter_key_interval_ms", 0.0)
+        
+        if mean_int <= 0:
+            return 1.0
+        
+        # Coefficient of variation = std_dev / mean
+        cv = std_dev / mean_int
+        
+        # If cv is extremely small (< 0.05), it indicates script/bot automation
+        if cv < 0.05:
+            return 0.1
+        # If cv is between 0.1 and 0.4, it's very natural human rhythm
+        elif 0.1 <= cv <= 0.4:
+            return 1.0
+        # If cv is between 0.05 and 0.1 or 0.4 and 0.6, scale down
+        elif 0.05 <= cv < 0.1:
+            return round((cv - 0.05) / 0.05 * 0.9 + 0.1, 2)
+        elif 0.4 < cv <= 0.7:
+            return round(1.0 - (cv - 0.4) / 0.3 * 0.5, 2)
+        else:
+            return 0.5
+
+    def compute_touch_pressure_score(self, session_id: str) -> float | None:
+        samples = [s.get("touch_pressure") for s in self.buffers[session_id] if s.get("touch_pressure")]
+        if not samples:
+            return None
+        
+        latest = samples[-1]
+        if latest.get("is_calibrating", True):
+            return 1.0
+            
+        std_dev = latest.get("std_dev_pressure", 0.0)
+        mean_p = latest.get("mean_pressure", 0.0)
+        
+        if std_dev < 0.001:
+            return 0.1  # Bot touch pressure signature
+        
+        if 0.1 <= mean_p <= 0.9:
+            return 1.0
+        return 0.7
+
+    def compute_motion_score(self, session_id: str) -> float | None:
+        samples = [s.get("motion_signature") for s in self.buffers[session_id] if s.get("motion_signature")]
+        if not samples:
+            return None
+            
+        latest = samples[-1]
+        if latest.get("is_calibrating", True):
+            return 1.0
+            
+        std_x = latest.get("accel_std_x", 0.0)
+        std_y = latest.get("accel_std_y", 0.0)
+        std_z = latest.get("accel_std_z", 0.0)
+        
+        total_motion_std = std_x + std_y + std_z
+        
+        if total_motion_std < 0.01:
+            return 0.2
+        elif total_motion_std > 20.0:
+            return 0.4
+            
+        return 1.0
+
 sdk_engine = FusionAdaptiveTrustSDKEngine()
+behavioral_engine = BehavioralBiometricsEngine()

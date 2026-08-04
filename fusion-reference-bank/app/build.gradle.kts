@@ -31,14 +31,14 @@ android {
     val releaseKeyPassword = providers.gradleProperty("FUSION_RELEASE_KEY_PASSWORD").orNull
     val releaseBaseUrl = providers.gradleProperty("FUSION_BASE_URL")
         .orElse(providers.environmentVariable("FUSION_BASE_URL"))
-        .getOrElse("https://fusion.example.invalid/")
+        .getOrElse("")
     val releaseWebSocketUrl = providers.gradleProperty("FUSION_WS_URL")
         .orElse(providers.environmentVariable("FUSION_WS_URL"))
-        .getOrElse("wss://fusion.example.invalid/ws/stream")
+        .getOrElse("")
     val debugBaseUrl = providers.gradleProperty("FUSION_DEBUG_BASE_URL")
-        .getOrElse("http://10.0.2.2:8001/")
+        .getOrElse("")
     val debugWebSocketUrl = providers.gradleProperty("FUSION_DEBUG_WS_URL")
-        .getOrElse("ws://10.0.2.2:8001/ws/stream")
+        .getOrElse("")
     signingConfigs {
         if (listOf(releaseStoreFile, releaseStorePassword, releaseKeyAlias, releaseKeyPassword).all { !it.isNullOrBlank() }) {
             create("release") {
@@ -71,6 +71,12 @@ android {
             signingConfigs.findByName("release")?.let { signingConfig = it }
         }
         debug {
+            require(debugBaseUrl.startsWith("http://") || debugBaseUrl.startsWith("https://")) {
+                "Debug FUSION_DEBUG_BASE_URL must be provided"
+            }
+            require(debugWebSocketUrl.startsWith("ws://") || debugWebSocketUrl.startsWith("wss://")) {
+                "Debug FUSION_DEBUG_WS_URL must be provided"
+            }
             buildConfigField("String", "FUSION_BASE_URL", "\"$debugBaseUrl\"")
             buildConfigField("String", "FUSION_WS_URL", "\"$debugWebSocketUrl\"")
             buildConfigField("String", "FUSION_DEV_CLIENT_ID", "\"fusion-android-dev\"")

@@ -1,23 +1,18 @@
 import { useCallback, useEffect, useState } from 'react';
 
-export const API_BASE =
-  import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8000' : '');
+export const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8000' : '');
 
-/**
- * Fetch one JSON resource with explicit loading / empty / error states.
- *
- * There is deliberately no "default data" parameter. When a request fails the
- * hook reports the failure and the caller renders an error state -- a
- * production surface must never silently fall back to a fabricated record.
- *
- * `path` may be null to skip fetching (e.g. before a case id is known).
- */
-export default function useResource(path, { skip = false } = {}) {
-  const [data, setData] = useState(null);
-  const [status, setStatus] = useState(path && !skip ? 'loading' : 'idle');
+const resourceCache = new Map();
+const DEFAULT_TIMEOUT_MS = 8000;
+const DEFAULT_REFRESH_MS = 30000;
+
+export default function useResource(path, { skip = false, timeoutMs = DEFAULT_TIMEOUT_MS, refreshMs = DEFAULT_REFRESH_MS } = {}) {
+  const cached = path ? resourceCache.get(path) : null;
+  const [data, setData] = useState(cached?.data ?? null);
+  const [status, setStatus] = useState(path && !skip ? (cached ? 'stale' : 'loading') : 'idle');
   const [error, setError] = useState(null);
+  const [lastUpdated, setLastUpdated] = useState(cached?.updatedAt ?? null);
   const [reloadToken, setReloadToken] = useState(0);
-
   const reload = useCallback(() => setReloadToken((token) => token + 1), []);
 
   useEffect(() => {
@@ -27,38 +22,43 @@ export default function useResource(path, { skip = false } = {}) {
       setError(null);
       return undefined;
     }
-
-    const controller = new AbortController();
     let active = true;
-
-    (async () => {
-      setStatus('loading');
+    let activeController = null;
+    const load = async () => {
+      const controller = new AbortController();
+      activeController = controller;
+      const timeout = setTimeout(() => controller.abort(), timeoutMs);
+      setStatus((current) => (data ? 'stale' : current === 'ready' ? 'stale' : 'loading'));
       setError(null);
       try {
         const response = await fetch(`${API_BASE}${path}`, { signal: controller.signal });
         if (!response.ok) {
           const detail = await response.json().catch(() => null);
-          throw Object.assign(
-            new Error(detail?.detail || `Request failed (HTTP ${response.status})`),
-            { status: response.status },
-          );
+          throw Object.assign(new Error(detail?.detail || `Request failed (HTTP ${response.status})`), { status: response.status });
         }
         const body = await response.json();
         if (!active) return;
+        const updatedAt = new Date().toISOString();
+        resourceCache.set(path, { data: body, updatedAt });
         setData(body);
+        setLastUpdated(updatedAt);
         setStatus('ready');
       } catch (requestError) {
-        if (requestError.name === 'AbortError' || !active) return;
-        setError(requestError);
-        setStatus('error');
+        if (!active) return;
+        setError(requestError.name === 'AbortError' ? new Error('Request timed out; retrying automatically.') : requestError);
+        setStatus(data ? 'stale' : 'error');
+      } finally {
+        clearTimeout(timeout);
       }
-    })();
-
+    };
+    load();
+    const timer = setInterval(load, refreshMs);
     return () => {
       active = false;
-      controller.abort();
+      activeController?.abort();
+      clearInterval(timer);
     };
-  }, [path, skip, reloadToken]);
+  }, [path, skip, reloadToken, timeoutMs, refreshMs]);
 
-  return { data, status, error, reload };
+  return { data, status, error, reload, lastUpdated };
 }

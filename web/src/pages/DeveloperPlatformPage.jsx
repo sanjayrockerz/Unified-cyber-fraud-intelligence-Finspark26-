@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Code2, Copy, Download, RefreshCw, Smartphone, Wifi } from 'lucide-react';
-import { API_BASE, authenticatedWebSocketUrl } from '../platformAuth';
+import { API_BASE, authenticatedWebSocketUrl, authenticatedWebSocketProtocols } from '../platformAuth';
 
 export default function DeveloperPlatformPage() {
   const [pairing, setPairing] = useState(null);
@@ -55,7 +55,10 @@ export default function DeveloperPlatformPage() {
   useEffect(() => {
     let socket;
     try {
-      socket = new WebSocket(authenticatedWebSocketUrl(`${API_BASE.replace(/^http/, 'ws')}/ws/stream`));
+      socket = new WebSocket(
+        authenticatedWebSocketUrl(`${API_BASE.replace(/^http/, 'ws')}/ws/stream`),
+        authenticatedWebSocketProtocols(),
+      );
       socket.onmessage = (message) => setEvents((current) => [JSON.parse(message.data), ...current].slice(0, 80));
     } catch (socketError) { setError(socketError.message); }
     return () => socket?.close();

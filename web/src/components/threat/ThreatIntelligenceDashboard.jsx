@@ -4,7 +4,7 @@ import {
   Terminal, Globe, Users, Briefcase, Zap, Info, ArrowUpRight, Copy, Check, MessageSquare
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { authenticatedWebSocketUrl } from '../../platformAuth';
+import { authenticatedWebSocketUrl, authenticatedWebSocketProtocols } from '../../platformAuth';
 import DataTable from '../common/DataTable';
 import Drawer from '../common/Drawer';
 import LiveThreatMap from './LiveThreatMap';
@@ -40,13 +40,7 @@ export default function ThreatIntelligenceDashboard() {
   const [detectionMetrics, setDetectionMetrics] = useState(null);
 
   // Microsoft Defender style Incident Queue state
-  const [incidents, setIncidents] = useState([
-    { id: 'INC-901', name: 'Impossible Travel Anomaly', customer: 'Rajesh Kumar', risk: 98, age: '2 mins ago', status: 'INVESTIGATING', severity: 'CRITICAL', details: 'Concurrent logins detected from Mumbai (IN) and Moscow (RU) within a 4-minute window. Risk score is evaluated at 98.' },
-    { id: 'INC-902', name: 'Mule Account Spurt', customer: 'Anita', risk: 92, age: '5 mins ago', status: 'ASSIGNED', severity: 'HIGH', details: 'Beneficiary account registered 12 inward IMPS transactions followed by immediate ATM withdrawal attempt.' },
-    { id: 'INC-903', name: 'VPN Login Bypass', customer: 'Arjun', risk: 76, age: '12 mins ago', status: 'QUEUED', severity: 'MEDIUM', details: 'Login routing via NordVPN server in Stockholm. Customer usually accesses from Chennai.' },
-    { id: 'INC-904', name: 'Multi-Device Concurrent Active Session', customer: 'Sarah Jenkins', risk: 82, age: '24 mins ago', status: 'ESCALATED', severity: 'MEDIUM', details: 'Active sessions detected on 4 distinct mobile device models within a 15-minute window.' },
-    { id: 'INC-905', name: 'Device Swap Verification', customer: 'Dave Smith', risk: 45, age: '1 hour ago', status: 'RESOLVED', severity: 'LOW', details: 'User agent changed from iPhone 13 to iPhone 15 Pro. Completed face match challenge.' }
-  ]);
+  const [incidents, setIncidents] = useState([]);
 
   async function fetchThreats() {
     setLoading(true);
@@ -54,7 +48,18 @@ export default function ThreatIntelligenceDashboard() {
       const response = await fetch(`${API_BASE}/threats`);
       if (response.ok) {
         const data = await response.json();
-        setThreats(data.threats || []);
+        const observed = data.threats || [];
+        setThreats(observed);
+        setIncidents(observed.map((threat) => ({
+          id: threat.id || threat.threat_id,
+          name: threat.threat_category || threat.event_type || 'Observed threat',
+          customer: threat.user_id || threat.customer_id || 'Unattributed entity',
+          risk: threat.risk_score ?? threat.score,
+          age: threat.timestamp || threat.created_at || 'Observed',
+          status: threat.status || 'QUEUED',
+          severity: threat.severity || 'OBSERVED',
+          details: threat.description || threat.evidence || 'Evidence available in the threat record.',
+        })));
         // Reset global topbar freshness counter
         window.dispatchEvent(new CustomEvent('threats-updated'));
       }
@@ -106,7 +111,10 @@ export default function ThreatIntelligenceDashboard() {
 
     function connect() {
       try {
-        socket = new WebSocket(authenticatedWebSocketUrl(`${WS_BASE}/ws/stream`));
+        socket = new WebSocket(
+          authenticatedWebSocketUrl(`${WS_BASE}/ws/stream`),
+          authenticatedWebSocketProtocols(),
+        );
         socket.onopen = () => setStreamConnected(true);
         socket.onmessage = (event) => {
           const message = JSON.parse(event.data);
@@ -453,18 +461,12 @@ export default function ThreatIntelligenceDashboard() {
                 <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-soc-primary"></span>
               </div>
               <span className="text-soc-text font-bold text-[10px] uppercase block mb-1">Live Recommendations</span>
-              <p className="text-soc-text">
-                Freeze account immediately. Current transaction attempts match high-correlation carding clusters routing from Saint Petersburg, Russia. Dispatched biometric MFA step-up.
-              </p>
+              <p className="text-soc-text">{selectedIncident?.details || 'Waiting for backend threat telemetry and analyst recommendations.'}</p>
             </div>
 
             {/* Live recommendations checklist */}
             <div className="space-y-2 pt-1">
-              {[
-                'Biometric MFA check for Rajesh Kumar',
-                'Quarantine network range 185.112.0.0/16',
-                'Audit beneficiary ledger ACC_ABC_123',
-              ].map((rec, i) => (
+              {(selectedIncident?.recommended_actions || ['Review observed evidence', 'Validate adaptive trust change', 'Record analyst disposition']).map((rec, i) => (
                 <div key={i} className="flex items-start gap-2 text-[10px] font-mono text-soc-text">
                   <span className="text-soc-primary font-bold mt-0.5">•</span>
                   <span>{rec}</span>

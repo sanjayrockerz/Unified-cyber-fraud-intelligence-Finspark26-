@@ -62,6 +62,16 @@ interface FusionApiService {
         @Body request: SDKEventRequest
     ): Response<SDKEventResponse>
 
+    @POST("sdk/behavior")
+    suspend fun reportBehavioralBiometrics(
+        @Body request: BehavioralBiometricsRequest
+    ): Response<BehaviorAckResponse>
+
+    @POST("sdk/telemetry")
+    suspend fun reportTelemetry(
+        @Body request: SDKTelemetryRequest
+    ): Response<BehaviorAckResponse>
+
     @POST("sdk/request-decision")
     suspend fun requestDecision(
         @Body request: SDKDecisionRequest

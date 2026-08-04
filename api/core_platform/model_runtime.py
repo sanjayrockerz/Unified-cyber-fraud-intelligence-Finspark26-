@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import time
+import traceback
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -10,6 +12,11 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
 MODELS_DIR = ROOT / "ml" / "models"
+logger = logging.getLogger(__name__)
+
+
+class ModelLoadError(RuntimeError):
+    """Raised when a model artifact cannot be loaded or executed."""
 
 
 @dataclass
@@ -25,6 +32,8 @@ class InferenceResult:
     artifacts: list[dict[str, str]] = field(default_factory=list)
     latency_ms: float = 0.0
     error_code: str | None = None
+    fallback: bool = False
+    error_id: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -39,6 +48,8 @@ class InferenceResult:
             "artifacts": self.artifacts,
             "latency_ms": self.latency_ms,
             "error_code": self.error_code,
+            "fallback": self.fallback,
+            "error_id": self.error_id,
         }
 
 
@@ -135,7 +146,7 @@ class ModelRuntime:
             action = "ALLOW"
             reasons.append("No blocking deterministic policy matched")
         return InferenceResult(
-            status="ModelUnavailable",
+            status="degraded",
             implementation="POLICY_FALLBACK",
             version="policy-v1.0.3",
             action=action,
@@ -145,6 +156,8 @@ class ModelRuntime:
             reasons=reasons,
             latency_ms=round((time.perf_counter() - started) * 1000.0, 3),
             error_code=reason,
+            fallback=True,
+            error_id="MODEL_ERR_001",
         )
 
     def infer(
@@ -191,7 +204,17 @@ class ModelRuntime:
                 artifacts=self._availability["artifacts"],
                 latency_ms=round((time.perf_counter() - started) * 1000.0, 3),
             )
+        except (ValueError, KeyError) as exc:
+            logger.warning("Model inference validation failed: %s", exc)
+            return self._policy_fallback(
+                transaction, threats, graph_findings, "MODEL_INPUT_INVALID", started
+            )
+        except ModelLoadError:
+            return self._policy_fallback(
+                transaction, threats, graph_findings, "MODEL_LOAD_FAILED", started
+            )
         except Exception:
+            logging.error(traceback.format_exc())
             return self._policy_fallback(
                 transaction,
                 threats,

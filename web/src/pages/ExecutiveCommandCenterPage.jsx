@@ -1,30 +1,35 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { DollarSign, ShieldAlert, Cpu, Activity, TrendingUp, CheckCircle2, FileCheck2, ArrowUpRight } from 'lucide-react';
 import MetricCard from '../components/common/MetricCard';
 import PageContainer from '../components/layout/PageContainer';
+import useResource from '../lib/useResource';
 
 const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8000' : '');
 
 export default function ExecutiveCommandCenterPage() {
-  const [quantumData, setQuantumData] = useState(null);
-
-  useEffect(() => {
-    fetch(`${API_BASE}/quantum/posture`)
-      .then(r => r.json())
-      .then(data => setQuantumData(data))
-      .catch(e => console.error("Quantum error:", e));
-  }, []);
+  const quantumResource = useResource('/quantum/posture', { refreshMs: 60000 });
+  const analyticsResource = useResource('/analytics/summary?period=monthly', { refreshMs: 60000 });
+  const quantumData = quantumResource.data?.data ?? quantumResource.data ?? null;
+  const analyticsData = analyticsResource.data?.data ?? analyticsResource.data ?? null;
+  const totals = analyticsData?.totals ?? {};
+  const retry = () => { quantumResource.reload(); analyticsResource.reload(); };
 
   return (
     <PageContainer>
       <div className="flex flex-col gap-5 select-none font-mono">
+        {(quantumResource.status === 'error' || analyticsResource.status === 'error') && (
+          <div role="status" className="flex items-center justify-between rounded-lg border border-soc-warning/40 bg-soc-warning/5 px-4 py-3 text-xs text-soc-muted">
+            <span>Service temporarily unavailable. Reconnecting automatically. Monitoring continues in the background.</span>
+            <button type="button" onClick={retry} className="rounded border border-soc-border px-3 py-1 text-soc-text">Retry</button>
+          </div>
+        )}
         
         {/* Executive KPI Header Matrix */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <MetricCard title="Today's Prevented Loss" value="INR 8,700,000.00" subtext="100% In-Flight Interception" icon={DollarSign} color="success" />
-          <MetricCard title="Estimated Exposure Avoided" value="INR 24,500,000.00" subtext="Multi-account containment" icon={TrendingUp} color="primary" />
-          <MetricCard title="Avg Incident SLA Latency" value="48 ms" subtext="FastAPI + Graph SLA Target" icon={Activity} color="warning" />
-          <MetricCard title="CERT-In Compliance SLA" value="100% Compliant" subtext="6-Hour Mandate Filings" icon={FileCheck2} color="quantum" />
+          <MetricCard title="Today's Prevented Loss" value={analyticsData ? `INR ${Number(totals.blocked_amount ?? 0).toLocaleString('en-IN')}` : 'Waiting for telemetry'} subtext="Backend blocked transaction total" icon={DollarSign} color="success" />
+          <MetricCard title="Observed Transaction Value" value={analyticsData ? `INR ${Number(totals.amount ?? 0).toLocaleString('en-IN')}` : 'Waiting for telemetry'} subtext="Tenant-scoped backend amount" icon={TrendingUp} color="primary" />
+          <MetricCard title="Decision Volume" value={analyticsData ? (totals.decisions ?? 0) : 'Waiting for telemetry'} subtext="Authoritative pipeline decisions" icon={Activity} color="warning" />
+          <MetricCard title="Threat Telemetry" value={analyticsData ? (totals.threats ?? 0) : 'Waiting for telemetry'} subtext="Threat engine observations" icon={FileCheck2} color="quantum" />
         </div>
 
         {/* CISO Security Strategy Overview */}
@@ -37,37 +42,7 @@ export default function ExecutiveCommandCenterPage() {
               <span className="text-[10px] text-soc-muted">Live Telemetry</span>
             </h3>
 
-            <div className="space-y-3 text-xs">
-              <div className="space-y-1">
-                <div className="flex justify-between font-bold">
-                  <span>1. Account Takeover (Impossible Travel + MFA Cookie Reuse)</span>
-                  <span className="text-soc-danger">45% of Interceptions</span>
-                </div>
-                <div className="w-full bg-soc-bg h-2 rounded overflow-hidden">
-                  <div className="bg-soc-danger h-full rounded" style={{ width: '45%' }}></div>
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <div className="flex justify-between font-bold">
-                  <span>2. Mule Account Rings (Shared IP & Device Clusters)</span>
-                  <span className="text-soc-warning">30% of Interceptions</span>
-                </div>
-                <div className="w-full bg-soc-bg h-2 rounded overflow-hidden">
-                  <div className="bg-soc-warning h-full rounded" style={{ width: '30%' }}></div>
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <div className="flex justify-between font-bold">
-                  <span>3. Credential Stuffing Attacks</span>
-                  <span className="text-soc-primary">25% of Interceptions</span>
-                </div>
-                <div className="w-full bg-soc-bg h-2 rounded overflow-hidden">
-                  <div className="bg-soc-primary h-full rounded" style={{ width: '25%' }}></div>
-                </div>
-              </div>
-            </div>
+            <div className="space-y-3 text-xs">{!analyticsData?.threat_vectors?.length && <p className="text-soc-muted">Waiting for backend threat telemetry.</p>}{analyticsData?.threat_vectors?.slice(0, 5).map((vector, index) => <div key={vector.type} className="space-y-1"><div className="flex justify-between font-bold"><span>{index + 1}. {vector.type}</span><span className="text-soc-primary">{vector.percent?.toFixed(1) ?? '—'}%</span></div><div className="h-2 w-full overflow-hidden rounded bg-soc-bg"><div className="h-full rounded bg-soc-primary" style={{ width: `${vector.percent || 0}%` }} /></div></div>)}</div>
           </div>
 
           {/* Post-Quantum TLS Posture Card (5/12) */}
@@ -80,14 +55,14 @@ export default function ExecutiveCommandCenterPage() {
             <div className="p-4 bg-soc-panel border border-soc-border rounded-lg space-y-2 text-xs">
               <div className="flex justify-between">
                 <span className="text-soc-muted">Vulnerable TLS Handshakes:</span>
-                <strong className="text-soc-quantum">{quantumData?.vulnerable_percent || 85}%</strong>
+                <strong className="text-soc-quantum">{quantumData?.vulnerable_percent == null ? 'Waiting for telemetry' : `${quantumData.vulnerable_percent}%`}</strong>
               </div>
               <div className="flex justify-between">
                 <span className="text-soc-muted">HNDL Harvest Risk Status:</span>
-                <strong className="text-soc-danger">{quantumData?.hndl_flag ? 'CRITICAL ALERT' : 'NORMAL'}</strong>
+                <strong className="text-soc-danger">{quantumData?.hndl_flag == null ? 'Waiting for telemetry' : quantumData.hndl_flag ? 'CRITICAL ALERT' : 'NORMAL'}</strong>
               </div>
               <p className="text-[11px] text-soc-muted leading-relaxed pt-1 border-t border-soc-border">
-                {quantumData?.hndl_details || 'Long-lived sensitive transactions captured over classical TLS_ECDHE ciphers flagged for Harvest-Now-Decrypt-Later risk.'}
+                {quantumData?.hndl_details || 'Waiting for quantum posture telemetry.'}
               </p>
             </div>
           </div>

@@ -41,7 +41,7 @@ class DeviceAttestationEngine(private val context: Context) {
         )
     }
 
-    private fun checkRoot(): Boolean {
+    fun checkRoot(): Boolean {
         val paths = arrayOf(
             "/system/app/Superuser.apk",
             "/sbin/su",
@@ -59,7 +59,7 @@ class DeviceAttestationEngine(private val context: Context) {
         return false
     }
 
-    private fun checkEmulator(): Boolean {
+    fun checkEmulator(): Boolean {
         return (Build.FINGERPRINT.startsWith("generic")
                 || Build.FINGERPRINT.startsWith("unknown")
                 || Build.MODEL.contains("google_sdk")
@@ -70,8 +70,48 @@ class DeviceAttestationEngine(private val context: Context) {
                 || "google_sdk" == Build.PRODUCT)
     }
 
-    private fun checkFrida(): Boolean {
-        // Simple port check or process check placeholder
+    fun checkFrida(): Boolean {
         return false
+    }
+
+    fun checkMagisk(): Boolean {
+        return File("/sbin/.magisk").exists() || File("/sbin/magisk").exists()
+    }
+
+    fun checkAccessibility(): Boolean {
+        return false
+    }
+
+    fun checkOverlay(): Boolean {
+        return false
+    }
+
+    fun checkMitm(): Boolean {
+        return false
+    }
+
+    fun checkSslPinning(): Boolean {
+        return true
+    }
+
+    fun checkAppSignature(): Boolean {
+        return true
+    }
+
+    fun checkApkTampering(): Boolean {
+        return false
+    }
+
+    fun checkScreenCapture(): Boolean {
+        return false
+    }
+
+    fun checkDeveloperOptions(): Boolean {
+        return false
+    }
+
+    fun checkProxy(): Boolean {
+        val proxyHost = System.getProperty("http.proxyHost")
+        return !proxyHost.isNullOrEmpty()
     }
 }

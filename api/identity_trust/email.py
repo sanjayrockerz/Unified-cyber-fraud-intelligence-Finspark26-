@@ -60,7 +60,16 @@ class SecurityEmailService:
         put("email_logs", log["id"], log)
         if supabase_rest.enabled:
             try:
-                supabase_rest.insert("email_logs", {k: v for k, v in log.items() if k != "id"})
+                db_status = "DELIVERED" if log.get("status") == "SENT" else "FAILED"
+                supabase_rest.insert("email_logs", {
+                    "customer_id": log.get("customer_id"),
+                    "recipient_email": log.get("recipient_email"),
+                    "email_subject": log.get("subject"),
+                    "email_kind": log.get("template_key"),
+                    "body_text": body,
+                    "status": db_status,
+                    "sent_at": log.get("sent_at") or log.get("created_at") or datetime.now(timezone.utc).isoformat()
+                })
             except SupabaseError:
                 pass
         return log

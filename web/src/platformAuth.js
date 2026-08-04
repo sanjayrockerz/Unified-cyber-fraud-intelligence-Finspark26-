@@ -22,17 +22,14 @@ function validateRuntimeConfig() {
 }
 
 function requestToken() {
-  // DEV talks directly to the backend with the shared local-only dev secret.
-  // Production never ships a client secret to the browser: it calls a
-  // same-origin serverless proxy (/api/token) that holds the real secret
-  // server-side and forwards a minted access token only.
+  // The client secret is held by the deployment's server-side token proxy.
   if (import.meta.env.DEV) {
     return rawFetch(`${API_BASE}/auth/token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        client_id: 'fusion-dashboard-dev',
-        client_secret: 'fusion-dashboard-local-only',
+        client_id: import.meta.env.VITE_DEV_CLIENT_ID,
+        client_secret: import.meta.env.VITE_DEV_CLIENT_SECRET,
       }),
     });
   }
@@ -81,8 +78,15 @@ export function authenticatedWebSocketUrl(url) {
   if (!import.meta.env.DEV && parsed.protocol !== 'wss:') {
     throw new Error('Production dashboard WebSocket must use WSS');
   }
-  parsed.searchParams.set('access_token', accessToken);
   return parsed.toString();
+}
+
+export function authenticatedWebSocketProtocols() {
+  validateRuntimeConfig();
+  if (!accessToken || tokenExpiry(accessToken) <= Math.floor(Date.now() / 1000)) {
+    throw new Error('Platform authentication has expired');
+  }
+  return [`Bearer.${accessToken}`];
 }
 
 export { API_BASE };

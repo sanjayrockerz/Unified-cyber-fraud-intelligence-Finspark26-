@@ -14,7 +14,7 @@ services:
         value: production
       - key: FUSION_SECURITY_MODE
         value: production
-      - key: JWT_SECRET
+      - key: JWT_SECRET_KEY
         sync: false
       - key: JWT_ISSUER
         value: fusion-risk-os
@@ -26,11 +26,10 @@ services:
         sync: false
       - key: FUSION_AUTH_CLIENTS_JSON
         sync: false
-      - key: FUZEN_AI_BANK_USERS_JSON
-        # Hackathon demo identity used by the reference APK. The password
-        # is FusionDemo!2026; only the PBKDF2 hash is stored here.
-        value: >-
-          [{"username":"demo_user","password_hash":"pbkdf2_sha256$310000$9f4e2a7c1d6b8e03a5c9d2f1748b6e10$efd382ec9af21935f8cce46c51ef98cfa6b706ccb885a80001e89e5db9cea6df","user_id":"USR_DEMO_001","display_name":"Fusion Demo Customer","email":"demo.user@fusion-risk-os.local","tenant_id":"TENANT_FUSB_001","app_id":"com.fuzenbank.mobileapp"}]
+      - key: FUSION_BANK_USERS_JSON
+        sync: false
+      - key: DATABASE_URL
+        value: ./finspark.db
       - key: BANK_REFRESH_TTL_SECONDS
         value: 2592000
       - key: DB_PATH
@@ -50,6 +49,8 @@ services:
       - key: LEDGER_SIGNING_KEY
         sync: false
       - key: GATEWAY_WEBHOOK_SECRET
+        sync: false
+      - key: GATEWAY_TENANT_ID
         sync: false
       - key: SUPABASE_URL
         sync: false

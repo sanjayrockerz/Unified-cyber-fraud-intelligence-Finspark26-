@@ -44,8 +44,17 @@ async def gateway_webhook(request: Request, x_razorpay_signature: Optional[str] 
     if not hmac.compare_digest(expected_signature, x_razorpay_signature):
         raise HTTPException(status_code=401, detail="Invalid signature")
 
+    tenant_id = str(
+        payload.get("tenant_id")
+        or os.environ.get("GATEWAY_TENANT_ID")
+        or os.environ.get("FUSION_DEFAULT_TENANT_ID")
+        or "TENANT_FUSB_001"
+    ).strip()
+    if not tenant_id:
+        raise HTTPException(status_code=422, detail="Gateway tenant_id is required")
+
     # Persist only after authentication and never store authorization/signature headers.
-    put("webhooks", webhook_id, {"body": payload})
+    put("webhooks", webhook_id, {"body": payload}, tenant_id=tenant_id)
 
     # Normalize the payload into the platform's internal transaction schema
     # Supporting Razorpay format as an example
@@ -81,6 +90,7 @@ async def gateway_webhook(request: Request, x_razorpay_signature: Optional[str] 
         "dest_user_id": "",
         "dest_device_id": "",
         "dest_ip": "",
+        "tenant_id": tenant_id,
         "oldbalanceDest": 0.0,
         "newbalanceDest": amount,
         "cyber_compromise_in_window": False,

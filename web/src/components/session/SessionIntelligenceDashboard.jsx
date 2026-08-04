@@ -1,5 +1,5 @@
 ﻿import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { authenticatedWebSocketUrl } from '../../platformAuth';
+import { authenticatedWebSocketUrl, authenticatedWebSocketProtocols } from '../../platformAuth';
 import { Clock3, RefreshCw, Search, ShieldCheck, Wifi, WifiOff } from 'lucide-react';
 import Card from '../common/Card';
 import TrustComponentHeatmap from './TrustComponentHeatmap';
@@ -8,9 +8,36 @@ import TrustTimelineChart from './TrustTimelineChart';
 
 const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8000' : '');
 const WS_BASE = (import.meta.env.VITE_WS_BASE || API_BASE).replace(/^http/, 'ws');
+const SESSION_CACHE_KEY = 'fuzen.session.registry';
+const SESSION_CLIENT_KEY = 'fuzen.session.client-id';
+
+function getClientId() {
+  let value = sessionStorage.getItem(SESSION_CLIENT_KEY);
+  if (!value) {
+    value = `WEB_${crypto.randomUUID()}`;
+    sessionStorage.setItem(SESSION_CLIENT_KEY, value);
+  }
+  return value;
+}
+
+function readSessionCache() {
+  try { return JSON.parse(sessionStorage.getItem(SESSION_CACHE_KEY) || '[]'); } catch { return []; }
+}
+
+async function fetchWithTimeout(url, options = {}, timeoutMs = 8000) {
+  const controller = new AbortController();
+  const timer = window.setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(url, { ...options, signal: controller.signal });
+    if (!response.ok) throw new Error(`Session service returned ${response.status}`);
+    return response;
+  } finally {
+    window.clearTimeout(timer);
+  }
+}
 
 export default function SessionIntelligenceDashboard() {
-  const [sessions, setSessions] = useState([]);
+  const [sessions, setSessions] = useState(readSessionCache);
   const [selectedId, setSelectedId] = useState('');
   const [detail, setDetail] = useState(null);
   const [history, setHistory] = useState([]);
@@ -20,20 +47,22 @@ export default function SessionIntelligenceDashboard() {
   const [connectionState, setConnectionState] = useState('CONNECTING');
   const [error, setError] = useState('');
   const [latency, setLatency] = useState(null);
+  const clientId = getClientId();
 
   const loadSessions = useCallback(async () => {
     try {
-      const params = new URLSearchParams({ limit: '200' });
+      const params = new URLSearchParams({ limit: '50' });
       if (query) params.set('search', query);
       if (stateFilter) params.set('state', stateFilter);
-      const response = await fetch(`${API_BASE}/sessions?${params}`);
-      if (!response.ok) throw new Error(`Session registry returned ${response.status}`);
+      const response = await fetchWithTimeout(`${API_BASE}/sessions?${params}`);
       const payload = await response.json();
-      setSessions(payload.sessions || []);
-      setSelectedId((current) => current || payload.sessions?.[0]?.session_id || '');
+      const nextSessions = payload.data?.sessions || payload.sessions || [];
+      setSessions(nextSessions);
+      sessionStorage.setItem(SESSION_CACHE_KEY, JSON.stringify(nextSessions));
+      setSelectedId((current) => current || nextSessions[0]?.session_id || '');
       setError('');
     } catch (requestError) {
-      setError(requestError.message);
+      setError('Service temporarily unavailable. Reconnecting automatically. Monitoring continues in the background.');
     }
   }, [query, stateFilter]);
 
@@ -46,17 +75,17 @@ export default function SessionIntelligenceDashboard() {
     const started = performance.now();
     try {
       const [detailResponse, historyResponse] = await Promise.all([
-        fetch(`${API_BASE}/sessions/${encodeURIComponent(selectedId)}`),
-        fetch(`${API_BASE}/trust-history/${encodeURIComponent(selectedId)}?range=${range}`),
+        fetchWithTimeout(`${API_BASE}/sessions/${encodeURIComponent(selectedId)}`),
+        fetchWithTimeout(`${API_BASE}/trust-history/${encodeURIComponent(selectedId)}?range=${range}`),
       ]);
-      if (!detailResponse.ok || !historyResponse.ok) throw new Error('Unable to load selected session');
-      setDetail(await detailResponse.json());
+      const detailPayload = await detailResponse.json();
+      setDetail(detailPayload.data ?? detailPayload);
       const historyPayload = await historyResponse.json();
-      setHistory(historyPayload.snapshots || []);
+      setHistory(historyPayload.data?.snapshots || historyPayload.snapshots || []);
       setLatency(Math.round(performance.now() - started));
       setError('');
     } catch (requestError) {
-      setError(requestError.message);
+      setError('Service temporarily unavailable. Reconnecting automatically. Monitoring continues in the background.');
     }
   }, [range, selectedId]);
 
@@ -81,7 +110,11 @@ export default function SessionIntelligenceDashboard() {
 
     const connect = () => {
       setConnectionState('CONNECTING');
-      socket = new WebSocket(authenticatedWebSocketUrl(`${WS_BASE}/ws/stream?session_id=${encodeURIComponent(selectedId)}`));
+      const params = new URLSearchParams({ session_id: selectedId, client_id: clientId });
+      socket = new WebSocket(
+        authenticatedWebSocketUrl(`${WS_BASE}/ws/stream?${params}`),
+        authenticatedWebSocketProtocols(),
+      );
       socket.onopen = () => setConnectionState('LIVE');
       socket.onmessage = (message) => {
         const envelope = JSON.parse(message.data);

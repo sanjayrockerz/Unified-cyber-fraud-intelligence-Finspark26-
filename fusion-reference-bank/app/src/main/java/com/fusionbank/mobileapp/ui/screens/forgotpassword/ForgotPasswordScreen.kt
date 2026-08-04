@@ -20,6 +20,8 @@ import com.fusionbank.mobileapp.ui.theme.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.RequestBody.Companion.toRequestBody
 
 @Composable
 fun ForgotPasswordScreen(
@@ -122,10 +124,8 @@ fun ForgotPasswordScreen(
                             CoroutineScope(Dispatchers.IO).launch {
                                 try {
                                     val client = okhttp3.OkHttpClient()
-                                    val body = okhttp3.RequestBody.create(
-                                        okhttp3.MediaType.parse("application/json"),
-                                        """{"email":"$email"}"""
-                                    )
+                                    val mediaType = "application/json".toMediaTypeOrNull()
+                                    val body = """{"email":"$email"}""".toRequestBody(mediaType)
                                     val request = okhttp3.Request.Builder()
                                         .url(com.fusionbank.mobileapp.sdk.Fusion.getBaseUrl() + "api/auth/forgot-password")
                                         .post(body)

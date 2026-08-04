@@ -22,7 +22,8 @@ class SessionTrustRepository:
     """Additive SQLite repository for Phase 3 session and trust state."""
 
     def __init__(self, db_path: str | Path | None = None):
-        self.db_path = str(db_path or os.environ.get("DB_PATH", "./finspark.db"))
+        configured_db = os.environ.get("DB_PATH") or os.environ.get("DATABASE_URL") or "./finspark.db"
+        self.db_path = str(db_path or configured_db).removeprefix("sqlite:///")
         self._lock = threading.RLock()
         # For :memory: databases every new connect() call creates a fresh
         # empty database, losing all schema and data.  We keep a single

@@ -27,7 +27,7 @@ def get_dev_token() -> str:
     Uses fusion-dashboard-dev which has analyst/operator/developer roles matching DEFAULT_ROLES."""
     response = client.post(
         "/auth/token",
-        json={"client_id": "fusion-dashboard-dev", "client_secret": "fusion-dashboard-local-only"},
+        json={"client_id": "test-dashboard-client", "client_secret": "test-dashboard-secret"},
     )
     assert response.status_code == 200
     return response.json()["access_token"]
@@ -55,10 +55,10 @@ def test_put_then_get_settings_policy_roundtrips():
         headers={"Authorization": f"Bearer {token}"},
     )
     assert put_response.status_code == 200
-    assert put_response.json() == payload
+    assert put_response.json()["data"] == payload
 
     get_response = client.get(
         "/settings/policy",
         headers={"Authorization": f"Bearer {token}"},
     )
-    assert get_response.json() == payload
+    assert get_response.json()["data"] == payload

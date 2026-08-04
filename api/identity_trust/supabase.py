@@ -26,7 +26,7 @@ class SupabaseRest:
     def _request(self, path: str, *, method: str = "GET", body: dict[str, Any] | None = None, auth_key: str | None = None) -> Any:
         if not self.enabled:
             raise SupabaseError("Supabase is not configured")
-        key = auth_key or self.settings.supabase_service_role_key
+        key = auth_key or self.settings.supabase_service_role_key or self.settings.supabase_anon_key
         headers = {"apikey": key, "Authorization": f"Bearer {key}", "Content-Type": "application/json"}
         request = urllib.request.Request(
             f"{self.settings.supabase_url}{path}",

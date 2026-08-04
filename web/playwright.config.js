@@ -8,8 +8,22 @@ export default defineConfig({
   testMatch: '**/*.spec.js',
   fullyParallel: true,
   reporter: 'line',
+  webServer: [
+    {
+      command: 'python e2e_backend.py',
+      url: 'http://127.0.0.1:8000/health/live',
+      reuseExistingServer: true,
+      timeout: 120000,
+    },
+    {
+      command: 'node e2e_vite.mjs',
+      url: 'http://127.0.0.1:5173',
+      reuseExistingServer: true,
+      timeout: 120000,
+    },
+  ],
   use: {
-    baseURL: process.env.E2E_BASE_URL || 'http://localhost:5173',
+    baseURL: process.env.E2E_BASE_URL || 'http://127.0.0.1:5173',
     trace: 'retain-on-failure',
   },
 });

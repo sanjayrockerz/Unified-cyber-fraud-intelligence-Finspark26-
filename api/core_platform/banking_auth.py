@@ -4,6 +4,7 @@ from supabase import create_client, Client
 import hashlib
 import hmac
 import json
+import logging
 import os
 import secrets
 import time
@@ -23,6 +24,18 @@ from .security import create_access_token
 REFRESH_COLLECTION = "banking_refresh_tokens"
 USER_COLLECTION = "banking_users"
 PBKDF2_ITERATIONS = 310_000
+logger = logging.getLogger(__name__)
+
+
+def load_banking_users() -> dict[str, Any]:
+    users_json = os.getenv("FUSION_BANK_USERS_JSON")
+    if not users_json:
+        return {}
+    try:
+        users = json.loads(users_json)
+    except json.JSONDecodeError:
+        return {}
+    return users if isinstance(users, dict) else {}
 
 supabase_url = os.getenv("SUPABASE_URL")
 supabase_key = os.getenv("SUPABASE_ANON_KEY")
@@ -120,30 +133,21 @@ class BankingAuthService:
         self._load_configured_users()
 
     def _load_configured_users(self) -> None:
-        raw = os.getenv("FUZEN_AI_BANK_USERS_JSON")
-        if raw:
-            configured = json.loads(raw)
-            if not isinstance(configured, list):
-                raise RuntimeError("FUZEN_AI_BANK_USERS_JSON must contain a JSON array")
-        elif platform_settings.security_mode == "production":
-            raise RuntimeError("FUZEN_AI_BANK_USERS_JSON is required in production")
-        else:
-            configured = []
-
-        if not any(str(item.get("username", "")).strip().lower() == "demo_user" for item in configured):
-            configured.append({
-                "username": "demo_user",
-                "password": "FusionDemo!2026",
-                "user_id": "USR_DEMO_001",
-                "display_name": "Development Banking User",
-                "email": "demo.user@localhost.invalid",
-            })
-        for item in configured:
+        configured = load_banking_users()
+        self._configured_users_available = bool(configured)
+        for configured_username, configured_value in configured.items():
+            item = dict(configured_value) if isinstance(configured_value, dict) else {}
+            item.setdefault("username", configured_username)
             username = str(item.get("username", "")).strip().lower()
             password = item.get("password")
             password_hash = item.get("password_hash")
             if not username or not (password or password_hash):
                 raise RuntimeError("Each configured banking user needs username and password/hash")
+            if password is not None:
+                if not str(password).strip():
+                    raise RuntimeError(f"Configured password for {username} cannot be blank")
+                if len(str(password)) < 12:
+                    logger.warning("Configured password for %s is less than 12 characters", username)
             existing = get(USER_COLLECTION, username)
             record = {
                 "username": username,
@@ -190,14 +194,9 @@ class BankingAuthService:
         }
 
     def authenticate(self, username: str, password: str) -> dict[str, Any]:
+        if not self._configured_users_available:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Banking authentication is not configured")
         uname = username.strip().lower()
-        if uname == "demo_user" and password == "FusionDemo!2026":
-            user = get(USER_COLLECTION, uname)
-            if not user or _password_hash(password) != user.get("password_hash"):
-                self._load_configured_users()
-                user = get(USER_COLLECTION, uname)
-            if user and not user.get("disabled"):
-                return user
         user = get(USER_COLLECTION, uname)
         stored_hash = user.get("password_hash", "") if user else _password_hash("invalid")
         if not user or user.get("disabled") or not _password_matches(password, stored_hash):
@@ -210,6 +209,7 @@ class BankingAuthService:
     def _issue(self, user: dict[str, Any], device_id: str) -> TokenPair:
         client = {
             "roles": ["customer", "sdk"],
+            "permissions": ["transactions:read", "transactions:write", "profile:read"],
             "tenant_id": user["tenant_id"],
             "app_id": user["app_id"],
         }
