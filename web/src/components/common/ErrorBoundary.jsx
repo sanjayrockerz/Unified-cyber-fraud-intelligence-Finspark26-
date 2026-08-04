@@ -5,6 +5,7 @@ export default class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
     this.state = { hasError: false, error: null, failedAt: null };
+    this.retryTimer = null;
   }
 
   static getDerivedStateFromError(error) {
@@ -15,13 +16,27 @@ export default class ErrorBoundary extends React.Component {
     console.error('[ErrorBoundary] caught render error:', error, info);
   }
 
+  componentWillUnmount() {
+    if (this.retryTimer) clearTimeout(this.retryTimer);
+  }
+
   componentDidUpdate(previousProps) {
     if (this.state.hasError && previousProps.resetKey !== this.props.resetKey) {
       this.handleReset();
     }
+    if (this.state.hasError && !this.retryTimer) {
+      this.retryTimer = setTimeout(() => {
+        this.retryTimer = null;
+        this.handleReset();
+      }, 2500);
+    }
   }
 
-  handleReset = () => this.setState({ hasError: false, error: null, failedAt: null });
+  handleReset = () => {
+    if (this.retryTimer) clearTimeout(this.retryTimer);
+    this.retryTimer = null;
+    this.setState({ hasError: false, error: null, failedAt: null });
+  };
 
   render() {
     if (!this.state.hasError) return this.props.children;

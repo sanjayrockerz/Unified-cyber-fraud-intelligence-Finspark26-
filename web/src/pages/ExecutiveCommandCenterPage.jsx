@@ -5,12 +5,35 @@ import PageContainer from '../components/layout/PageContainer';
 import useResource from '../lib/useResource';
 
 const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8000' : '');
+const asNumber = (value) => {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+};
+const normalizeAnalytics = (payload) => {
+  const value = payload?.data ?? payload ?? {};
+  const totals = value?.totals && typeof value.totals === 'object' ? value.totals : {};
+  return {
+    totals: {
+      blocked_amount: asNumber(totals.blocked_amount) ?? 0,
+      amount: asNumber(totals.amount) ?? 0,
+      decisions: asNumber(totals.decisions) ?? 0,
+      threats: asNumber(totals.threats) ?? 0,
+    },
+    threat_vectors: Array.isArray(value?.threat_vectors)
+      ? value.threat_vectors.filter((item) => item && typeof item === 'object').map((item) => ({
+        type: String(item.type || 'Unknown'),
+        percent: asNumber(item.percent) ?? 0,
+      }))
+      : [],
+  };
+};
 
 export default function ExecutiveCommandCenterPage() {
   const quantumResource = useResource('/quantum/posture', { refreshMs: 60000 });
   const analyticsResource = useResource('/analytics/summary?period=monthly', { refreshMs: 60000 });
-  const quantumData = quantumResource.data?.data ?? quantumResource.data ?? null;
-  const analyticsData = analyticsResource.data?.data ?? analyticsResource.data ?? null;
+  const quantumPayload = quantumResource.data?.data ?? quantumResource.data ?? null;
+  const quantumData = quantumPayload && typeof quantumPayload === 'object' ? quantumPayload : null;
+  const analyticsData = analyticsResource.data ? normalizeAnalytics(analyticsResource.data) : null;
   const totals = analyticsData?.totals ?? {};
   const retry = () => { quantumResource.reload(); analyticsResource.reload(); };
 
@@ -42,7 +65,7 @@ export default function ExecutiveCommandCenterPage() {
               <span className="text-[10px] text-soc-muted">Live Telemetry</span>
             </h3>
 
-            <div className="space-y-3 text-xs">{!analyticsData?.threat_vectors?.length && <p className="text-soc-muted">Waiting for backend threat telemetry.</p>}{analyticsData?.threat_vectors?.slice(0, 5).map((vector, index) => <div key={vector.type} className="space-y-1"><div className="flex justify-between font-bold"><span>{index + 1}. {vector.type}</span><span className="text-soc-primary">{vector.percent?.toFixed(1) ?? '—'}%</span></div><div className="h-2 w-full overflow-hidden rounded bg-soc-bg"><div className="h-full rounded bg-soc-primary" style={{ width: `${vector.percent || 0}%` }} /></div></div>)}</div>
+            <div className="space-y-3 text-xs">{!analyticsData?.threat_vectors?.length && <p className="text-soc-muted">Waiting for backend threat telemetry.</p>}{analyticsData?.threat_vectors?.slice(0, 5).map((vector, index) => <div key={vector.type} className="space-y-1"><div className="flex justify-between font-bold"><span>{index + 1}. {vector.type}</span><span className="text-soc-primary">{asNumber(vector.percent)?.toFixed(1) ?? '—'}%</span></div><div className="h-2 w-full overflow-hidden rounded bg-soc-bg"><div className="h-full rounded bg-soc-primary" style={{ width: `${Math.min(100, Math.max(0, asNumber(vector.percent) ?? 0))}%` }} /></div></div>)}</div>
           </div>
 
           {/* Post-Quantum TLS Posture Card (5/12) */}

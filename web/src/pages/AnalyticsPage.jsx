@@ -161,9 +161,9 @@ export default function AnalyticsPage() {
     for (let i = 0; i <= 100; i++) {
       chartData.push({
         threshold: i,
-        txn_cost: sweepData.transaction_only[i]?.total_cost || 0,
-        cyber_cost: sweepData.cyber_only[i]?.total_cost || 0,
-        fusion_cost: sweepData.full_fusion[i]?.total_cost || 0,
+        txn_cost: numberOrNull(sweepData.transaction_only[i]?.total_cost) ?? 0,
+        cyber_cost: numberOrNull(sweepData.cyber_only[i]?.total_cost) ?? 0,
+        fusion_cost: numberOrNull(sweepData.full_fusion[i]?.total_cost) ?? 0,
       });
     }
   }
@@ -422,7 +422,7 @@ export default function AnalyticsPage() {
                   <YAxis stroke="#A0AEC0" tick={{fontSize: 10}} tickFormatter={(v) => '₹' + (v/1000).toFixed(0) + 'k'} width={60} />
                   <RechartsTooltip 
                     contentStyle={{ backgroundColor: '#1A202C', borderColor: '#2D3748', fontSize: '11px', fontFamily: 'monospace', borderRadius: '8px' }}
-                    formatter={(value, name) => ['₹' + value.toLocaleString(), name]}
+                    formatter={(value, name) => ['₹' + (numberOrNull(value) ?? 0).toLocaleString(), name]}
                     labelFormatter={(label) => `Threshold: ${label}`}
                   />
                   <Legend verticalAlign="top" height={36} iconType="circle" wrapperStyle={{ fontSize: '11px', fontWeight: 'bold' }}/>

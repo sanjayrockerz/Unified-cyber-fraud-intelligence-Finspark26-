@@ -5,8 +5,19 @@ const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http:/
 const REPORT_CACHE_KEY = 'fuzen.reports.cache';
 
 function readCache() {
-  try { return JSON.parse(sessionStorage.getItem(REPORT_CACHE_KEY) || '[]'); } catch { return []; }
+  try {
+    const cached = JSON.parse(sessionStorage.getItem(REPORT_CACHE_KEY) || '[]');
+    return Array.isArray(cached) ? cached.filter((item) => item && typeof item === 'object') : [];
+  } catch { return []; }
 }
+
+function normalizeReports(body) {
+  const value = body?.data ?? body ?? {};
+  const rows = value?.reports ?? value?.items ?? [];
+  return Array.isArray(rows) ? rows.filter((item) => item && typeof item === 'object') : [];
+}
+
+const wait = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
 export default function ReportsPage() {
   const [reports, setReports] = useState(readCache);
@@ -14,26 +25,36 @@ export default function ReportsPage() {
   const [error, setError] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
   const mounted = useRef(true);
+  const refreshSequence = useRef(0);
 
   const refresh = async () => {
+    const sequence = ++refreshSequence.current;
     setLoading((current) => reports.length === 0 && current);
-    try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 8000);
-      const response = await fetch(`${API_BASE}/reports`, { signal: controller.signal });
-      clearTimeout(timeout);
-      if (!response.ok) throw new Error(`Report service returned HTTP ${response.status}`);
-      const body = await response.json();
-      const nextReports = body.reports || body.items || body.data?.reports || body.data?.items || [];
-      if (!mounted.current) return;
-      setReports(nextReports);
-      sessionStorage.setItem(REPORT_CACHE_KEY, JSON.stringify(nextReports));
-      setLastUpdated(new Date().toISOString());
-      setError(null);
-    } catch (exception) {
-      if (mounted.current) setError(exception.name === 'AbortError' ? 'Report service timed out.' : exception.message);
-    } finally {
-      if (mounted.current) setLoading(false);
+    let lastError = null;
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 8000);
+        try {
+          const response = await fetch(`${API_BASE}/reports`, { signal: controller.signal });
+          if (!response.ok) throw new Error(`Report service returned HTTP ${response.status}`);
+          const nextReports = normalizeReports(await response.json());
+          if (!mounted.current || sequence !== refreshSequence.current) return;
+          setReports(nextReports);
+          sessionStorage.setItem(REPORT_CACHE_KEY, JSON.stringify(nextReports));
+          setLastUpdated(new Date().toISOString());
+          setError(null);
+          setLoading(false);
+          return;
+        } finally { clearTimeout(timeout); }
+      } catch (exception) {
+        lastError = exception;
+        if (attempt < 2) await wait(250 * (attempt + 1));
+      }
+    }
+    if (mounted.current && sequence === refreshSequence.current) {
+      setError(lastError?.name === 'AbortError' ? 'Report service timed out.' : lastError?.message || 'Report service is reconnecting.');
+      setLoading(false);
     }
   };
 
