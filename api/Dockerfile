@@ -30,6 +30,9 @@ COPY ml/explain.py ml/explain.py
 # Read by GET /metrics/evaluate. Without it the Overview headline reads
 # "Unavailable" in production even though the report is committed to the repo.
 COPY ml/metrics_report.md ml/metrics_report.md
+# Read by GET /metrics/cost. Without it the Analytics threshold-sweep panel
+# reads "Metrics unavailable" in production even though the cache is committed.
+COPY ml/sweep_cache.json ml/sweep_cache.json
 # Trained model binaries are gitignored on main but force-committed on the
 # deploy branch specifically so this COPY has something to pick up. The
 # explainer above needs them too: no artifacts means no TreeSHAP attributions.

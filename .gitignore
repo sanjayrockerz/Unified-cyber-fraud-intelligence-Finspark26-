@@ -38,6 +38,7 @@ web/build/
 .vite/
 .env.local
 .env.*.local
+.vercel/
 
 # --- OS / editor ---
 .DS_Store
