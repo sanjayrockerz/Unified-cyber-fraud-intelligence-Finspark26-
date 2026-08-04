@@ -149,9 +149,23 @@ async def register_paired_device(req: DeviceRegistrationRequest):
     if not record:
         raise HTTPException(status_code=401, detail="Pairing token is invalid, expired, or already used")
     device = pairing_registry.register_device(req.pair_id, req.model_dump())
-    client = platform_settings.clients.get("fusion-android-dev", {"roles": ["sdk"], "app_id": "com.fuzenbank.mobileapp"})
+    configured = next(
+        ((client_id, item) for client_id, item in platform_settings.clients.items() if "sdk" in set(item.get("roles", []))),
+        None,
+    )
+    if configured is None:
+        raise HTTPException(status_code=503, detail="No SDK authentication client is configured")
+    client_id, configured_client = configured
+    client = {
+        **configured_client,
+        "roles": ["sdk"],
+        "tenant_id": configured_client.get("tenant_id") or os.getenv("FUSION_DEFAULT_TENANT_ID", ""),
+        "app_id": configured_client.get("app_id") or "com.fuzenbank.mobileapp",
+    }
+    if not client["tenant_id"]:
+        raise HTTPException(status_code=503, detail="SDK authentication client has no tenant scope")
     access_token, expires_at = create_access_token(
-        "fusion-android-dev", {**client, "roles": ["sdk"]}, subject=device["device_id"]
+        client_id, client, subject=device["device_id"]
     )
     refresh_token = secrets.token_urlsafe(32)
     return {

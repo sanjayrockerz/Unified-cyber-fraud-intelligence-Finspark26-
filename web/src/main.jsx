@@ -18,7 +18,16 @@ async function start() {
 }
 
 start().catch((error) => {
-  document.getElementById('root').textContent = `Platform startup failed: ${error.message}`
+  const root = document.getElementById('root')
+  if (!root) return
+  root.innerHTML = `
+    <main style="min-height:100vh;display:grid;place-items:center;background:#07111f;color:#e6edf7;font-family:system-ui,sans-serif;padding:24px;text-align:center">
+      <section role="alert" aria-live="assertive">
+        <h1>Service temporarily unavailable</h1>
+        <p>The platform is reconnecting automatically. Monitoring continues in the background.</p>
+        <button type="button" onclick="window.location.reload()">Retry</button>
+      </section>
+    </main>`
 })
 
 window.addEventListener('error', (event) => {

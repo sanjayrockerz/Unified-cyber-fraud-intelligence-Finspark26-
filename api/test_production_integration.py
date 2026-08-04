@@ -6,6 +6,7 @@ from fastapi.testclient import TestClient
 
 from api.main import app
 from api.sdk_engine import sdk_engine
+from api.core_platform.security import validate_access_token
 
 
 client = TestClient(app)
@@ -53,6 +54,9 @@ def test_pairing_registers_device_and_issues_sdk_credentials():
     )
     assert registration.status_code == 200
     assert registration.json()["device_id"] == "paired-test-device"
+    sdk_context = validate_access_token(registration.json()["access_token"])
+    assert sdk_context.tenant_id == "TENANT_FUSB_001"
+    assert "sdk" in sdk_context.roles
     assert registration.json()["access_token"]
     assert client.post(
         "/device/register",

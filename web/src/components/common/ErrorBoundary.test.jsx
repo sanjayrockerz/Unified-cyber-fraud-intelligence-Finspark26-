@@ -21,7 +21,7 @@ describe('ErrorBoundary', () => {
         <Bomb shouldThrow />
       </ErrorBoundary>
     );
-    expect(screen.getByText(/unexpected error/i)).toBeInTheDocument();
+    expect(screen.getByText(/service temporarily unavailable/i)).toBeInTheDocument();
     expect(screen.queryByText('safe content')).not.toBeInTheDocument();
     spy.mockRestore();
   });
@@ -33,7 +33,7 @@ describe('ErrorBoundary', () => {
         <Bomb shouldThrow />
       </ErrorBoundary>
     );
-    expect(screen.getByText(/unexpected error/i)).toBeInTheDocument();
+    expect(screen.getByText(/service temporarily unavailable/i)).toBeInTheDocument();
 
     rerender(
       <ErrorBoundary resetKey="b">

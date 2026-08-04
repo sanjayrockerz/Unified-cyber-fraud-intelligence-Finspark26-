@@ -14,7 +14,7 @@ for (const route of ROUTES) {
     });
     await page.goto(`http://127.0.0.1:5173${route}`);
     await page.waitForTimeout(800);
-    await expect(page.getByText(/unexpected error/i)).not.toBeVisible();
+    await expect(page.getByText(/service temporarily unavailable/i)).not.toBeVisible();
     expect(consoleErrors, `console errors on ${route}: ${consoleErrors.join('; ')}`).toEqual([]);
   });
 }
@@ -30,7 +30,7 @@ test('ErrorBoundary catches a forced render error without white-screening the ap
 
   // The route content area must show the ErrorBoundary fallback, not a
   // white screen or an unhandled-exception overlay.
-  await expect(page.getByText(/unexpected error/i)).toBeVisible();
+  await expect(page.getByText(/service temporarily unavailable/i)).toBeVisible();
 
   // The app chrome (sidebar/topbar) must survive the crash AND remain
   // interactive -- matching how Task 3's implementer manually verified this
@@ -46,7 +46,7 @@ test('ErrorBoundary catches a forced render error without white-screening the ap
   // sidebar was never disabled) and the destination route must render
   // cleanly with no leftover crash fallback.
   await expect(page).toHaveURL(/\/operations$/);
-  await expect(page.getByText(/unexpected error/i)).not.toBeVisible();
+  await expect(page.getByText(/service temporarily unavailable/i)).not.toBeVisible();
 });
 
 test('the render-crash test hook cannot fire without the explicit test trigger', async ({ page }) => {
@@ -55,5 +55,5 @@ test('the render-crash test hook cannot fire without the explicit test trigger',
   // must never show the ErrorBoundary fallback.
   await page.goto('http://127.0.0.1:5173/');
   await page.waitForTimeout(500);
-  await expect(page.getByText(/unexpected error/i)).not.toBeVisible();
+  await expect(page.getByText(/service temporarily unavailable/i)).not.toBeVisible();
 });
