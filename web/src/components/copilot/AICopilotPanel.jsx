@@ -37,9 +37,77 @@ function normalizeResponse(raw, context = {}) {
   };
 }
 
-function Section({ value }) {
-  const text = cleanText(value) || EMPTY;
-  return <p className="whitespace-pre-wrap">{text}</p>;
+// The grounded backend response is structured telemetry, not prose: evidence,
+// signals and timeline are arrays of records, impact and references are
+// objects. Rendering those through cleanText() stringifies them to
+// "[object Object]", so Section renders by shape instead.
+const TITLE_KEYS = ['threat_name', 'txn_id', 'case_id', 'msg_type', 'event_type', 'session_id', 'name', 'id'];
+const HIDDEN_KEYS = new Set(['tenant_id']);
+const MAX_FIELDS = 8;
+
+function humanize(key) {
+  return key.replace(/_/g, ' ').replace(/\b\w/g, (character) => character.toUpperCase());
+}
+
+function formatScalar(value) {
+  if (value === null || value === undefined || value === '') return null;
+  if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+  if (typeof value === 'number') {
+    return Number.isInteger(value)
+      ? value.toLocaleString('en-US')
+      : value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  return cleanText(value);
+}
+
+// Nested objects/arrays are deliberately dropped rather than dumped -- a card
+// is a summary, and the raw record stays available via the platform APIs.
+function scalarEntries(source) {
+  return Object.entries(source)
+    .filter(([key, value]) => !HIDDEN_KEYS.has(key) && typeof value !== 'object' && formatScalar(value) !== null)
+    .slice(0, MAX_FIELDS);
+}
+
+function FieldRow({ label, value }) {
+  return <div className="flex min-w-0 items-baseline justify-between gap-2">
+    <dt className="truncate text-soc-muted">{label}</dt>
+    <dd className="truncate font-mono text-soc-text">{value}</dd>
+  </div>;
+}
+
+function RecordRow({ record }) {
+  const titleKey = TITLE_KEYS.find((key) => formatScalar(record[key]) !== null);
+  const entries = scalarEntries(record).filter(([key]) => key !== titleKey);
+  return <li className="rounded-lg border border-soc-border bg-soc-bg/40 p-2">
+    {titleKey && <p className="truncate font-mono text-[11px] font-semibold text-soc-text">{formatScalar(record[titleKey])}</p>}
+    {entries.length > 0 && <dl className={`grid grid-cols-1 gap-x-4 gap-y-0.5 sm:grid-cols-2 ${titleKey ? 'mt-1.5' : ''}`}>
+      {entries.map(([key, value]) => <FieldRow key={key} label={humanize(key)} value={formatScalar(value)} />)}
+    </dl>}
+  </li>;
+}
+
+export function Section({ value }) {
+  if (Array.isArray(value)) {
+    if (value.length === 0) return <p className="whitespace-pre-wrap">{EMPTY}</p>;
+    if (value.every((item) => item === null || typeof item !== 'object')) {
+      return <ul className="list-disc space-y-0.5 pl-4">
+        {value.map((item, index) => <li key={index}>{cleanText(item) || EMPTY}</li>)}
+      </ul>;
+    }
+    return <ul className="space-y-2">
+      {value.map((item, index) => (item && typeof item === 'object'
+        ? <RecordRow key={index} record={item} />
+        : <li key={index}>{cleanText(item) || EMPTY}</li>))}
+    </ul>;
+  }
+  if (value && typeof value === 'object') {
+    const entries = scalarEntries(value);
+    if (entries.length === 0) return <p className="whitespace-pre-wrap">{EMPTY}</p>;
+    return <dl className="space-y-1">
+      {entries.map(([key, item]) => <FieldRow key={key} label={humanize(key)} value={formatScalar(item)} />)}
+    </dl>;
+  }
+  return <p className="whitespace-pre-wrap">{cleanText(value) || EMPTY}</p>;
 }
 
 export default function AICopilotPanel({ activeContext }) {
@@ -74,8 +142,6 @@ export default function AICopilotPanel({ activeContext }) {
       setMessages(history);
     } finally { setLoading(false); }
   };
-
-  const renderList = (value) => <Section value={Array.isArray(value) ? value.map((item) => `• ${cleanText(item)}`).join('\n') : value} />;
 
   return <div className="flex h-full flex-col border-l border-soc-border bg-soc-bg text-soc-text">
     <header className="flex items-center justify-between border-b border-soc-border bg-soc-surface px-4 py-3">
