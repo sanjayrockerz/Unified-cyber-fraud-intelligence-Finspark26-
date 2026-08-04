@@ -5,10 +5,24 @@ import './index.css'
 import ErrorBoundary from './components/common/ErrorBoundary.jsx'
 import { bootstrapPlatformAuth, installAuthenticatedFetch } from './platformAuth'
 
-async function start() {
-  await bootstrapPlatformAuth()
-  installAuthenticatedFetch()
-  ReactDOM.createRoot(document.getElementById('root')).render(
+const root = document.getElementById('root')
+
+function renderLoading() {
+  if (!root) return
+  root.innerHTML = `
+    <main style="min-height:100vh;display:grid;place-items:center;background:#07111f;color:#e6edf7;font-family:system-ui,sans-serif;padding:24px;text-align:center">
+      <section role="status" aria-live="polite">
+        <div style="width:34px;height:34px;border:3px solid #263755;border-top-color:#7c5cff;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 16px"></div>
+        <h1 style="font-size:20px;margin:0 0 8px">Starting Fuzen AI Command Center</h1>
+        <p style="color:#9aa9c2;margin:0">Establishing a secure monitoring session…</p>
+      </section>
+    </main>
+    <style>@keyframes spin{to{transform:rotate(360deg)}}</style>`
+}
+
+function renderApp() {
+  if (!root) return
+  ReactDOM.createRoot(root).render(
     <React.StrictMode>
       <ErrorBoundary>
         <App />
@@ -17,8 +31,15 @@ async function start() {
   )
 }
 
+renderLoading()
+
+async function start() {
+  await bootstrapPlatformAuth()
+  installAuthenticatedFetch()
+  renderApp()
+}
+
 start().catch((error) => {
-  const root = document.getElementById('root')
   if (!root) return
   root.innerHTML = `
     <main style="min-height:100vh;display:grid;place-items:center;background:#07111f;color:#e6edf7;font-family:system-ui,sans-serif;padding:24px;text-align:center">
