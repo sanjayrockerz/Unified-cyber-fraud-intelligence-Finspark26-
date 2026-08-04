@@ -24,6 +24,25 @@ import { FLAT_EPSILON, formatF, formatPct, getUplift } from '../lib/metricsForma
 import useResource from '../lib/useResource';
 
 const unwrap = (body) => body?.data ?? body ?? null;
+const numberOrNull = (value) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+const normalizeMetricSet = (value) => ({
+  pr_auc: numberOrNull(value?.pr_auc),
+  precision: numberOrNull(value?.precision),
+  recall: numberOrNull(value?.recall),
+  f1: numberOrNull(value?.f1),
+  confusion_matrix: Object.fromEntries(['TP', 'TN', 'FP', 'FN'].map((key) => [key, numberOrNull(value?.confusion_matrix?.[key]) ?? 0])),
+});
+const normalizeEvaluation = (value) => {
+  if (!value || typeof value !== 'object') return null;
+  return { transaction_only: normalizeMetricSet(value.transaction_only), full_fusion: normalizeMetricSet(value.full_fusion) };
+};
+const normalizeSweep = (value) => {
+  if (!value || typeof value !== 'object') return null;
+  return { transaction_only: value.transaction_only || {}, cyber_only: value.cyber_only || {}, full_fusion: value.full_fusion || {} };
+};
 
 export default function AnalyticsPage() {
   const [timeRange, setTimeRange] = useState('24h');
@@ -38,13 +57,15 @@ export default function AnalyticsPage() {
   const evalResource = useResource('/metrics/evaluate', { refreshMs: 300000 });
   const sweepResource = useResource(`/metrics/cost?fn_cost=${fnCost}&fp_cost=${fpCost}`, { refreshMs: 300000 });
   const summaryData = unwrap(summaryResource.data);
-  const evalData = unwrap(evalResource.data);
-  const sweepData = unwrap(sweepResource.data);
+  const evalData = normalizeEvaluation(unwrap(evalResource.data));
+  const sweepData = normalizeSweep(unwrap(sweepResource.data));
   const summaryError = summaryResource.status === 'error';
   const evalError = evalResource.status === 'error';
   const sweepError = sweepResource.status === 'error';
   const totals = summaryData?.totals ?? {};
-  const hasEval = Boolean(evalData?.transaction_only && evalData?.full_fusion);
+  const hasEval = ['transaction_only', 'full_fusion'].every((config) =>
+    ['pr_auc', 'precision', 'recall', 'f1'].every((metric) => Number.isFinite(evalData?.[config]?.[metric]))
+  );
   const retryAll = () => {
     summaryResource.reload();
     evalResource.reload();
@@ -123,9 +144,9 @@ export default function AnalyticsPage() {
     { title: 'Observed Threats', val: summaryData ? (totals.threats ?? 0) : 'Waiting', sub: summaryError ? 'Retrying analytics connection' : 'Threat engine telemetry', color: 'text-soc-success', icon: FileCheck2 }
   ];
 
-  const threatVectors = (summaryData?.threat_vectors || []).map((item) => ({ ...item, pct: item.percent, severity: 'OBSERVED', color: 'bg-soc-primary' }));
+  const threatVectors = (Array.isArray(summaryData?.threat_vectors) ? summaryData.threat_vectors : []).map((item) => ({ ...item, count: numberOrNull(item.count) ?? 0, pct: numberOrNull(item.percent) ?? 0, severity: 'OBSERVED', color: 'bg-soc-primary' }));
 
-  const hourlyVelocities = (summaryData?.hourly || []).map((item) => ({ hour: item.hour, attacks: item.transactions }));
+  const hourlyVelocities = (Array.isArray(summaryData?.hourly) ? summaryData.hourly : []).map((item) => ({ hour: item.hour, attacks: numberOrNull(item.transactions) ?? 0 }));
 
   const topOriginGeos = [];
 
@@ -147,7 +168,10 @@ export default function AnalyticsPage() {
     }
   }
 
-  const currentSweepPt = (sweepData && sweepData[selectedConfig]) ? sweepData[selectedConfig][thresholdInt] : null;
+  const candidateSweepPt = sweepData?.[selectedConfig]?.[thresholdInt];
+  const currentSweepPt = candidateSweepPt && ['precision', 'recall', 'total_cost', 'FP', 'FN'].every((key) => Number.isFinite(Number(candidateSweepPt[key])))
+    ? { ...candidateSweepPt, precision: Number(candidateSweepPt.precision), recall: Number(candidateSweepPt.recall), total_cost: Number(candidateSweepPt.total_cost), FP: Number(candidateSweepPt.FP), FN: Number(candidateSweepPt.FN) }
+    : null;
   // No fabricated fallback here: totalPos/totalNeg must come from the SAME
   // honest evalData source as the FP/FN counts rendered below, or the
   // confusion-matrix panel is hidden entirely rather than mixing a real
@@ -205,6 +229,13 @@ export default function AnalyticsPage() {
           </button>
         </div>
       </div>
+
+      {(summaryError || evalError || sweepError) && (
+        <div role="status" className="flex items-center justify-between rounded-lg border border-soc-warning/40 bg-soc-warning/5 px-4 py-3 text-xs text-soc-muted">
+          <span>Some analytics telemetry is reconnecting. Available panels remain visible and will refresh automatically.</span>
+          <button type="button" onClick={retryAll} className="rounded border border-soc-border px-3 py-1 text-soc-text">Retry telemetry</button>
+        </div>
+      )}
 
       {/* 1. EXEC KPI STRIP */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

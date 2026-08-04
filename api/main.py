@@ -477,8 +477,46 @@ async def _persist_universe_collections(universe: dict, tenant_id: str | None = 
             store.put("devices", device["device_id"], device, tenant_id=tenant_id)
 
     transactions = universe.get("transactions", [])
+    seeded_session_users: set[str] = set()
     for transaction in transactions:
+        # Synthetic decisions are still authoritative backend state: anomalous
+        # or high-value transfers are blocked, while normal activity is
+        # allowed. This keeps analytics, cases, and reports consistent with the
+        # same transaction record without contacting a real payment network.
+        is_blocked = bool(
+            transaction.get("cyber_compromise_in_window")
+            or float(transaction.get("amount") or 0) >= 250000
+        )
+        transaction["decision"] = "BLOCK" if is_blocked else "ALLOW"
+        transaction["action"] = transaction["decision"]
         store.put("transactions", transaction["txn_id"], transaction, tenant_id=tenant_id)
+
+        # Populate the persistent session/trust registry from the same
+        # generated activity. The dashboard can therefore open Session
+        # Intelligence immediately after a simulation rather than waiting for
+        # a separate APK session to exist.
+        session_id = transaction.get("session_id")
+        # Keep startup bounded for large synthetic universes while still
+        # giving the Operations Center a useful live registry. Additional
+        # sessions are still represented by their transaction/session IDs and
+        # become full trust sessions when the SDK emits telemetry.
+        user_id = str(transaction.get("user_id", "unknown"))
+        if session_id and user_id not in seeded_session_users and len(seeded_session_users) < 250:
+            seeded_session_users.add(user_id)
+            update = session_intelligence.start_session(
+                {
+                    "session_id": session_id,
+                    "user_id": user_id,
+                    "device_id": transaction.get("device_id", ""),
+                },
+                initial_event={
+                    "event_type": "TRANSACTION_OBSERVED",
+                    "amount": transaction.get("amount", 0),
+                    "decision": transaction["decision"],
+                    "location": transaction.get("city", ""),
+                },
+            )
+            await trust_update_broker.publish(update.model_dump(mode="json"))
 
     case_index = 0
     for transaction in transactions:
@@ -492,6 +530,20 @@ async def _persist_universe_collections(universe: dict, tenant_id: str | None = 
                 evaluation = None
             case = _case_from_transaction(transaction, case_index, evaluation)
             store.put("cases", case["case_id"], case, tenant_id=tenant_id)
+            report = {
+                "report_id": f"RPT-{case['case_id']}",
+                "txn_id": transaction.get("txn_id"),
+                "user_id": transaction.get("user_id"),
+                "amount": transaction.get("amount", 0),
+                "score": case.get("score"),
+                "severity": case.get("severity"),
+                "status": "READY",
+                "incident_summary": case.get("reason"),
+                "reasons": [case.get("reason", "")],
+                "created_at": transaction.get("timestamp"),
+                "source": "backend_synthetic_simulation",
+            }
+            store.put("reports", report["report_id"], report, tenant_id=tenant_id)
 
 
 def _paginated_collection(
@@ -1625,19 +1677,21 @@ async def websocket_endpoint(websocket: WebSocket):
     except HTTPException as exc:
         await websocket.close(code=exc.status_code if exc.status_code in {4401, 4403, 4409} else 4403, reason=str(exc.detail))
         return
-    connection_key = f"{auth.tenant_id}:{auth.subject}:{websocket.query_params.get('session_id') or 'all'}"
+    session_filter = websocket.query_params.get("session_id")
+    client_id = websocket.query_params.get("client_id") or "legacy"
+    connection_key = f"{auth.tenant_id}:{auth.subject}:{session_filter or 'all'}:{client_id}"
     if connection_key in _active_websocket_sessions:
         await websocket.close(code=4409, reason="Duplicate session")
         return
     _active_websocket_sessions.add(connection_key)
     await websocket.accept(subprotocol=next((item.strip() for item in websocket.headers.get("sec-websocket-protocol", "").split(",") if item.strip().startswith("Bearer.")), None))
-    session_filter = websocket.query_params.get("session_id")
     if session_filter and "customer" in auth.roles:
         owned_session = sdk_engine.sdk_sessions.get(session_filter)
         if not owned_session or owned_session.get("user_id") != auth.subject:
             await websocket.close(code=4403, reason="Session is not owned by this identity")
             return
     subscription = await platform_event_broker.subscribe(session_filter)
+    trust_subscription = await trust_update_broker.subscribe(session_filter)
 
     try:
         await websocket.send_json(
@@ -1656,18 +1710,27 @@ async def websocket_endpoint(websocket: WebSocket):
             limit=20,
         ):
             await websocket.send_json(recent_event)
+        for recent_event in trust_update_broker.recent(
+            session_id=session_filter,
+            limit=20,
+        ):
+            await websocket.send_json(recent_event)
 
         while True:
             receive_task = asyncio.create_task(websocket.receive_text())
             update_task = asyncio.create_task(subscription.queue.get())
+            trust_task = asyncio.create_task(trust_subscription.queue.get())
             done, pending = await asyncio.wait(
-                {receive_task, update_task},
+                {receive_task, update_task, trust_task},
                 return_when=asyncio.FIRST_COMPLETED,
             )
             for task in pending:
                 task.cancel()
             if update_task in done:
                 event = update_task.result()
+                await websocket.send_json({**event, "tenant": auth.tenant_id, "session": session_filter or event.get("session_id"), "request_id": auth.request_id, "timestamp": event.get("timestamp") or datetime.datetime.now(datetime.timezone.utc).isoformat()})
+            if trust_task in done:
+                event = trust_task.result()
                 await websocket.send_json({**event, "tenant": auth.tenant_id, "session": session_filter or event.get("session_id"), "request_id": auth.request_id, "timestamp": event.get("timestamp") or datetime.datetime.now(datetime.timezone.utc).isoformat()})
             if receive_task in done:
                 message = receive_task.result()
@@ -1686,6 +1749,7 @@ async def websocket_endpoint(websocket: WebSocket):
         print(f"WebSocket error: {e}")
     finally:
         await platform_event_broker.unsubscribe(subscription.subscription_id)
+        await trust_update_broker.unsubscribe(trust_subscription.subscription_id)
         _active_websocket_sessions.discard(connection_key)
 
 # --- FUSION ADAPTIVE TRUST SDK (FAT-SDK) ENDPOINTS ---

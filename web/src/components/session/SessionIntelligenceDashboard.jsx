@@ -9,6 +9,16 @@ import TrustTimelineChart from './TrustTimelineChart';
 const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8000' : '');
 const WS_BASE = (import.meta.env.VITE_WS_BASE || API_BASE).replace(/^http/, 'ws');
 const SESSION_CACHE_KEY = 'fuzen.session.registry';
+const SESSION_CLIENT_KEY = 'fuzen.session.client-id';
+
+function getClientId() {
+  let value = sessionStorage.getItem(SESSION_CLIENT_KEY);
+  if (!value) {
+    value = `WEB_${crypto.randomUUID()}`;
+    sessionStorage.setItem(SESSION_CLIENT_KEY, value);
+  }
+  return value;
+}
 
 function readSessionCache() {
   try { return JSON.parse(sessionStorage.getItem(SESSION_CACHE_KEY) || '[]'); } catch { return []; }
@@ -37,6 +47,7 @@ export default function SessionIntelligenceDashboard() {
   const [connectionState, setConnectionState] = useState('CONNECTING');
   const [error, setError] = useState('');
   const [latency, setLatency] = useState(null);
+  const clientId = getClientId();
 
   const loadSessions = useCallback(async () => {
     try {
@@ -99,8 +110,9 @@ export default function SessionIntelligenceDashboard() {
 
     const connect = () => {
       setConnectionState('CONNECTING');
+      const params = new URLSearchParams({ session_id: selectedId, client_id: clientId });
       socket = new WebSocket(
-        authenticatedWebSocketUrl(`${WS_BASE}/ws/stream?session_id=${encodeURIComponent(selectedId)}`),
+        authenticatedWebSocketUrl(`${WS_BASE}/ws/stream?${params}`),
         authenticatedWebSocketProtocols(),
       );
       socket.onopen = () => setConnectionState('LIVE');
