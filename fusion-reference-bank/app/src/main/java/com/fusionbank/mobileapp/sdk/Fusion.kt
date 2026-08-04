@@ -21,6 +21,10 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.util.UUID
 import org.json.JSONObject
 import android.os.Build
+import android.os.BatteryManager
+import android.app.ActivityManager
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.view.KeyEvent
 import android.view.MotionEvent
 
@@ -284,13 +288,14 @@ object Fusion {
                 Result.failure(IllegalStateException("Session start failed: HTTP ${response.code()}")),
             )
         }
-        _activeSession.value = session
+                _activeSession.value = session
         secureStorage.saveString(SecureStorage.KEY_SESSION_ID, session.sessionId)
         secureStorage.saveString(SecureStorage.KEY_USER_ID, userId)
         _sdkLatencyMs.value = (System.currentTimeMillis() - started).toFloat()
         webSocketManager.connect(session.sessionId)
         startBehaviorCollection(appContext)
         startTelemetryLoop(appContext)
+        reportEvent("SESSION_STARTED")
         deliver(onResult, Result.success(session))
     }
 
@@ -412,6 +417,7 @@ object Fusion {
             val refreshToken = secureStorage.getString(SecureStorage.KEY_BANKING_REFRESH_TOKEN)
             try {
                 ensureValidBankingToken()
+                reportEvent("USER_LOGOUT")
                 val response = apiService.bankingLogout(BankingLogoutRequest(refreshToken))
                 if (!response.isSuccessful && response.code() != 401) {
                     throw IllegalStateException("Logout failed: HTTP ${response.code()}")
@@ -427,7 +433,13 @@ object Fusion {
 
     fun endSession() {
         if (!isInitialized) return
+        if (_activeSession.value != null) reportEvent("SESSION_ENDED")
         clearLocalSession()
+    }
+
+    /** Privacy-safe lifecycle signal; no screen contents or input values are sent. */
+    fun reportLifecycleEvent(eventType: String) {
+        if (_activeSession.value != null) reportEvent(eventType)
     }
 
     fun shutdown() {
@@ -557,43 +569,30 @@ object Fusion {
         
         telemetryJob = scope.launch(Dispatchers.IO) {
             val deviceId = session.deviceId
-            val random = java.util.Random()
-            var cpu = 12.5f
-            var ram = 45.2f
-            var battery = 88.0f
-            
-            val screens = arrayOf(
-                "com.fusionbank.mobileapp.ui.screens.LoginScreen",
-                "com.fusionbank.mobileapp.ui.screens.DashboardScreen",
-                "com.fusionbank.mobileapp.ui.screens.AccountDetailsScreen",
-                "com.fusionbank.mobileapp.ui.screens.TransferScreen",
-                "com.fusionbank.mobileapp.ui.screens.SecuritySettingsScreen"
-            )
-            
+            val activityManager = appContext.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+            val batteryManager = appContext.getSystemService(Context.BATTERY_SERVICE) as BatteryManager
+
             while (isActive) {
                 try {
-                    cpu = (cpu + (random.nextFloat() * 10f - 5f)).coerceIn(5.0f, 65.0f)
-                    ram = (ram + (random.nextFloat() * 4f - 2f)).coerceIn(35.0f, 85.0f)
-                    battery = (battery - 0.01f).coerceIn(1.0f, 100.0f)
-                    val foreground = screens[random.nextInt(screens.size)]
-                    
-                    val lat = 12.9716 + (random.nextDouble() * 0.002 - 0.001)
-                    val lng = 77.5946 + (random.nextDouble() * 0.002 - 0.001)
-                    val locationStr = String.format(java.util.Locale.US, "%.5f, %.5f", lat, lng)
-                    
+                    val memory = ActivityManager.MemoryInfo().also { activityManager.getMemoryInfo(it) }
+                    val memoryUsage = if (memory.totalMem > 0) {
+                        ((memory.totalMem - memory.availMem).toDouble() / memory.totalMem * 100.0).toFloat()
+                    } else 0f
+                    val battery = batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
+                        .coerceIn(0, 100).toFloat()
                     val vpn = attestationEngine.isVpnActive()
                     
                     val request = SDKTelemetryRequest(
                         sessionId = session.sessionId,
                         deviceId = deviceId,
-                        cpuUsage = cpu,
-                        memoryUsage = ram,
+                        cpuUsage = 0f,
+                        memoryUsage = memoryUsage,
                         batteryLevel = battery,
-                        foregroundApp = foreground,
-                        networkType = "WiFi",
+                        foregroundApp = appContext.packageName,
+                        networkType = readNetworkType(),
                         vpnActive = vpn,
                         proxyActive = attestationEngine.checkProxy(),
-                        location = locationStr,
+                        location = "",
                         rootDetected = attestationEngine.checkRoot(),
                         debuggerAttached = android.os.Debug.isDebuggerConnected(),
                         fridaDetected = attestationEngine.checkFrida(),
@@ -622,6 +621,18 @@ object Fusion {
                 }
                 delay(1000L)
             }
+        }
+    }
+
+    private fun readNetworkType(): String {
+        val manager = appContext.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val network = manager.activeNetwork ?: return "OFFLINE"
+        val capabilities = manager.getNetworkCapabilities(network) ?: return "UNKNOWN"
+        return when {
+            capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> "WIFI"
+            capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> "CELLULAR"
+            capabilities.hasTransport(NetworkCapabilities.TRANSPORT_VPN) -> "VPN"
+            else -> "OTHER"
         }
     }
 

@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.fusionbank.mobileapp.ui.components.LiveStatusCard
+import com.fusionbank.mobileapp.sdk.Fusion
 import com.fusionbank.mobileapp.ui.theme.*
 
 @Composable
@@ -27,6 +28,7 @@ fun DashboardScreen(
 ) {
     val accounts by viewModel.accounts.collectAsState()
     val transactions by viewModel.recentTransactions.collectAsState()
+    val profile by Fusion.bankingProfile.collectAsState()
 
     Scaffold(
         containerColor = PrimaryDark,
@@ -77,7 +79,7 @@ fun DashboardScreen(
                 item {
                     Column {
                         Text("Welcome Back,", style = MaterialTheme.typography.bodyMedium, color = TextSecondaryDark)
-                        Text("Demo Customer", style = MaterialTheme.typography.titleLarge, color = TextPrimaryDark, fontWeight = FontWeight.Bold)
+                        Text(profile?.displayName ?: profile?.username ?: "Secure banking session", style = MaterialTheme.typography.titleLarge, color = TextPrimaryDark, fontWeight = FontWeight.Bold)
                     }
                 }
 

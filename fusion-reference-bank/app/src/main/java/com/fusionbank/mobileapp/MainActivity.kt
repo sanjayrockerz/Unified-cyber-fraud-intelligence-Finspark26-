@@ -35,6 +35,16 @@ class MainActivity : ComponentActivity() {
         return super.dispatchTouchEvent(ev)
     }
 
+    override fun onResume() {
+        super.onResume()
+        Fusion.reportLifecycleEvent("APP_RESUME")
+    }
+
+    override fun onPause() {
+        Fusion.reportLifecycleEvent("APP_BACKGROUND")
+        super.onPause()
+    }
+
     override fun dispatchKeyEvent(event: KeyEvent?): Boolean {
         val consumed = event?.let { Fusion.dispatchKeyEvent(it) } ?: false
         return if (consumed) true else super.dispatchKeyEvent(event)

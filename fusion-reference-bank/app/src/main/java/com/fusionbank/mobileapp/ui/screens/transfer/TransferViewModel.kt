@@ -44,6 +44,7 @@ class TransferViewModel @Inject constructor() : ViewModel() {
         _isEvaluating.value = true
         _errorMessage.value = null
         _decisionResult.value = null
+        Fusion.reportEvent("TRANSFER_STARTED", amt)
 
         Fusion.requestDecision(
             eventType = "TRANSFER_INITIATED",
@@ -53,6 +54,11 @@ class TransferViewModel @Inject constructor() : ViewModel() {
             _isEvaluating.value = false
             result.onSuccess { decision ->
                 _decisionResult.value = decision
+                val outcome = decision.decision.uppercase()
+                Fusion.reportEvent(
+                    if (outcome.contains("BLOCK") || outcome.contains("CHALLENGE")) "TRANSFER_CANCELLED" else "TRANSFER_COMPLETED",
+                    amt,
+                )
             }.onFailure { ex ->
                 _errorMessage.value = ex.message ?: "Decision request failed"
             }
@@ -60,6 +66,7 @@ class TransferViewModel @Inject constructor() : ViewModel() {
     }
 
     fun dismissResult() {
+        if (_decisionResult.value != null) Fusion.reportEvent("TRANSFER_RESULT_VIEWED")
         _decisionResult.value = null
     }
 }

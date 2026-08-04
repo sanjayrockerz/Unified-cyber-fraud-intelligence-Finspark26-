@@ -147,6 +147,13 @@ fun LiveStatusCard(
                 }
             }
 
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                StatusChip("DEVICE VERIFIED", StatusGreen)
+                StatusChip("SESSION ACTIVE", if (activeSession != null) StatusGreen else StatusYellow)
+                StatusChip("TRUST MONITORING", AccentCyan)
+            }
+
             Spacer(modifier = Modifier.height(6.dp))
 
             Row(
@@ -175,4 +182,17 @@ fun LiveStatusCard(
             }
         }
     }
+}
+
+@Composable
+private fun StatusChip(label: String, color: Color) {
+    Text(
+        text = label,
+        color = color,
+        fontSize = 8.sp,
+        fontWeight = FontWeight.Bold,
+        modifier = Modifier
+            .background(color.copy(alpha = 0.10f), RoundedCornerShape(5.dp))
+            .padding(horizontal = 6.dp, vertical = 4.dp)
+    )
 }

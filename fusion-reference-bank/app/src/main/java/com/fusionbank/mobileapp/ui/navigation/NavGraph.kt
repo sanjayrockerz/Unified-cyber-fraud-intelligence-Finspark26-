@@ -1,10 +1,17 @@
 package com.fusionbank.mobileapp.ui.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.compose.currentBackStackEntryAsState
+import com.fusionbank.mobileapp.sdk.Fusion
 import com.fusionbank.mobileapp.ui.screens.accounts.AccountsScreen
 import com.fusionbank.mobileapp.ui.screens.beneficiary.BeneficiaryScreen
 import com.fusionbank.mobileapp.ui.screens.bill.BillPaymentScreen
@@ -41,6 +48,16 @@ object Destinations {
 fun NavGraph(
     navController: NavHostController = rememberNavController()
 ) {
+    val backStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = backStackEntry?.destination?.route
+    var previousRoute by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(currentRoute) {
+        currentRoute?.let { route ->
+            previousRoute?.let { Fusion.reportLifecycleEvent("SCREEN_CLOSE") }
+            Fusion.reportLifecycleEvent("SCREEN_OPEN")
+            previousRoute = route
+        }
+    }
     NavHost(
         navController = navController,
         startDestination = Destinations.SPLASH
