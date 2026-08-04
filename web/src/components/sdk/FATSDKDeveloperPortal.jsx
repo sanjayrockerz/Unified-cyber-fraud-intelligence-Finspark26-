@@ -10,7 +10,7 @@ import {
 const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8000' : '');
 const WS_BASE = (import.meta.env.VITE_WS_BASE || API_BASE).replace(/^http/, 'ws');
 
-// â”€â”€â”€ Syntax-highlight JSON for the API Explorer â”€â”€â”€
+// --- Syntax-highlight JSON for the API Explorer ---
 function JsonBlock({ data }) {
   const str = JSON.stringify(data, null, 2);
   return (
@@ -20,7 +20,7 @@ function JsonBlock({ data }) {
   );
 }
 
-// â”€â”€â”€ Code snippet block with copy â”€â”€â”€
+// --- Code snippet block with copy ---
 function CodeSnippet({ code, lang = 'kotlin' }) {
   const [copied, setCopied] = useState(false);
   const copy = () => {
@@ -321,7 +321,7 @@ export default function FATSDKDeveloperPortal() {
         })}
       </div>
 
-      {/* â”€â”€ OVERVIEW â”€â”€ */}
+      {/* --- OVERVIEW --- */}
       {activeTab === 'overview' && (
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
@@ -366,7 +366,7 @@ export default function FATSDKDeveloperPortal() {
         </div>
       )}
 
-      {/* â”€â”€ QUICK START â”€â”€ */}
+      {/* --- QUICK START --- */}
       {activeTab === 'quickstart' && (
         <div className="space-y-4">
           <div className="p-3 bg-soc-panel border border-soc-border rounded-lg">
@@ -390,7 +390,7 @@ export default function FATSDKDeveloperPortal() {
         </div>
       )}
 
-      {/* â”€â”€ ANDROID SDK â”€â”€ */}
+      {/* --- ANDROID SDK --- */}
       {activeTab === 'sdk' && (
         <div className="space-y-3">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -430,7 +430,7 @@ export default function FATSDKDeveloperPortal() {
         </div>
       )}
 
-      {/* â”€â”€ API EXPLORER â”€â”€ */}
+      {/* --- API EXPLORER --- */}
       {activeTab === 'explorer' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div className="space-y-3">
@@ -484,7 +484,7 @@ export default function FATSDKDeveloperPortal() {
         </div>
       )}
 
-      {/* â”€â”€ SDK SHOWCASE SIMULATOR â”€â”€ */}
+      {/* --- SDK SHOWCASE SIMULATOR --- */}
       {activeTab === 'simulator' && (
         <div className="space-y-4">
           <div className="p-4 bg-soc-panel border border-soc-border rounded-lg space-y-4">
@@ -560,7 +560,7 @@ export default function FATSDKDeveloperPortal() {
         </div>
       )}
 
-      {/* â”€â”€ POLICY ENGINE â”€â”€ */}
+      {/* --- POLICY ENGINE --- */}
       {activeTab === 'policy' && (
         <div className="space-y-2">
           <span className="text-[10px] text-soc-dim uppercase font-bold block">Active Adaptive Security Policies</span>
@@ -586,7 +586,7 @@ export default function FATSDKDeveloperPortal() {
         </div>
       )}
 
-      {/* â”€â”€ INTEGRATION MONITOR â”€â”€ */}
+      {/* --- INTEGRATION MONITOR --- */}
       {activeTab === 'monitor' && (
         <div className="space-y-3">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -619,7 +619,7 @@ export default function FATSDKDeveloperPortal() {
                   <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0">
                       <div className="truncate text-[10px] font-bold text-soc-info">{update.session_id}</div>
-                      <div className="text-[9px] text-soc-muted">{update.event_type} â€¢ {update.passport?.current_status}</div>
+                      <div className="text-[9px] text-soc-muted">{update.event_type} • {update.passport?.current_status}</div>
                     </div>
                     <div className="text-right">
                       <div className="text-base font-black text-soc-text">{Number(update.passport?.overall_trust ?? 0).toFixed(1)}</div>
@@ -628,7 +628,7 @@ export default function FATSDKDeveloperPortal() {
                   </div>
                   {update.deltas?.length > 0 && (
                     <div className="mt-1 truncate text-[9px] text-soc-muted">
-                      {update.deltas.map((delta) => `${delta.component} ${delta.difference > 0 ? '+' : ''}${Number(delta.difference).toFixed(1)}`).join(' â€¢ ')}
+                      {update.deltas.map((delta) => `${delta.component} ${delta.difference > 0 ? '+' : ''}${Number(delta.difference).toFixed(1)}`).join(' • ')}
                     </div>
                   )}
                 </div>
@@ -657,7 +657,7 @@ export default function FATSDKDeveloperPortal() {
         </div>
       )}
 
-      {/* â”€â”€ CONNECTED APPS â”€â”€ */}
+      {/* --- CONNECTED APPS --- */}
       {activeTab === 'apps' && (
         <div className="space-y-2">
           <span className="text-[10px] text-soc-dim uppercase font-bold block">Connected Application Registry</span>
@@ -668,7 +668,7 @@ export default function FATSDKDeveloperPortal() {
                   <Smartphone className="w-3.5 h-3.5 text-soc-info" />
                   <span>{app.name}</span>
                 </div>
-                <div className="text-[10px] text-soc-muted">{app.app_id} â€¢ {app.platform} â€¢ {app.sdk_version}</div>
+                <div className="text-[10px] text-soc-muted">{app.app_id} • {app.platform} • {app.sdk_version}</div>
                 <div className="text-[10px] text-soc-dim">Last heartbeat: {app.last_heartbeat}</div>
               </div>
               <div className="flex items-center gap-4 text-[11px]">

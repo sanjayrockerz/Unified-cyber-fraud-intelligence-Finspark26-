@@ -296,7 +296,7 @@ function EventList({ title, rows, empty, recovery = false }) {
               </span>
             </div>
             <div className="mt-1 text-[10px] text-soc-muted">
-              {Number(row.previous_trust).toFixed(1)} â†’ {Number(row.current_trust).toFixed(1)}
+              {Number(row.previous_trust).toFixed(1)} → {Number(row.current_trust).toFixed(1)}
             </div>
             <div className="mt-1 text-[10px] text-soc-muted">{row.reason}</div>
             {recovery && <span className="mt-2 inline-block rounded bg-soc-success/10 px-1.5 py-0.5 text-[9px] text-soc-success">RECOVERED</span>}

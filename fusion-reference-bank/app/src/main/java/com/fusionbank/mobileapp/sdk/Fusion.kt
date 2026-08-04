@@ -40,6 +40,8 @@ object Fusion {
     private var telemetryJob: Job? = null
     @Volatile private var accessToken: String? = null
     @Volatile private var accessTokenExpiresAt: Long = 0L
+    @Volatile private var bankingAccessToken: String? = null
+    @Volatile private var bankingAccessTokenExpiresAt: Long = 0L
 
     private val _activeSession = MutableStateFlow<SDKSessionResponse?>(null)
     val activeSession: StateFlow<SDKSessionResponse?> = _activeSession.asStateFlow()
@@ -64,9 +66,14 @@ object Fusion {
         config = customConfig
         secureStorage = SecureStorage(context)
         accessToken = customConfig.accessToken
+            ?: secureStorage.getString(SecureStorage.KEY_SDK_ACCESS_TOKEN)
             ?: secureStorage.getString(SecureStorage.KEY_ACCESS_TOKEN)
         accessTokenExpiresAt = secureStorage
-            .getString(SecureStorage.KEY_ACCESS_EXPIRES_AT)?.toLongOrNull() ?: 0L
+            .getString(SecureStorage.KEY_SDK_ACCESS_EXPIRES_AT)?.toLongOrNull()
+            ?: secureStorage.getString(SecureStorage.KEY_ACCESS_EXPIRES_AT)?.toLongOrNull() ?: 0L
+        bankingAccessToken = secureStorage.getString(SecureStorage.KEY_BANKING_ACCESS_TOKEN)
+        bankingAccessTokenExpiresAt = secureStorage
+            .getString(SecureStorage.KEY_BANKING_ACCESS_EXPIRES_AT)?.toLongOrNull() ?: 0L
 
         val logging = HttpLoggingInterceptor().apply {
             level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BASIC
@@ -75,7 +82,9 @@ object Fusion {
         val okHttpClient = OkHttpClient.Builder()
             .addInterceptor { chain ->
                 val builder = chain.request().newBuilder()
-                accessToken?.takeIf { it.isNotBlank() }?.let {
+                val path = chain.request().url.encodedPath
+                val token = if (path.startsWith("/banking/")) bankingAccessToken else accessToken
+                token?.takeIf { it.isNotBlank() }?.let {
                     builder.header("Authorization", "Bearer $it")
                 }
                 if (::attestationEngine.isInitialized) {
@@ -152,8 +161,9 @@ object Fusion {
     private fun persistPairing(pairing: PairingRegistrationResponse) {
         accessToken = pairing.accessToken
         accessTokenExpiresAt = pairing.expiresAt * 1000L
+        secureStorage.saveString(SecureStorage.KEY_SDK_ACCESS_TOKEN, pairing.accessToken)
+        secureStorage.saveString(SecureStorage.KEY_SDK_ACCESS_EXPIRES_AT, accessTokenExpiresAt.toString())
         secureStorage.saveString(SecureStorage.KEY_ACCESS_TOKEN, pairing.accessToken)
-        secureStorage.saveString(SecureStorage.KEY_REFRESH_TOKEN, pairing.refreshToken)
         secureStorage.saveString(SecureStorage.KEY_ACCESS_EXPIRES_AT, accessTokenExpiresAt.toString())
         secureStorage.saveString(SecureStorage.KEY_BACKEND_URL, pairing.backendUrl + "/")
         secureStorage.saveString(SecureStorage.KEY_WS_URL, pairing.wsUrl)
@@ -399,9 +409,9 @@ object Fusion {
     fun logout(onResult: (Result<Unit>) -> Unit) {
         if (!isInitialized) return onResult(Result.success(Unit))
         scope.launch {
-            val refreshToken = secureStorage.getString(SecureStorage.KEY_REFRESH_TOKEN)
+            val refreshToken = secureStorage.getString(SecureStorage.KEY_BANKING_REFRESH_TOKEN)
             try {
-                ensureValidAccessToken()
+                ensureValidBankingToken()
                 val response = apiService.bankingLogout(BankingLogoutRequest(refreshToken))
                 if (!response.isSuccessful && response.code() != 401) {
                     throw IllegalStateException("Logout failed: HTTP ${response.code()}")
@@ -434,11 +444,6 @@ object Fusion {
     private suspend fun ensureValidAccessToken() {
         val now = System.currentTimeMillis() / 1000L
         if (!accessToken.isNullOrBlank() && accessTokenExpiresAt > now + 30L) return
-        val refreshToken = secureStorage.getString(SecureStorage.KEY_REFRESH_TOKEN)
-        if (!refreshToken.isNullOrBlank()) {
-            refreshBankingAuthentication()
-            return
-        }
         val clientId = config.developmentClientId
         val clientSecret = config.developmentClientSecret
         if (clientId.isNullOrBlank() || clientSecret.isNullOrBlank()) {
@@ -454,8 +459,17 @@ object Fusion {
         accessTokenExpiresAt = token.expiresAt
     }
 
+    private suspend fun ensureValidBankingToken() {
+        val now = System.currentTimeMillis() / 1000L
+        if (!bankingAccessToken.isNullOrBlank() && bankingAccessTokenExpiresAt > now + 30L) return
+        if (secureStorage.getString(SecureStorage.KEY_BANKING_REFRESH_TOKEN).isNullOrBlank()) {
+            throw IllegalStateException("No valid banking session")
+        }
+        refreshBankingAuthentication()
+    }
+
     private suspend fun refreshBankingAuthentication() {
-        val refreshToken = secureStorage.getString(SecureStorage.KEY_REFRESH_TOKEN)
+        val refreshToken = secureStorage.getString(SecureStorage.KEY_BANKING_REFRESH_TOKEN)
             ?: throw IllegalStateException("No persistent banking session")
         val response = apiService.refreshBankingToken(
             BankingRefreshRequest(refreshToken, getOrCreateDeviceId())
@@ -468,12 +482,12 @@ object Fusion {
     }
 
     private fun persistAuthentication(auth: BankingAuthResponse) {
-        accessToken = auth.accessToken
-        accessTokenExpiresAt = auth.expiresAt
+        bankingAccessToken = auth.accessToken
+        bankingAccessTokenExpiresAt = auth.expiresAt
         _bankingProfile.value = auth.profile
-        secureStorage.saveString(SecureStorage.KEY_ACCESS_TOKEN, auth.accessToken)
-        secureStorage.saveString(SecureStorage.KEY_ACCESS_EXPIRES_AT, auth.expiresAt.toString())
-        secureStorage.saveString(SecureStorage.KEY_REFRESH_TOKEN, auth.refreshToken)
+        secureStorage.saveString(SecureStorage.KEY_BANKING_ACCESS_TOKEN, auth.accessToken)
+        secureStorage.saveString(SecureStorage.KEY_BANKING_ACCESS_EXPIRES_AT, auth.expiresAt.toString())
+        secureStorage.saveString(SecureStorage.KEY_BANKING_REFRESH_TOKEN, auth.refreshToken)
         secureStorage.saveString(SecureStorage.KEY_REFRESH_EXPIRES_AT, auth.refreshExpiresAt.toString())
         secureStorage.saveString(SecureStorage.KEY_USER_ID, auth.profile.userId)
     }
@@ -629,6 +643,8 @@ object Fusion {
         _sdkLatencyMs.value = null
         accessToken = null
         accessTokenExpiresAt = 0L
+        bankingAccessToken = null
+        bankingAccessTokenExpiresAt = 0L
         secureStorage.clearSessionPreservingDevice()
     }
 

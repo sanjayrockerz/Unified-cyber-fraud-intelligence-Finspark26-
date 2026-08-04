@@ -45,7 +45,7 @@ export default function VerdictBadge({ evaluation, currentTxn }) {
             if (r.startsWith('Counterfactual')) return null;
             return (
               <li key={i} className="flex gap-2">
-                <span className="text-soc-muted">â€¢</span> 
+                <span className="text-soc-muted">•</span>
                 {r}
               </li>
             );

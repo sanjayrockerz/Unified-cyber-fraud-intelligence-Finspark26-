@@ -166,8 +166,8 @@ export default function UniversalSearch({ isOpen, onClose }) {
 
         {/* Footer */}
         <div className="flex items-center justify-between px-4 py-2 bg-soc-panel/50 border-t border-soc-border text-[11px] text-soc-dim font-mono">
-          <span>Navigate with <kbd className="px-1 py-0.5 bg-soc-bg border border-soc-border rounded">â†‘</kbd> <kbd className="px-1 py-0.5 bg-soc-bg border border-soc-border rounded">â†“</kbd></span>
-          <span>Open with <kbd className="px-1 py-0.5 bg-soc-bg border border-soc-border rounded">â†µ Enter</kbd></span>
+          <span>Navigate with <kbd className="px-1 py-0.5 bg-soc-bg border border-soc-border rounded">↑</kbd> <kbd className="px-1 py-0.5 bg-soc-bg border border-soc-border rounded">↓</kbd></span>
+          <span>Open with <kbd className="px-1 py-0.5 bg-soc-bg border border-soc-border rounded">↵ Enter</kbd></span>
           <span>Close with <kbd className="px-1 py-0.5 bg-soc-bg border border-soc-border rounded">Esc</kbd></span>
         </div>
       </div>

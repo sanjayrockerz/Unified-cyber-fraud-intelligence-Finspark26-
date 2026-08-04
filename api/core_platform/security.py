@@ -50,6 +50,7 @@ ROLE_POLICIES: tuple[tuple[str, frozenset[str]], ...] = (
     ("/evidence/", frozenset({"analyst", "operator", "admin"})),
     ("/audit/", frozenset({"analyst", "operator", "admin"})),
     ("/trust/", frozenset({"analyst", "operator", "sdk", "admin"})),
+    ("/quantum/", frozenset({"analyst", "operator", "developer", "sdk", "admin"})),
     ("/sessions", frozenset({"analyst", "operator", "sdk", "admin"})),
     ("/threats", frozenset({"analyst", "operator", "developer", "sdk", "admin"})),
     ("/graph/", frozenset({"analyst", "operator", "developer", "admin"})),

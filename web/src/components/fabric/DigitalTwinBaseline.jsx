@@ -89,7 +89,7 @@ export default function DigitalTwinBaseline({ userId, transaction }) {
               </span>
             </div>
             <span className="text-[10px] text-soc-muted">
-              KYC: {identity.kyc_status} â€¢ Segment: {identity.occupation} â€¢ Primary Acc: {identity.primary_account}
+              KYC: {identity.kyc_status} • Segment: {identity.occupation} • Primary Acc: {identity.primary_account}
             </span>
           </div>
         </div>
@@ -232,7 +232,7 @@ export default function DigitalTwinBaseline({ userId, transaction }) {
                 <div key={d.device_id} className="p-2 bg-soc-bg border border-soc-border rounded text-[11px] flex justify-between items-center">
                   <div>
                     <span className="font-bold text-soc-text">{d.name} ({d.device_id})</span>
-                    <div className="text-[10px] text-soc-muted">{d.os} â€¢ {d.browser} â€¢ Fingerprint: {d.fingerprint}</div>
+                    <div className="text-[10px] text-soc-muted">{d.os} • {d.browser} • Fingerprint: {d.fingerprint}</div>
                   </div>
                   <span className="text-[10px] px-1.5 py-0.5 bg-soc-success/10 text-soc-success border border-soc-success/30 rounded">
                     Trust: {d.trust_score * 100}%
@@ -248,7 +248,7 @@ export default function DigitalTwinBaseline({ userId, transaction }) {
               </span>
               <div className="p-2 bg-soc-bg border border-soc-border rounded space-y-1">
                 <div className="text-soc-text font-bold">Home: {locations.home_location?.city}, {locations.home_location?.country} ({locations.home_location?.lat}, {locations.home_location?.lon})</div>
-                <div className="text-[10px] text-soc-muted">Geo-Velocity Baseline: {locations.geo_velocity_kmh} km/h â€¢ VPN Usage Count: {locations.vpn_usage_count}</div>
+                <div className="text-[10px] text-soc-muted">Geo-Velocity Baseline: {locations.geo_velocity_kmh} km/h • VPN Usage Count: {locations.vpn_usage_count}</div>
               </div>
               {locations.impossible_travel_events?.length > 0 && (
                 <div className="p-2 bg-soc-danger/10 border border-soc-danger/30 text-soc-danger rounded text-[10px]">

@@ -287,7 +287,7 @@ export default function InvestigationIntelligencePanel({ caseId, activeTxn = nul
               </div>
               <div>
                 <span className="font-bold text-soc-text text-xs">4. Multi-Vector Decision Quality Score</span>
-                <div className="text-[10px] text-soc-muted">Model Agreement: {decision_quality.model_agreement_percent}% â€¢ Evidence Completeness: {decision_quality.evidence_completeness_percent}%</div>
+                <div className="text-[10px] text-soc-muted">Model Agreement: {decision_quality.model_agreement_percent}% • Evidence Completeness: {decision_quality.evidence_completeness_percent}%</div>
               </div>
             </div>
 

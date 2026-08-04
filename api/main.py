@@ -516,6 +516,26 @@ async def _persist_universe_collections(universe: dict, tenant_id: str | None = 
                     "location": transaction.get("city", ""),
                 },
             )
+            # Seed the same session intelligence path used by the SDK so the
+            # registry reflects the observed transfer instead of a neutral
+            # 100-point passport for every generated session.
+            update = session_intelligence.process_event(
+                {
+                    "session_id": session_id,
+                    "event_type": "TRANSFER",
+                    "amount": transaction.get("amount", 0),
+                    "decision": transaction["decision"],
+                    "location": transaction.get("city", ""),
+                }
+            )
+            if transaction.get("cyber_compromise_in_window") or transaction["decision"] == "BLOCK":
+                update = session_intelligence.process_event(
+                    {
+                        "session_id": session_id,
+                        "event_type": "TAP_INJECTION",
+                        "device_id": transaction.get("device_id", ""),
+                    }
+                )
             await trust_update_broker.publish(update.model_dump(mode="json"))
 
     case_index = 0
@@ -1378,6 +1398,25 @@ async def list_live_sessions(
     include_closed: bool = True,
     limit: int = 200,
 ):
+    # Upgrade older generated rows once, using their persisted transaction
+    # facts. This keeps existing local demo databases from displaying a flat
+    # 100.0 posture after the scoring implementation became event-driven.
+    for existing in session_intelligence.repository.list_sessions(limit=limit):
+        context = session_intelligence.repository.get_context(existing.session_id)
+        last_event = (context.facts.get("last_event") if context else {}) or {}
+        if context and context.event_count <= 1 and float(last_event.get("amount") or 0) > 0:
+            session_intelligence.process_event(
+                {
+                    "session_id": existing.session_id,
+                    "event_type": "TRANSFER",
+                    "amount": last_event.get("amount"),
+                    "decision": last_event.get("decision"),
+                }
+            )
+            if str(last_event.get("decision", "")).upper() == "BLOCK":
+                session_intelligence.process_event(
+                    {"session_id": existing.session_id, "event_type": "TAP_INJECTION"}
+                )
     lifecycle = None
     if state:
         try:

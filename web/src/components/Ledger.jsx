@@ -18,7 +18,7 @@ export default function Ledger({ events = [] }) {
           </div>
           <div className="text-xs text-soc-muted mt-2 flex justify-between">
             <span className="truncate w-20">{evt.nameOrig}</span>
-            <span>â†’</span>
+            <span>→</span>
             <span className="truncate w-20 text-right">{evt.nameDest}</span>
           </div>
         </div>

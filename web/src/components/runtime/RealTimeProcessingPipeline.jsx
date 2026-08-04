@@ -136,7 +136,7 @@ export default function RealTimeProcessingPipeline({ activeTxn, evaluation, webs
       status: 'COMPLETED',
       execTimeMs: '0.02 ms',
       confidence: '98.0%',
-      summary: 'KYC Verified Tier-3 Biometric â€¢ Account Age > 3 Years',
+      summary: 'KYC Verified Tier-3 Biometric • Account Age > 3 Years',
       details: {
         kyc_status: 'VERIFIED TIER-3 (BIOMETRIC)',
         risk_tier: 'HIGH (Corporate)',
@@ -151,7 +151,7 @@ export default function RealTimeProcessingPipeline({ activeTxn, evaluation, webs
       status: isCyberTxn ? 'FLAGGED' : 'COMPLETED',
       execTimeMs: '0.01 ms',
       confidence: '94.0%',
-      summary: isCyberTxn ? 'Unregistered Fingerprint dev_9999 â€¢ SIM Swap Check Flagged' : 'Registered Device iPhone 15 Pro',
+      summary: isCyberTxn ? 'Unregistered Fingerprint dev_9999 • SIM Swap Check Flagged' : 'Registered Device iPhone 15 Pro',
       details: {
         device_id: selectedTxn.device_id,
         fingerprint: 'FP_a1b2c3d4e5',
@@ -167,10 +167,10 @@ export default function RealTimeProcessingPipeline({ activeTxn, evaluation, webs
       status: isCyberTxn ? 'FLAGGED' : 'COMPLETED',
       execTimeMs: '0.02 ms',
       confidence: '96.0%',
-      summary: isCyberTxn ? 'Anomalous Transfer Amount (INR 7.5L) â€¢ Deviation Index 82.5%' : 'Normal Spending Envelope',
+      summary: isCyberTxn ? 'Anomalous Transfer Amount (INR 7.5L) • Deviation Index 82.5%' : 'Normal Spending Envelope',
       details: {
         login_hour: '10:00 IST (Preferred)',
-        normal_range: 'INR 500 â€“ INR 50,000',
+        normal_range: 'INR 500 – INR 50,000',
         behavior_drift: isCyberTxn ? 0.82 : 0.04
       }
     },
@@ -181,7 +181,7 @@ export default function RealTimeProcessingPipeline({ activeTxn, evaluation, webs
       status: isCyberTxn ? 'CRITICAL_THREAT' : 'COMPLETED',
       execTimeMs: '0.01 ms',
       confidence: '98.0%',
-      summary: isCyberTxn ? 'Impossible Travel (Moscow âž” Mumbai) â€¢ Malicious ASN AS49505' : 'Clean IP Reputation',
+      summary: isCyberTxn ? 'Impossible Travel (Moscow → Mumbai) • Malicious ASN AS49505' : 'Clean IP Reputation',
       details: {
         mitre_mapped: isCyberTxn ? ['T1078.004 Valid Accounts', 'T1539 Cookie Theft'] : [],
         asn_reputation: isCyberTxn ? 'AS49505 OOO Baxet (Proxy Pool)' : 'Jio Fiber Clean',
@@ -210,7 +210,7 @@ export default function RealTimeProcessingPipeline({ activeTxn, evaluation, webs
       status: isCleanTxn ? 'ISSUED_ALLOW' : 'ISSUED_BLOCK',
       execTimeMs: '0.02 ms',
       confidence: '97.0%',
-      summary: `Overall Session Trust: ${isCleanTxn ? '94.0%' : '29.0%'} â€¢ Verdict: ${verdictAction}`,
+      summary: `Overall Session Trust: ${isCleanTxn ? '94.0%' : '29.0%'} • Verdict: ${verdictAction}`,
       details: {
         session_passport_id: 'SESS_9921_CRITICAL',
         verdict: verdictAction,
@@ -225,7 +225,7 @@ export default function RealTimeProcessingPipeline({ activeTxn, evaluation, webs
       status: 'COMPLETED',
       execTimeMs: '0.02 ms',
       confidence: '98.0%',
-      summary: `LightGBM (0.82) + IsoForest (0.94) + GraphSAGE (0.045) âž” ${verdictAction}`,
+      summary: `LightGBM (0.82) + IsoForest (0.94) + GraphSAGE (0.045) → ${verdictAction}`,
       details: {
         model_agreement: '98.0% Agreement',
         composite_risk: compositeRiskScore,
@@ -359,7 +359,7 @@ export default function RealTimeProcessingPipeline({ activeTxn, evaluation, webs
                     <span className={`font-mono font-bold text-xs ${isFlagged ? 'text-soc-danger' : 'text-soc-success'}`}>
                       {stg.status}
                     </span>
-                    <div className="text-[10px] text-soc-dim">{stg.execTimeMs} â€¢ Conf: {stg.confidence}</div>
+                    <div className="text-[10px] text-soc-dim">{stg.execTimeMs} • Conf: {stg.confidence}</div>
                   </div>
                   {isExpanded ? <ChevronUp className="w-4 h-4 text-soc-dim" /> : <ChevronDown className="w-4 h-4 text-soc-dim" />}
                 </div>

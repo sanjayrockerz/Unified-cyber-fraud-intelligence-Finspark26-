@@ -28,6 +28,7 @@ export default function QuantumTrustPanel() {
   const [recommendations, setRecommendations] = useState([]);
   const [activeTab, setActiveTab] = useState('overview'); // overview | assessment | inventory | algorithms | migration | compliance | simulation | audit
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   // Simulation state
   const [simSelectedAsset, setSimSelectedAsset] = useState('ASSET_001');
@@ -44,6 +45,7 @@ export default function QuantumTrustPanel() {
 
   const fetchQuantumData = async () => {
     setLoading(true);
+    setError('');
     try {
       const [rRes, aRes, iRes, recRes] = await Promise.all([
         fetch(`${API_BASE}/quantum/readiness`),
@@ -52,16 +54,21 @@ export default function QuantumTrustPanel() {
         fetch(`${API_BASE}/quantum/recommendations`)
       ]);
 
-      const rData = await rRes.json();
-      const aData = await aRes.json();
-      const iData = await iRes.json();
-      const recData = await recRes.json();
+      const read = async (response) => {
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(payload?.error?.message || payload?.detail || `Quantum service returned HTTP ${response.status}`);
+        return payload?.data ?? payload;
+      };
+      const [rData, aData, iData, recData] = await Promise.all([
+        read(rRes), read(aRes), read(iRes), read(recRes),
+      ]);
 
       setReadiness(rData);
       setAssessment(aData);
-      setInventory(iData);
-      setRecommendations(recData);
+      setInventory(Array.isArray(iData) ? iData : iData?.items || []);
+      setRecommendations(Array.isArray(recData) ? recData : recData?.items || []);
     } catch (e) {
+      setError(e.message || 'Quantum Trust service is reconnecting.');
       console.error("Quantum Trust fetch error:", e);
     } finally {
       setLoading(false);
@@ -112,15 +119,16 @@ export default function QuantumTrustPanel() {
     return (
       <div className="bg-soc-surface border border-soc-border rounded-xl p-4 shadow-lg font-mono text-xs text-soc-dim flex items-center gap-2">
         <RefreshCw className="w-4 h-4 animate-spin text-soc-info" />
-        <span>Evaluating Enterprise Post-Quantum Cryptographic Posture...</span>
+        <span>{error || 'Evaluating Enterprise Post-Quantum Cryptographic Posture...'}</span>
+        {error && <button type="button" onClick={fetchQuantumData} className="ml-2 rounded border border-soc-border px-2 py-1 text-soc-text">Retry</button>}
       </div>
     );
   }
 
   const filteredInventory = inventory.filter(item => 
-    item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.public_key_algo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.id.toLowerCase().includes(searchTerm.toLowerCase())
+    String(item.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    String(item.public_key_algo || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    String(item.id || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -292,7 +300,7 @@ export default function QuantumTrustPanel() {
                     <span className="font-bold text-soc-text text-[11px]">{item.name}</span>
                     <span className="text-[9px] px-1.5 py-0.2 rounded bg-soc-bg border border-soc-border text-soc-dim">{item.id}</span>
                   </div>
-                  <div className="text-[10px] text-soc-muted">{item.type} â€¢ {item.crypto_library} â€¢ Expiry: {item.cert_expiry_days} days</div>
+                  <div className="text-[10px] text-soc-muted">{item.type} • {item.crypto_library} • Expiry: {item.cert_expiry_days} days</div>
                 </div>
 
                 <div className="flex items-center gap-3">
