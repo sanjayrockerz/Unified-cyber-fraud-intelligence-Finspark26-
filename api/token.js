@@ -7,7 +7,7 @@ export default async function handler(req, res) {
     return;
   }
 
-  const apiBase = process.env.FUSION_API_BASE?.replace(/\/$/, '') || 'https://unified-cyber-fraud-intelligence.onrender.com';
+  const apiBase = process.env.FUSION_API_BASE?.replace(/\/$/, '') || 'https://risk-engine-api-o2kl.onrender.com';
   const clientId = process.env.FUSION_DASHBOARD_CLIENT_ID || 'fusion-dashboard-dev';
   const clientSecret = process.env.FUSION_DASHBOARD_CLIENT_SECRET || 'fusion-dashboard-local-only';
   if (!apiBase || !clientId || !clientSecret) {

@@ -198,7 +198,7 @@ Two things to know before demoing it:
 
 ## 8. Deployment reality — where should the demo actually run?
 
-A real deployment exists and was iterated on repeatedly (commit history: "wire Render env vars," "resolve bundle size limit and 404 errors," "isolate Vercel dashboard from Python backend"): backend on Render (`unified-cyber-fraud-intelligence.onrender.com`), frontend on Vercel (`web-three-nu-82.vercel.app`), with real serverless token-proxy functions keeping client secrets out of the browser bundle.
+A real deployment exists and was iterated on repeatedly (commit history: "wire Render env vars," "resolve bundle size limit and 404 errors," "isolate Vercel dashboard from Python backend"): backend on Render (`risk-engine-api-o2kl.onrender.com`), frontend on Vercel (`web-three-nu-82.vercel.app`), with real serverless token-proxy functions keeping client secrets out of the browser bundle.
 
 **But during this audit, the Render backend returned HTTP 503 twice** — consistent with Render's free tier sleeping after ~15 minutes of inactivity (30-60s cold-start wake time), though a genuinely crashed service can't be ruled out from outside. Combined with the APK/SDK-download landmine above (§7) and the fact that the Android app's debug build only talks to `localhost` by default, **the safest, fully-rehearsed path is to run everything locally**: `uvicorn api.main:app` + `npm run dev` (the root `package.json` proxies to `web/`), on one laptop. If you want the deployed URL as a fallback talking point, **ping it to warm it up before you go on stage** — do not assume it will answer instantly cold.
 
