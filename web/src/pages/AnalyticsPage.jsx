@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   BarChart3, 
   TrendingUp, 
@@ -21,48 +21,35 @@ import {
 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer } from 'recharts';
 import { FLAT_EPSILON, formatF, formatPct, getUplift } from '../lib/metricsFormat';
+import useResource from '../lib/useResource';
+
+const unwrap = (body) => body?.data ?? body ?? null;
 
 export default function AnalyticsPage() {
   const [timeRange, setTimeRange] = useState('24h');
   
-  // Data states
-  const [evalData, setEvalData] = useState(null);
-  const [evalError, setEvalError] = useState(false);
-  const [sweepData, setSweepData] = useState(null);
-  const [sweepError, setSweepError] = useState(false);
-  const [summaryData, setSummaryData] = useState(null);
-  const [summaryError, setSummaryError] = useState(false);
-
   // Sweep controls
   const [fnCost, setFnCost] = useState(250000);
   const [fpCost, setFpCost] = useState(400);
   const [thresholdInt, setThresholdInt] = useState(50);
   const [selectedConfig, setSelectedConfig] = useState('full_fusion');
 
-  useEffect(() => {
-    const apiBase = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8000' : '');
-    fetch(`${apiBase}/analytics/summary?period=${timeRange}`).then((r) => r.json()).then((body) => setSummaryData(body.data || body)).catch(() => setSummaryError(true));
-  }, [timeRange]);
-
-  useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8000' : '')}/metrics/evaluate`)
-      .then(r => r.json())
-      .then(data => {
-        if (data.error) setEvalError(true);
-        else setEvalData(data);
-      })
-      .catch(() => setEvalError(true));
-  }, []);
-
-  useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8000' : '')}/metrics/cost?fn_cost=${fnCost}&fp_cost=${fpCost}`)
-      .then(r => r.json())
-      .then(data => {
-        if (data.error) setSweepError(true);
-        else setSweepData(data);
-      })
-      .catch(() => setSweepError(true));
-  }, [fnCost, fpCost]);
+  const summaryResource = useResource(`/analytics/summary?period=${timeRange}`, { refreshMs: 60000 });
+  const evalResource = useResource('/metrics/evaluate', { refreshMs: 300000 });
+  const sweepResource = useResource(`/metrics/cost?fn_cost=${fnCost}&fp_cost=${fpCost}`, { refreshMs: 300000 });
+  const summaryData = unwrap(summaryResource.data);
+  const evalData = unwrap(evalResource.data);
+  const sweepData = unwrap(sweepResource.data);
+  const summaryError = summaryResource.status === 'error';
+  const evalError = evalResource.status === 'error';
+  const sweepError = sweepResource.status === 'error';
+  const totals = summaryData?.totals ?? {};
+  const hasEval = Boolean(evalData?.transaction_only && evalData?.full_fusion);
+  const retryAll = () => {
+    summaryResource.reload();
+    evalResource.reload();
+    sweepResource.reload();
+  };
 
   let computedModelMetrics = [];
   let headlineUplift = "Loading...";
@@ -70,7 +57,7 @@ export default function AnalyticsPage() {
   let recallCompare = "";
   let headlineIsPositive = true;
 
-  if (evalData) {
+  if (hasEval) {
     computedModelMetrics = [
       {
         metric: 'PR-AUC (Precision-Recall Area)',
@@ -125,15 +112,15 @@ export default function AnalyticsPage() {
   }
 
   const kpis = [
-    { title: 'Observed Transactions', val: summaryData ? summaryData.totals.transactions : 'Waiting', sub: summaryData ? `${summaryData.totals.blocked} blocked decisions` : 'Backend analytics unavailable', color: 'text-soc-success', icon: ShieldAlert },
+    { title: 'Observed Transactions', val: summaryData ? (totals.transactions ?? 0) : 'Waiting', sub: summaryData ? `${totals.blocked ?? 0} blocked decisions` : 'Waiting for telemetry', color: 'text-soc-success', icon: ShieldAlert },
     {
       title: 'Fusion Model PR-AUC Uplift',
       val: headlineUplift,
-      sub: evalData ? `PR-AUC (${formatF(evalData.full_fusion.pr_auc)} vs ${formatF(evalData.transaction_only.pr_auc)})` : (evalError ? 'Metrics Unavailable' : 'Loading...'),
+      sub: hasEval ? `PR-AUC (${formatF(evalData.full_fusion.pr_auc)} vs ${formatF(evalData.transaction_only.pr_auc)})` : (evalError ? 'Retrying metrics connection' : 'Loading...'),
       color: headlineIsPositive ? 'text-soc-primary' : 'text-soc-warning', icon: TrendingUp
     },
-    { title: 'Blocked Amount', val: summaryData ? `INR ${summaryData.totals.blocked_amount.toLocaleString('en-IN')}` : 'Waiting', sub: 'Tenant-scoped backend total', color: 'text-soc-warning', icon: Activity },
-    { title: 'Observed Threats', val: summaryData ? summaryData.totals.threats : 'Waiting', sub: summaryError ? 'Analytics unavailable' : 'Threat engine telemetry', color: 'text-soc-success', icon: FileCheck2 }
+    { title: 'Blocked Amount', val: summaryData ? `INR ${Number(totals.blocked_amount ?? 0).toLocaleString('en-IN')}` : 'Waiting', sub: 'Tenant-scoped backend total', color: 'text-soc-warning', icon: Activity },
+    { title: 'Observed Threats', val: summaryData ? (totals.threats ?? 0) : 'Waiting', sub: summaryError ? 'Retrying analytics connection' : 'Threat engine telemetry', color: 'text-soc-success', icon: FileCheck2 }
   ];
 
   const threatVectors = (summaryData?.threat_vectors || []).map((item) => ({ ...item, pct: item.percent, severity: 'OBSERVED', color: 'bg-soc-primary' }));
@@ -167,7 +154,7 @@ export default function AnalyticsPage() {
   // sweep with stale/fabricated totals (see CRITICAL 2 fix notes).
   let totalPos = null;
   let totalNeg = null;
-  if (evalData && evalData.transaction_only) {
+  if (hasEval && evalData.transaction_only.confusion_matrix) {
     totalPos = evalData.transaction_only.confusion_matrix.TP + evalData.transaction_only.confusion_matrix.FN;
     totalNeg = evalData.transaction_only.confusion_matrix.TN + evalData.transaction_only.confusion_matrix.FP;
   }
@@ -251,7 +238,7 @@ export default function AnalyticsPage() {
 
         {evalError ? (
           <div className="p-4 text-soc-danger font-bold border border-soc-danger/30 rounded bg-soc-danger/10">
-            Metrics Unavailable. Cannot reach evaluation endpoint.
+            Service temporarily unavailable. Retrying metrics connection automatically.
           </div>
         ) : !evalData ? (
           <div className="p-4 text-soc-muted font-bold animate-pulse">Loading real-time metrics...</div>
@@ -305,7 +292,7 @@ export default function AnalyticsPage() {
         </div>
 
         {sweepError ? (
-          <div className="text-soc-danger font-bold p-4 border border-soc-danger/30 rounded bg-soc-danger/10">Metrics unavailable</div>
+          <div className="text-soc-muted font-bold p-4 border border-soc-warning/30 rounded bg-soc-warning/5">Service temporarily unavailable. Retrying sweep connection automatically.</div>
         ) : !sweepData ? (
           <div className="text-soc-muted p-4 animate-pulse">Loading sweep data...</div>
         ) : (
@@ -428,7 +415,7 @@ export default function AnalyticsPage() {
               <Radio className="w-4 h-4 text-soc-danger animate-pulse" />
               <span>SIEM Threat Vector Distribution</span>
             </h3>
-            <span className="text-[10px] text-soc-muted">{summaryData ? `${summaryData.totals.transactions} Events` : 'Waiting for telemetry'}</span>
+            <span className="text-[10px] text-soc-muted">{summaryData ? `${totals.transactions ?? 0} Events` : 'Waiting for telemetry'}</span>
           </div>
 
           <div className="space-y-3">
@@ -537,4 +524,3 @@ export default function AnalyticsPage() {
     </div>
   );
 }
-

@@ -22,10 +22,12 @@ export default function useResource(path, { skip = false, timeoutMs = DEFAULT_TI
       setError(null);
       return undefined;
     }
-    const controller = new AbortController();
     let active = true;
-    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+    let activeController = null;
     const load = async () => {
+      const controller = new AbortController();
+      activeController = controller;
+      const timeout = setTimeout(() => controller.abort(), timeoutMs);
       setStatus((current) => (data ? 'stale' : current === 'ready' ? 'stale' : 'loading'));
       setError(null);
       try {
@@ -45,14 +47,15 @@ export default function useResource(path, { skip = false, timeoutMs = DEFAULT_TI
         if (!active) return;
         setError(requestError.name === 'AbortError' ? new Error('Request timed out; retrying automatically.') : requestError);
         setStatus(data ? 'stale' : 'error');
+      } finally {
+        clearTimeout(timeout);
       }
     };
     load();
     const timer = setInterval(load, refreshMs);
     return () => {
       active = false;
-      controller.abort();
-      clearTimeout(timeout);
+      activeController?.abort();
       clearInterval(timer);
     };
   }, [path, skip, reloadToken, timeoutMs, refreshMs]);
