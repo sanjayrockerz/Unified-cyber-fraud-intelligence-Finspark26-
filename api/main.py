@@ -51,7 +51,7 @@ from api.core_platform import (
 )
 from api.core_platform.observability import RequestContextMiddleware
 from api.core_platform.security import authenticate_websocket
-from api.core_platform.config import validate_environment
+from api.core_platform.config import configured_sdk_client, validate_environment
 from api.core_platform.dependencies import get_current_tenant, check_resource_ownership
 from api.core_platform.banking_auth import (
     router as banking_auth_router,
@@ -149,18 +149,15 @@ async def register_paired_device(req: DeviceRegistrationRequest):
     if not record:
         raise HTTPException(status_code=401, detail="Pairing token is invalid, expired, or already used")
     device = pairing_registry.register_device(req.pair_id, req.model_dump())
-    configured = next(
-        ((client_id, item) for client_id, item in platform_settings.clients.items() if "sdk" in set(item.get("roles", []))),
-        None,
-    )
-    if configured is None:
-        raise HTTPException(status_code=503, detail="No SDK authentication client is configured")
-    client_id, configured_client = configured
+    try:
+        client_id, configured_client = configured_sdk_client()
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
     client = {
         **configured_client,
         "roles": ["sdk"],
         "tenant_id": configured_client.get("tenant_id") or os.getenv("FUSION_DEFAULT_TENANT_ID", ""),
-        "app_id": configured_client.get("app_id") or "com.fuzenbank.mobileapp",
+        "app_id": configured_client.get("app_id") or os.getenv("FUSION_DEFAULT_APP_ID", "com.fusionbank.mobileapp"),
     }
     if not client["tenant_id"]:
         raise HTTPException(status_code=503, detail="SDK authentication client has no tenant scope")

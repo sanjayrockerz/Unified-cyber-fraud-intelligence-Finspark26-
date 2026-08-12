@@ -12,7 +12,7 @@ export default function DeveloperPlatformPage() {
   const [mobileBackend, setMobileBackend] = useState(
     import.meta.env.VITE_MOBILE_API_BASE ||
     (import.meta.env.DEV
-      ? `http://${window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? '10.0.2.2' : window.location.hostname}:8000`
+      ? `http://${window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname === '0.0.0.0' || window.location.hostname === '192.0.0.0' ? '10.0.2.2' : window.location.hostname}:18001`
       : API_BASE)
   );
 
@@ -31,6 +31,18 @@ export default function DeveloperPlatformPage() {
   const generatePairing = async () => {
     setError(null);
     const backend = mobileBackend.trim().replace(/\/$/, '');
+    let parsed;
+    try {
+      parsed = new URL(backend);
+    } catch {
+      throw new Error('Enter a reachable API URL, for example http://10.0.2.2:18001');
+    }
+    if (['0.0.0.0', '192.0.0.0', '255.255.255.255'].includes(parsed.hostname)) {
+      throw new Error('192.0.0.0/0.0.0.0 are bind addresses, not phone addresses. Use 10.0.2.2 for an emulator or your computer LAN IP for a phone.');
+    }
+    if (!['http:', 'https:'].includes(parsed.protocol)) {
+      throw new Error('API URL must start with http:// or https://');
+    }
     const ws = backend.replace(/^https?/, value => value === 'https' ? 'wss' : 'ws') + '/ws/stream';
     const response = await fetch(`${API_BASE}/device/pair`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ backend_url: backend, ws_url: ws }) });
     if (!response.ok) throw new Error(`Pairing generation failed: HTTP ${response.status}`);

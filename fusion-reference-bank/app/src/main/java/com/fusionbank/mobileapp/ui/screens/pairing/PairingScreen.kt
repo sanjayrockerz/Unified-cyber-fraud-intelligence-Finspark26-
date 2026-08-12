@@ -65,7 +65,8 @@ fun PairingScreen(
                         success = true
                     } else {
                         error = pairResult.exceptionOrNull()?.message
-                            ?: "Pairing failed — check that the QR code is valid"
+                            ?.replace(Regex("HTTP\\s*[45]\\d{2}"), "the server response")
+                            ?: "Pairing could not be completed. Check that the QR code is valid and retry."
                     }
                 })
             }
@@ -210,7 +211,9 @@ fun PairingScreen(
                             Fusion.pair(context, payload, onResult = { pairResult ->
                                 busy = false
                                 if (pairResult.isSuccess) success = true
-                                else error = pairResult.exceptionOrNull()?.message ?: "Pairing failed"
+                                else error = pairResult.exceptionOrNull()?.message
+                                    ?.replace(Regex("HTTP\\s*[45]\\d{2}"), "the server response")
+                                    ?: "Pairing could not be completed. Check the payload and retry."
                             })
                         },
                         modifier = Modifier.fillMaxWidth(),

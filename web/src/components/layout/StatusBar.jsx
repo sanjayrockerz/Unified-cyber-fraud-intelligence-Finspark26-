@@ -2,12 +2,14 @@
 import { Activity, ShieldCheck, Wifi } from 'lucide-react';
 
 export default function StatusBar() {
+  const connected = window.__FUSION_AUTH_READY__ === true;
+  const apiBase = import.meta.env.VITE_API_BASE || window.__FUSION_CONFIG__?.apiBase || 'https://unified-cyber-fraud-intelligence.onrender.com';
   return (
     <div className="flex h-6 items-center justify-between overflow-hidden border-t border-soc-border bg-soc-surface px-3 text-[10px] font-mono text-soc-dim select-none sm:px-4">
       <div className="flex min-w-0 items-center gap-2 sm:gap-4">
-        <span className="flex items-center gap-1 text-soc-success">
+        <span className={`flex items-center gap-1 ${connected ? 'text-soc-success' : 'text-soc-warning'}`} title={connected ? apiBase : window.__FUSION_AUTH_ERROR__ || 'Set Vercel token proxy variables'}>
           <Wifi className="w-3 h-3" />
-          <span className="truncate">WebSocket stream connected<span className="hidden sm:inline"> (port 8001)</span></span>
+          <span className="truncate">{connected ? 'Connected to Render' : 'Connect Vercel to Render'}<span className="hidden sm:inline"> · {apiBase}</span></span>
         </span>
         <span className="hidden sm:inline">SLA Target: &lt;50ms</span>
       </div>

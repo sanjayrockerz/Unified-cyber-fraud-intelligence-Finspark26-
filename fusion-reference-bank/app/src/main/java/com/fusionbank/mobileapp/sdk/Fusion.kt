@@ -152,7 +152,7 @@ object Fusion {
                 val response = apiService.registerPairedDevice(request)
                 val body = response.body()
                 if (!response.isSuccessful || body == null) {
-                    throw IllegalStateException("Pairing failed: HTTP ${response.code()}")
+                    throw backendError("Pairing", response.code())
                 }
                 persistPairing(body)
                 deliver(onResult, Result.success(body))
@@ -187,7 +187,7 @@ object Fusion {
                 )
                 val auth = response.body()
                 if (!response.isSuccessful || auth == null) {
-                    throw IllegalStateException("Authentication failed: HTTP ${response.code()}")
+                    throw backendError("Sign-in", response.code())
                 }
                 persistAuthentication(auth)
                 _lastLoginSecurity.value = auth.security
@@ -218,7 +218,7 @@ object Fusion {
                     )
                 )
                 val body = response.body()
-                if (!response.isSuccessful || body == null) throw IllegalStateException("Registration failed: HTTP ${response.code()}")
+                if (!response.isSuccessful || body == null) throw backendError("Registration", response.code())
                 deliver(onResult, Result.success(body))
             } catch (exception: Exception) {
                 deliver(onResult, Result.failure(exception))
@@ -285,7 +285,7 @@ object Fusion {
         if (!response.isSuccessful || session == null || !session.backendAck) {
             return deliver(
                 onResult,
-                Result.failure(IllegalStateException("Session start failed: HTTP ${response.code()}")),
+                Result.failure(backendError("Session start", response.code())),
             )
         }
                 _activeSession.value = session
@@ -661,6 +661,16 @@ object Fusion {
 
     private fun newId(prefix: String): String =
         "${prefix}_${UUID.randomUUID().toString().replace("-", "").uppercase()}"
+
+    private fun backendError(operation: String, status: Int): IllegalStateException =
+        IllegalStateException(
+            when (status) {
+                401 -> "$operation could not be completed. The session is not authorized; pair this device again and retry."
+                403 -> "$operation is not available for this device. Pair it again from the Developer Portal."
+                503 -> "$operation service is temporarily unavailable. Keep this pairing screen open and retry in a moment."
+                else -> "$operation could not be completed. Check the pairing payload and retry."
+            }
+        )
 
     private suspend fun <T> deliver(callback: (Result<T>) -> Unit, result: Result<T>) {
         withContext(Dispatchers.Main) { callback(result) }

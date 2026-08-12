@@ -37,7 +37,7 @@ services:
       - key: FUSION_DEFAULT_TENANT_ID
         value: TENANT_FUSB_001
       - key: FUSION_DEFAULT_APP_ID
-        value: com.fuzenbank.mobileapp
+        value: com.fusionbank.mobileapp
       - key: NEO4J_URI
         sync: false
       - key: NEO4J_USERNAME

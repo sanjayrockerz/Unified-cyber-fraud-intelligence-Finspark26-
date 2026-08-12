@@ -35,6 +35,12 @@ def load_banking_users() -> dict[str, Any]:
         users = json.loads(users_json)
     except json.JSONDecodeError:
         return {}
+    if isinstance(users, list):
+        return {
+            str(item.get("username", "")): item
+            for item in users
+            if isinstance(item, dict) and item.get("username")
+        }
     return users if isinstance(users, dict) else {}
 
 supabase_url = os.getenv("SUPABASE_URL")
@@ -198,6 +204,13 @@ class BankingAuthService:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Banking authentication is not configured")
         uname = username.strip().lower()
         user = get(USER_COLLECTION, uname)
+        if not user:
+            from api.store import list_all
+            user = next(
+                (item for item in list_all(USER_COLLECTION)
+                 if str(item.get("email", "")).strip().lower() == uname),
+                None,
+            )
         stored_hash = user.get("password_hash", "") if user else _password_hash("invalid")
         if not user or user.get("disabled") or not _password_matches(password, stored_hash):
             raise HTTPException(

@@ -1,5 +1,9 @@
+// Keep the dashboard usable when Vercel was deployed without the VITE variable.
+// VITE_API_BASE still wins, while this is the public Render service used by the
+// repository's deployment configuration.
 const API_BASE = import.meta.env.VITE_API_BASE
-  || (import.meta.env.DEV ? 'http://localhost:8000' : '');
+  || window.__FUSION_CONFIG__?.apiBase
+  || (import.meta.env.DEV ? 'http://localhost:8000' : 'https://unified-cyber-fraud-intelligence.onrender.com');
 const rawFetch = window.fetch.bind(window);
 let accessToken = window.__FUSION_CONFIG__?.accessToken || '';
 let expiresAt = 0;
@@ -15,7 +19,7 @@ function tokenExpiry(token) {
 }
 
 function validateRuntimeConfig() {
-  if (!API_BASE) throw new Error('VITE_API_BASE is required for production');
+  if (!API_BASE) throw new Error('A dashboard API URL is required');
   if (!import.meta.env.DEV && !API_BASE.startsWith('https://')) {
     throw new Error('Production dashboard API must use HTTPS');
   }
