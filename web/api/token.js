@@ -8,7 +8,7 @@ export default async function handler(req, res) {
     return;
   }
 
-  const apiBase = (process.env.FUSION_API_BASE || 'https://unified-cyber-fraud-intelligence.onrender.com').replace(/\/$/, '');
+  const apiBase = (process.env.FUSION_API_BASE || 'https://risk-engine-api-o2kl.onrender.com').replace(/\/$/, '');
   const clientId = process.env.FUSION_DASHBOARD_CLIENT_ID;
   const clientSecret = process.env.FUSION_DASHBOARD_CLIENT_SECRET;
   if (!apiBase || !clientId || !clientSecret) {

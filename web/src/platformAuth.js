@@ -3,7 +3,7 @@
 // repository's deployment configuration.
 const API_BASE = import.meta.env.VITE_API_BASE
   || window.__FUSION_CONFIG__?.apiBase
-  || (import.meta.env.DEV ? 'http://localhost:8000' : 'https://unified-cyber-fraud-intelligence.onrender.com');
+  || (import.meta.env.DEV ? 'http://localhost:8000' : 'https://risk-engine-api-o2kl.onrender.com');
 const rawFetch = window.fetch.bind(window);
 let accessToken = window.__FUSION_CONFIG__?.accessToken || '';
 let expiresAt = 0;

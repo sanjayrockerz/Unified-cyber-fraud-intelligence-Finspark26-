@@ -7,9 +7,9 @@ export default async function handler(req, res) {
     return;
   }
 
-  const apiBase = process.env.FUSION_API_BASE?.replace(/\/$/, '') || 'https://risk-engine-api-o2kl.onrender.com';
-  const clientId = process.env.FUSION_DASHBOARD_CLIENT_ID || 'fusion-dashboard-dev';
-  const clientSecret = process.env.FUSION_DASHBOARD_CLIENT_SECRET || 'fusion-dashboard-local-only';
+  const apiBase = (process.env.FUSION_API_BASE || 'https://risk-engine-api-o2kl.onrender.com').replace(/\/$/, '');
+  const clientId = process.env.FUSION_DASHBOARD_CLIENT_ID;
+  const clientSecret = process.env.FUSION_DASHBOARD_CLIENT_SECRET;
   if (!apiBase || !clientId || !clientSecret) {
     res.status(503).json({ error: 'Dashboard authentication is not configured' });
     return;

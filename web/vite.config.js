@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-const renderApi = process.env.VITE_API_BASE || 'https://unified-cyber-fraud-intelligence.onrender.com'
+const renderApi = process.env.VITE_API_BASE || 'https://risk-engine-api-o2kl.onrender.com'
 
 export default defineConfig({
   plugins: [react()],

@@ -3,7 +3,7 @@ import { Activity, ShieldCheck, Wifi } from 'lucide-react';
 
 export default function StatusBar() {
   const connected = window.__FUSION_AUTH_READY__ === true;
-  const apiBase = import.meta.env.VITE_API_BASE || window.__FUSION_CONFIG__?.apiBase || 'https://unified-cyber-fraud-intelligence.onrender.com';
+  const apiBase = import.meta.env.VITE_API_BASE || window.__FUSION_CONFIG__?.apiBase || 'https://risk-engine-api-o2kl.onrender.com';
   return (
     <div className="flex h-6 items-center justify-between overflow-hidden border-t border-soc-border bg-soc-surface px-3 text-[10px] font-mono text-soc-dim select-none sm:px-4">
       <div className="flex min-w-0 items-center gap-2 sm:gap-4">
