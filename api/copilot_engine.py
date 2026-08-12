@@ -97,7 +97,15 @@ def generate_grounded_fallback_response(query: str, state: dict[str, Any], conte
     severity = "CRITICAL" if any(str(item.get("severity", "")).upper() == "CRITICAL" for item in threats + cases) else ("OBSERVED" if threats or cases else "UNAVAILABLE")
     return {
         "summary": "Current investigation assessment is grounded in the authenticated tenant telemetry snapshot.",
-        "classification": [item.get("threat_category") or item.get("event_type") for item in threats[:5]] or ["No active classification observed"],
+        # Distinct categories: several threats routinely share one category, and
+        # repeating it adds no information to the classification card.
+        "classification": list(
+            dict.fromkeys(
+                label
+                for label in (item.get("threat_category") or item.get("event_type") for item in threats[:5])
+                if label
+            )
+        ) or ["No active classification observed"],
         "trust": context.get("trust") if context else "Adaptive trust is not available in the current response context.",
         "severity": severity,
         "evidence": state.get("recent_transactions", [])[:5] or ["No transaction evidence observed"],

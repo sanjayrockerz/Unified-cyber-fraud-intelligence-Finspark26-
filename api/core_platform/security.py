@@ -102,8 +102,12 @@ def create_access_token(
         "roles": client.get("roles") or ([client["role"]] if client.get("role") else []),
         "role": client.get("role") or (client.get("roles") or [None])[0],
         "permissions": client.get("permissions", []),
-        "tenant_id": client.get("tenant_id"),
-        "app_id": client.get("app_id"),
+        # validate_access_token rejects a token with no tenant_id, so fall back
+        # to the deployment's default scope rather than minting a token that
+        # every authenticated route will reject. A client that declares its own
+        # tenant/app keeps it.
+        "tenant_id": client.get("tenant_id") or settings.default_tenant_id or None,
+        "app_id": client.get("app_id") or settings.default_app_id or None,
         "iat": now,
         "nbf": now - 5,
         "exp": expires_at,

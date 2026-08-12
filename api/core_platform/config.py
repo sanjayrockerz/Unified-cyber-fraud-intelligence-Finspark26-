@@ -61,6 +61,15 @@ class PlatformSettings:
             "http://localhost:5173,http://127.0.0.1:5173",
         )
     )
+    # Tenant/app scope applied to clients that don't declare their own. Every
+    # authenticated route requires a tenant, so a client configured with only a
+    # secret and roles would otherwise mint tokens that fail validation.
+    default_tenant_id: str = field(
+        default_factory=lambda: os.getenv("FUSION_DEFAULT_TENANT_ID", "TENANT_FUSB_001")
+    )
+    default_app_id: str = field(
+        default_factory=lambda: os.getenv("FUSION_DEFAULT_APP_ID", "com.fuzenbank.mobileapp")
+    )
     neo4j_uri: str | None = field(default_factory=lambda: os.getenv("NEO4J_URI"))
     neo4j_username: str | None = field(default_factory=lambda: os.getenv("NEO4J_USERNAME"))
     neo4j_password: str | None = field(default_factory=lambda: os.getenv("NEO4J_PASSWORD"))

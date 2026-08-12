@@ -21,6 +21,25 @@ import {
 
 const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8000' : '');
 
+// Every API response is wrapped in {success, data, meta, errors}. A dict payload
+// is additionally flattened onto the envelope, but a list payload cannot be --
+// so /quantum/inventory and /quantum/recommendations carry their arrays only
+// under `data`. Read the payload out of `data` so both shapes work, and never
+// hand a non-array to state that the render treats as a list.
+function unwrapList(body) {
+  if (Array.isArray(body)) return body;
+  if (Array.isArray(body?.data)) return body.data;
+  if (Array.isArray(body?.items)) return body.items;
+  return [];
+}
+
+function unwrapRecord(body) {
+  if (!body || typeof body !== 'object' || Array.isArray(body)) return null;
+  if (body.success === false) return null;
+  if (body.data && typeof body.data === 'object' && !Array.isArray(body.data)) return body.data;
+  return body;
+}
+
 export default function QuantumTrustPanel() {
   const [readiness, setReadiness] = useState(null);
   const [assessment, setAssessment] = useState(null);
@@ -28,7 +47,6 @@ export default function QuantumTrustPanel() {
   const [recommendations, setRecommendations] = useState([]);
   const [activeTab, setActiveTab] = useState('overview'); // overview | assessment | inventory | algorithms | migration | compliance | simulation | audit
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
 
   // Simulation state
   const [simSelectedAsset, setSimSelectedAsset] = useState('ASSET_001');
@@ -45,7 +63,6 @@ export default function QuantumTrustPanel() {
 
   const fetchQuantumData = async () => {
     setLoading(true);
-    setError('');
     try {
       const [rRes, aRes, iRes, recRes] = await Promise.all([
         fetch(`${API_BASE}/quantum/readiness`),
@@ -54,21 +71,18 @@ export default function QuantumTrustPanel() {
         fetch(`${API_BASE}/quantum/recommendations`)
       ]);
 
-      const read = async (response) => {
-        const payload = await response.json().catch(() => ({}));
-        if (!response.ok) throw new Error(payload?.error?.message || payload?.detail || `Quantum service returned HTTP ${response.status}`);
-        return payload?.data ?? payload;
-      };
       const [rData, aData, iData, recData] = await Promise.all([
-        read(rRes), read(aRes), read(iRes), read(recRes),
+        rRes.json().catch(() => null),
+        aRes.json().catch(() => null),
+        iRes.json().catch(() => null),
+        recRes.json().catch(() => null),
       ]);
 
-      setReadiness(rData);
-      setAssessment(aData);
-      setInventory(Array.isArray(iData) ? iData : iData?.items || []);
-      setRecommendations(Array.isArray(recData) ? recData : recData?.items || []);
+      setReadiness(unwrapRecord(rData));
+      setAssessment(unwrapRecord(aData));
+      setInventory(unwrapList(iData));
+      setRecommendations(unwrapList(recData));
     } catch (e) {
-      setError(e.message || 'Quantum Trust service is reconnecting.');
       console.error("Quantum Trust fetch error:", e);
     } finally {
       setLoading(false);
@@ -86,8 +100,8 @@ export default function QuantumTrustPanel() {
           simulated_year: simYear
         })
       });
-      const data = await res.json();
-      setSimResult(data);
+      const data = await res.json().catch(() => null);
+      setSimResult(unwrapRecord(data));
     } catch (e) {
       console.error("Simulation error:", e);
     } finally {
@@ -119,16 +133,16 @@ export default function QuantumTrustPanel() {
     return (
       <div className="bg-soc-surface border border-soc-border rounded-xl p-4 shadow-lg font-mono text-xs text-soc-dim flex items-center gap-2">
         <RefreshCw className="w-4 h-4 animate-spin text-soc-info" />
-        <span>{error || 'Evaluating Enterprise Post-Quantum Cryptographic Posture...'}</span>
-        {error && <button type="button" onClick={fetchQuantumData} className="ml-2 rounded border border-soc-border px-2 py-1 text-soc-text">Retry</button>}
+        <span>Evaluating Enterprise Post-Quantum Cryptographic Posture...</span>
       </div>
     );
   }
 
-  const filteredInventory = inventory.filter(item => 
-    String(item.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    String(item.public_key_algo || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    String(item.id || '').toLowerCase().includes(searchTerm.toLowerCase())
+  const term = searchTerm.toLowerCase();
+  const filteredInventory = inventory.filter(item =>
+    [item?.name, item?.public_key_algo, item?.id].some(field =>
+      String(field ?? '').toLowerCase().includes(term)
+    )
   );
 
   return (
@@ -300,7 +314,7 @@ export default function QuantumTrustPanel() {
                     <span className="font-bold text-soc-text text-[11px]">{item.name}</span>
                     <span className="text-[9px] px-1.5 py-0.2 rounded bg-soc-bg border border-soc-border text-soc-dim">{item.id}</span>
                   </div>
-                  <div className="text-[10px] text-soc-muted">{item.type} • {item.crypto_library} • Expiry: {item.cert_expiry_days} days</div>
+                  <div className="text-[10px] text-soc-muted">{item.type} â€¢ {item.crypto_library} â€¢ Expiry: {item.cert_expiry_days} days</div>
                 </div>
 
                 <div className="flex items-center gap-3">
@@ -394,11 +408,11 @@ export default function QuantumTrustPanel() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-[11px]">
                 <div className="p-2 bg-soc-panel border border-soc-border rounded">
                   <span className="text-soc-dim block text-[10px]">Shor's Algorithm Factoring Time:</span>
-                  <span className="font-bold text-soc-danger">{simResult.quantum_threat_result.shor_factoring_time_minutes}</span>
+                  <span className="font-bold text-soc-danger">{simResult.quantum_threat_result?.shor_factoring_time_minutes ?? 'Not returned'}</span>
                 </div>
                 <div className="p-2 bg-soc-panel border border-soc-border rounded">
                   <span className="text-soc-dim block text-[10px]">Payload Compromise Risk:</span>
-                  <span className="font-bold text-soc-warning">{simResult.quantum_threat_result.payload_compromise_risk}</span>
+                  <span className="font-bold text-soc-warning">{simResult.quantum_threat_result?.payload_compromise_risk ?? 'Not returned'}</span>
                 </div>
               </div>
               <div className="text-[10px] text-soc-muted italic">{simResult.disclaimer}</div>
