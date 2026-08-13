@@ -34,14 +34,11 @@ function renderApp() {
 renderLoading()
 
 async function start() {
+  installAuthenticatedFetch()
   try {
     await bootstrapPlatformAuth()
-    installAuthenticatedFetch()
     window.__FUSION_AUTH_READY__ = true
   } catch (error) {
-    // Render the dashboard even if deployment secrets/API availability are
-    // wrong. API-backed panels can report their own connection state and the
-    // operator can fix the Vercel/Render variables without a white screen.
     window.__FUSION_AUTH_ERROR__ = error?.message || 'Authentication unavailable'
     console.error('[platform-auth] startup failed:', error)
   }
