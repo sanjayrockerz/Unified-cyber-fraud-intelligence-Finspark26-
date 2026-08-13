@@ -3,6 +3,9 @@ import json
 import math
 import os
 import sys
+from dotenv import load_dotenv
+
+load_dotenv()
 import io
 import datetime
 import hmac
